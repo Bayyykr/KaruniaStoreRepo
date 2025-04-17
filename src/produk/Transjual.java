@@ -1,5 +1,6 @@
 package Form;
 
+import PopUp_all.PopUp_BayarTransjual;
 import SourceCode.PopUp_edittransbeli;
 import SourceCode.ScrollPane;
 import java.awt.*;
@@ -16,13 +17,13 @@ import java.util.Locale;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import SourceCode.PopUp_transbelihapusdata;
-import SourceCode.PopUp_edittransbeli;
 import SourceCode.JTableRounded;
 import java.awt.geom.Path2D;
 import java.math.BigInteger;
 
 public class Transjual extends JPanel {
 
+    Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
     private JTextField hargaBeliField;
     private JPanel thisPanel;
@@ -55,41 +56,18 @@ public class Transjual extends JPanel {
 
         // Label Transaksi Beli - posisi tetap
         JLabel transaksiLabel = new JLabel("Transaksi Jual");
-        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        transaksiLabel.setBounds(30, 30, 200, 30);
+        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        transaksiLabel.setBounds(30, 50, 250, 30);
         mainPanel.add(transaksiLabel);
 
         // Field Tanggal otomatis - disesuaikan sedikit ke kanan
         JTextField dateField = createRoundedTextField(850, 30, 180, 30);
         dateField.setText(getCurrentDate());
         dateField.setEditable(false);
+        dateField.setFocusable(false);
         dateField.setBounds(835, 30, 200, 30);
         dateField.setBackground(new Color(200, 200, 200));
         mainPanel.add(dateField);
-
-        // Search field - diperlebar sedikit
-        JTextField searchField = createRoundedTextField(30, 70, 280, 35);
-        searchField.setText("Search");
-        searchField.setForeground(Color.BLACK);
-        searchField.setBackground(new Color(200, 200, 200));
-        searchField.addFocusListener(new FocusListener() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (searchField.getText().equals("Search")) {
-                    searchField.setText("");
-                    searchField.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (searchField.getText().isEmpty()) {
-                    searchField.setText("Search");
-                    searchField.setForeground(Color.BLACK);
-                }
-            }
-        });
-        mainPanel.add(searchField);
 
         // Membuat rounded table dengan JTableRounded - diperlebar untuk mengisi space
         String[] columns = {"No", "Nama Produk", "Size", "Jumlah", "Harga Satuan", "Diskon", "Total", "Aksi"};
@@ -455,14 +433,41 @@ public class Transjual extends JPanel {
                 g2.dispose();
             }
         };
-        formPanel.setBounds(800, 130, 235, 380); // Ukuran panel dikurangi untuk memberikan ruang tombol BAYAR
-        formPanel.setOpaque(false); // Memastikan transparansi bekerja dengan baik
+        formPanel.setBounds(800, 130, 235, 380); 
+        formPanel.setOpaque(false);
         mainPanel.add(formPanel);
 
-// Tambahkan label dan text field dengan jarak yang lebih baik
+        JLabel closeLabel = new JLabel("×");  
+        closeLabel.setBounds(215, 10, 20, 20);
+        closeLabel.setForeground(Color.BLACK);
+        closeLabel.setFont(new Font("Arial", Font.BOLD, 23));
+        closeLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        closeLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Fungsi saat label X diklik
+                System.out.println("Tombol close diklik");
+                Productt.getMainFrame().switchBackToProductPanelKasir();
+                scanKodeField.setText("");
+                hargaBeliField.setText("Rp. ");
+                closeLabel.setForeground(Color.BLACK); 
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                // Ketika mouse masuk area label
+                closeLabel.setForeground(new Color(255, 59, 48)); 
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                // Ketika mouse keluar area label
+                closeLabel.setForeground(Color.BLACK); 
+            }
+        });
+        formPanel.add(closeLabel);
         formPanel.add(createLabel("Scan Kode Produk", 15, 25));
         scanKodeField = createRoundedTextField(15, 50, 205, 35);
-// Tambahkan key listener untuk memastikan hanya angka yang dapat diinput
         scanKodeField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -532,7 +537,7 @@ public class Transjual extends JPanel {
                 g2.setColor(Color.BLACK);
                 g2.setStroke(new BasicStroke(3.0f));
                 g2.draw(borderPath);
-                
+
                 g2.fill(path);
                 g2.dispose();
             }
@@ -575,11 +580,11 @@ public class Transjual extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(52, 199, 89));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-                
+
                 g2.setColor(Color.black);
                 g2.setStroke(new BasicStroke(1.0f));
-                g2.drawRoundRect(0, 0, getWidth() -1, getHeight() -1, 15, 15);
-                
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -596,6 +601,14 @@ public class Transjual extends JPanel {
         btnBayar.setForeground(Color.WHITE);
         btnBayar.setFont(new Font("Arial", Font.BOLD, 14));
         btnBayar.setFocusPainted(false);
+        btnBayar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+                dialog.setVisible(true);
+            }
+        });
 
 // Efek hover dan klik
         btnBayar.addMouseListener(new MouseAdapter() {

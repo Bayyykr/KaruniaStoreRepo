@@ -4,6 +4,7 @@ import SourceCode.RoundedBorder;
 import SourceCode.RoundedButton;
 import SourceCode.ScrollPane;
 import SourceCode.JTableRounded;
+import SourceCode.PopUp_edittransbeli;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -11,10 +12,11 @@ import javax.swing.*;
 import javax.swing.table.*;
 
 public class GajiKaryawan extends JPanel {
-
+    Component parentComponent = this;
     private JTextField searchField;
     private JTableRounded salaryTable;
     private JButton aturJadwalGajiButton, kembaliButton;
+    private JLabel periodeLabel;
     private DefaultTableModel tableModel;
 
     public GajiKaryawan() {
@@ -73,9 +75,19 @@ public class GajiKaryawan extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         buttonPanel.setBackground(Color.WHITE);
 
+        // Periode Label
+        periodeLabel = new JLabel("FEBRUARI / 2025");
+        periodeLabel.setPreferredSize(new Dimension(130, 35));
+        periodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        periodeLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        periodeLabel.setForeground(Color.BLACK);
+        periodeLabel.setBackground(Color.WHITE);
+        periodeLabel.setOpaque(false);
+        periodeLabel.setBorder(new RoundedBorder(10, Color.BLACK, 1));
+
         // ATUR JADWAL GAJI button
-        aturJadwalGajiButton = new JButton("ATUR JADWAL GAJI");
-        aturJadwalGajiButton.setPreferredSize(new Dimension(150, 35));
+        aturJadwalGajiButton = new JButton("ATUR BULAN DAN TAHUN");
+        aturJadwalGajiButton.setPreferredSize(new Dimension(170, 35));
         aturJadwalGajiButton.setBackground(new Color(52, 61, 70));
         aturJadwalGajiButton.setForeground(Color.WHITE);
         aturJadwalGajiButton.setFocusPainted(false);
@@ -85,6 +97,16 @@ public class GajiKaryawan extends JPanel {
         aturJadwalGajiButton.setOpaque(false);
         aturJadwalGajiButton.setFont(new Font("Arial", Font.BOLD, 12));
         aturJadwalGajiButton.setUI(new RoundedButton());
+        aturJadwalGajiButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                aturJadwalGajiButton.setLocation(aturJadwalGajiButton.getX(), aturJadwalGajiButton.getY() + 2); // Tombol turun sedikit
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                aturJadwalGajiButton.setLocation(aturJadwalGajiButton.getX(), aturJadwalGajiButton.getY() - 2); // Kembali ke posisi semula
+            }
+        });
 
         // KEMBALI button
         kembaliButton = new JButton("KEMBALI");
@@ -98,7 +120,18 @@ public class GajiKaryawan extends JPanel {
         kembaliButton.setOpaque(false);
         kembaliButton.setFont(new Font("Arial", Font.BOLD, 12));
         kembaliButton.setUI(new RoundedButton());
-
+        kembaliButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                kembaliButton.setLocation(kembaliButton.getX(), kembaliButton.getY() + 2); // Tombol turun sedikit
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                kembaliButton.setLocation(kembaliButton.getX(), kembaliButton.getY() - 2); // Kembali ke posisi semula
+            }
+        });
+        
+        buttonPanel.add(periodeLabel);      
         buttonPanel.add(aturJadwalGajiButton);
         buttonPanel.add(kembaliButton);
 
@@ -125,12 +158,51 @@ public class GajiKaryawan extends JPanel {
         tableModel = (DefaultTableModel) table.getModel();
         tableModel.setRowCount(0); // Clear any existing rows
         table.setRowHeight(50);
-        table.setDefaultEditor(Object.class, null);
+        
+        // Konfigurasi warna baris tabel
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                // Kolom aksi dihandle oleh ButtonRenderer sendiri, jadi kita skip
+                if (column == 5) {
+                    return comp;
+                }
+                
+                // Jika seleksi, gunakan warna seleksi
+                if (isSelected) {
+                    comp.setBackground(table.getSelectionBackground());
+                    comp.setForeground(table.getSelectionForeground());
+                } else {
+                    // Jika tidak diseleksi, gunakan warna zebra-striping
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+                    comp.setForeground(table.getForeground());
+                }
+                
+                return comp;
+            }
+        });
 
         // Add sample salary data
         Object[][] data = {
             {"1", "02020121", "Haikal Zayne", "Manager", "Belum Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""}
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
         };
 
         for (Object[] row : data) {
@@ -146,86 +218,11 @@ public class GajiKaryawan extends JPanel {
         columnModel.getColumn(4).setPreferredWidth(150); // Status Gaji
         columnModel.getColumn(5).setPreferredWidth(100); // Aksi
 
-        columnModel.getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus,
-                    int row, int column) {
-                JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-                actionPanel.setBackground(Color.WHITE);
+        // Buat kelas ButtonEditor dan ButtonRenderer untuk menghandle tombol di tabel
+        table.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+        table.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox(), table));
 
-                // Lock button
-                JButton lockButton = new JButton();
-                lockButton.setPreferredSize(new Dimension(50, 30));
-                lockButton.setBackground(new Color(40, 199, 111));
-                lockButton.setForeground(Color.WHITE);
-                lockButton.setBorderPainted(false);
-                lockButton.setFocusPainted(false);
-                lockButton.setContentAreaFilled(true);
-                lockButton.setFont(new Font("Arial", Font.PLAIN, 12));
-                lockButton.setUI(new RoundedButton());
-                lockButton.setOpaque(false);
-                lockButton.setContentAreaFilled(true);
-
-                // Tambahkan action listener di sini
-                lockButton.addActionListener(e -> {
-                    System.out.println("Bayar untuk baris: " + row);
-                    // Tambahkan logika pembayaran di sini
-                    JOptionPane.showMessageDialog(null, "Membayar gaji untuk baris " + (row + 1));
-                });
-
-                try {
-                    ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/bayar-icon.png"));
-                    Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                    lockButton.setIcon(new ImageIcon(scaledImage));
-                } catch (Exception e) {
-                    lockButton.setText("Bayar");
-                }
-
-                // Trash button
-                JButton trashButton = new JButton();
-                trashButton.setPreferredSize(new Dimension(50, 30));
-                trashButton.setBackground(new Color(255, 59, 59));
-                trashButton.setForeground(Color.WHITE);
-                trashButton.setBorderPainted(false);
-                trashButton.setFocusPainted(false);
-                trashButton.setContentAreaFilled(true);
-                trashButton.setFont(new Font("Arial", Font.PLAIN, 12));
-                trashButton.setUI(new RoundedButton());
-                trashButton.setOpaque(false);
-                trashButton.setContentAreaFilled(true);
-
-                // Tambahkan action listener untuk tombol trash
-                trashButton.addActionListener(e -> {
-                    System.out.println("Hapus untuk baris: " + row);
-                    // Tambahkan logika penghapusan di sini
-                    int konfirmasi = JOptionPane.showConfirmDialog(null,
-                            "Apakah Anda yakin ingin menghapus data gaji untuk baris " + (row + 1) + "?",
-                            "Konfirmasi Hapus",
-                            JOptionPane.YES_NO_OPTION);
-
-                    if (konfirmasi == JOptionPane.YES_OPTION) {
-                        // Logika penghapusan
-                        System.out.println("Data dihapus");
-                    }
-                });
-
-                try {
-                    ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/icon_sampah_putih.png"));
-                    Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                    trashButton.setIcon(new ImageIcon(scaledImage));
-                } catch (Exception e) {
-                    trashButton.setText("Hapus");
-                }
-
-                actionPanel.add(lockButton);
-                actionPanel.add(trashButton);
-
-                return actionPanel;
-            }
-        });
-
-// Hapus mouse listener sebelumnya
+        // ScrollPane
         ScrollPane scrollPane = new ScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setThumbColor(new Color(80, 80, 80, 180));
@@ -244,5 +241,226 @@ public class GajiKaryawan extends JPanel {
         // Add components to main panel
         add(topPanel, BorderLayout.NORTH);
         add(tablePanel, BorderLayout.CENTER);
+    }
+
+    // Kelas ButtonRenderer untuk menampilkan tombol dalam cell - DENGAN PERBAIKAN
+    class ButtonRenderer extends JPanel implements TableCellRenderer {
+        private JButton bayarButton, hapusButton;
+
+        public ButtonRenderer() {
+            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 10));
+            setOpaque(true); // Kita ubah jadi true, tapi warnanya akan disesuaikan
+
+            // Buat tombol bayar
+            bayarButton = new JButton();
+            bayarButton.setPreferredSize(new Dimension(40, 30));
+            bayarButton.setBackground(new Color(40, 199, 111));
+            bayarButton.setForeground(Color.WHITE);
+            bayarButton.setBorderPainted(false);
+            bayarButton.setFocusPainted(false);
+            bayarButton.setContentAreaFilled(true);
+            bayarButton.setFont(new Font("Arial", Font.PLAIN, 12));
+            bayarButton.setUI(new RoundedButton());
+            bayarButton.setOpaque(false);
+            bayarButton.setContentAreaFilled(true);
+
+            try {
+                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/bayar-icon.png"));
+                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                bayarButton.setIcon(new ImageIcon(scaledImage));
+            } catch (Exception e) {
+                bayarButton.setText("Bayar");
+            }
+
+            // Buat tombol hapus
+            hapusButton = new JButton();
+            hapusButton.setPreferredSize(new Dimension(40, 30));
+            hapusButton.setBackground(new Color(255, 59, 59));
+            hapusButton.setForeground(Color.WHITE);
+            hapusButton.setBorderPainted(false);
+            hapusButton.setFocusPainted(false);
+            hapusButton.setContentAreaFilled(true);
+            hapusButton.setFont(new Font("Arial", Font.PLAIN, 12));
+            hapusButton.setUI(new RoundedButton());
+            hapusButton.setOpaque(false);
+            hapusButton.setContentAreaFilled(true);
+
+            try {
+                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/icon_sampah_putih.png"));
+                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                hapusButton.setIcon(new ImageIcon(scaledImage));
+            } catch (Exception e) {
+                hapusButton.setText("Hapus");
+            }
+
+            add(bayarButton);
+            add(hapusButton);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            
+            // Set warna latar belakang berdasarkan kondisi baris
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+            } else {
+                // Warna zebra-striping
+                setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+            }
+            
+            // Memastikan border tabel tetap terlihat
+            setBorder(BorderFactory.createEmptyBorder());
+            
+            return this;
+        }
+    }
+
+    // Kelas ButtonEditor untuk menghandle aksi klik pada tombol - DENGAN PERBAIKAN
+    class ButtonEditor extends DefaultCellEditor {
+        private JPanel panel;
+        private JButton bayarButton, hapusButton;
+        private String action = "";
+        private boolean isPushed;
+        private int clickedRow;
+        private JTable table;
+        
+        public ButtonEditor(JCheckBox checkBox, JTable table) {
+            super(checkBox);
+            this.table = table;
+            
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 10));
+            panel.setOpaque(true); // Kita ubah jadi true, tapi warnanya akan disesuaikan
+            
+            // Buat tombol bayar
+            bayarButton = new JButton();
+            bayarButton.setPreferredSize(new Dimension(40, 30));
+            bayarButton.setBackground(new Color(40, 199, 111));
+            bayarButton.setForeground(Color.WHITE);
+            bayarButton.setBorderPainted(false);
+            bayarButton.setFocusPainted(false);
+            bayarButton.setContentAreaFilled(true);
+            bayarButton.setFont(new Font("Arial", Font.PLAIN, 12));
+            bayarButton.setUI(new RoundedButton());
+            bayarButton.setOpaque(false);
+            bayarButton.setContentAreaFilled(true);
+
+            try {
+                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/bayar-icon.png"));
+                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                bayarButton.setIcon(new ImageIcon(scaledImage));
+            } catch (Exception e) {
+                bayarButton.setText("Bayar");
+            }
+            
+            bayarButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    action = "BAYAR";
+                    isPushed = true;
+                    fireEditingStopped();
+                }
+            });
+            
+            // Buat tombol hapus
+            hapusButton = new JButton();
+            hapusButton.setPreferredSize(new Dimension(40, 30));
+            hapusButton.setBackground(new Color(255, 59, 59));
+            hapusButton.setForeground(Color.WHITE);
+            hapusButton.setBorderPainted(false);
+            hapusButton.setFocusPainted(false);
+            hapusButton.setContentAreaFilled(true);
+            hapusButton.setFont(new Font("Arial", Font.PLAIN, 12));
+            hapusButton.setUI(new RoundedButton());
+            hapusButton.setOpaque(false);
+            hapusButton.setContentAreaFilled(true);
+
+            try {
+                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/icon_sampah_putih.png"));
+                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                hapusButton.setIcon(new ImageIcon(scaledImage));
+            } catch (Exception e) {
+                hapusButton.setText("Hapus");
+            }
+            
+            hapusButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    action = "HAPUS";
+                    isPushed = true;
+                    fireEditingStopped();
+                }
+            });
+            
+            panel.add(bayarButton);
+            panel.add(hapusButton);
+        }
+        
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            
+            isPushed = false;
+            action = "";
+            clickedRow = row;
+            
+          
+            panel.setBackground(row % 2 == 0 ? Color.WHITE : new Color(57, 105, 138));
+            
+            return panel;
+        }
+        
+        @Override
+        public Object getCellEditorValue() {
+            if (isPushed) {
+                if (action.equals("BAYAR")) {
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
+                    
+                    // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
+                    dialog.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosed(WindowEvent e) {
+                            // Force refresh tabel setelah dialog ditutup
+                            table.clearSelection();
+                            table.repaint();
+                        }
+                    });
+                    
+                    dialog.setVisible(true);
+                } else if (action.equals("HAPUS")) {
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
+                    
+                    // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
+                    dialog.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosed(WindowEvent e) {
+                            // Force refresh tabel setelah dialog ditutup
+                            table.clearSelection();
+                            table.repaint();
+                        }
+                    });
+                    
+                    dialog.setVisible(true);
+                }
+            }
+            isPushed = false;
+            return "";
+        }
+        
+        @Override
+        public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
+        }
+        
+        @Override
+        protected void fireEditingStopped() {
+            super.fireEditingStopped();
+            // Tambahan untuk memastikan seleksi dihapus
+            table.clearSelection();
+            table.repaint();
+        }
     }
 }

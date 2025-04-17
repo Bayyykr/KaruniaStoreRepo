@@ -452,7 +452,7 @@ private void addPanelClickListener(JPanel panel) {
     panel.add(Box.createVerticalStrut(15));
   
     // Tombol sell (Jual Produk)
-    sellButton = createRoundedIconButton("add.png", new Color(20, 20, 20), "Transaksi Jual");
+    sellButton = createRoundedIconButton("keranjang.png", new Color(20, 20, 20), "Transaksi Jual");
     sellButton.addActionListener(e -> {
         // Sembunyikan tooltip
         animateHideTooltip();

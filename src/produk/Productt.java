@@ -19,11 +19,13 @@ public class Productt extends JFrame {
 
     // Define panel references as class members
     private Dashboard dashboardPanel;
+    private ProductDisplayyKasir produkPanelkasir;
     private ProductDisplayy produkPanel;
     private AddNewProductFormm addProductPanel;
     private DeleteProductPanel deleteProductPanel;
     private EditProductPanel editproductpanel;
     private DataKaryawan karyawanPanel;
+    private AbsenKaryawan absenpanel;
     private Transaksibeli transaksiBeli;
     private Transjual transaksiJual;
     private Laporan laporanPanel; // Tambahkan reference untuk panel laporan
@@ -53,11 +55,13 @@ public class Productt extends JFrame {
 
         // Initialize all panels
         dashboardPanel = new Dashboard();
+        produkPanelkasir = new ProductDisplayyKasir();
         produkPanel = new ProductDisplayy();
         addProductPanel = new AddNewProductFormm();
         deleteProductPanel = new DeleteProductPanel();
         editproductpanel = new EditProductPanel();
         karyawanPanel = new DataKaryawan();
+        absenpanel = new AbsenKaryawan();
         transaksiBeli = new Transaksibeli();
         transaksiJual = new Transjual();
         laporanPanel = new Laporan(); 
@@ -75,9 +79,11 @@ public class Productt extends JFrame {
         // Set bounds for all panels
         dashboardPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         produkPanel.setBounds(panelX, 50, 1100, 720);
+        produkPanelkasir.setBounds(panelX, 50, 1100, 720);
         addProductPanel.setBounds(panelX, 50, 1100, 720);
         deleteProductPanel.setBounds(panelX, 50, 1100, 720);
         karyawanPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        absenpanel.setBounds(panelX, panelY, panelWidth, 640);
         transaksiBeli.setBounds(panelX, panelY, panelWidth, panelHeight);
         transaksiJual.setBounds(panelX,panelY, panelWidth, panelHeight);
         editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
@@ -92,6 +98,14 @@ public class Productt extends JFrame {
         // Add method to switch to DeleteProductPanel
         produkPanel.setTrashButtonListener(() -> {
             switchToDeleteProductPanel();
+        });
+        
+          karyawanPanel.setAbsenKaryawan(() -> {
+            switchToAbsenKaryawan();
+        });
+        
+        absenpanel.setBackToDataKaryawan(() -> {
+            switchToDataKaryawan();
         });
 
         // Add menu change event listener
@@ -109,7 +123,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanel;
                         break;
                     case 1: // Produk
-                        currentPanel = produkPanel;
+                        currentPanel = produkPanelkasir;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan
@@ -215,6 +229,46 @@ public void switchToTransJualPanel() {
         }
     
         currentPanel = produkPanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+    
+        revalidate();
+        repaint();
+    }
+    
+        // Method untuk kembali ke panel produk
+    public void switchBackToProductPanelKasir() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+    
+        currentPanel = produkPanelkasir;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+    
+        revalidate();
+        repaint();
+    }
+    
+     public void switchToAbsenKaryawan() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+        
+        currentPanel = absenpanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+        
+        revalidate();
+        repaint();
+    }
+
+    public void switchToDataKaryawan() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+    
+        currentPanel = karyawanPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
     
