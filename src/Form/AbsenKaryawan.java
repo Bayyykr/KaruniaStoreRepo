@@ -359,8 +359,7 @@ public class AbsenKaryawan extends JPanel {
 
         String query = "SELECT COUNT(DISTINCT DATE(waktu_masuk)) as total_days "
                 + "FROM absensi "
-                + "WHERE norfid = ? AND MONTH(waktu_masuk) = ? AND YEAR(waktu_masuk) = ? "
-                + "AND status = 'Sudah'";
+                + "WHERE norfid = ? AND MONTH(waktu_masuk) = ? AND YEAR(waktu_masuk) = ? ";
 
         try (PreparedStatement stmt = con.prepareStatement(query)) {
             stmt.setString(1, norfid);
@@ -400,7 +399,7 @@ public class AbsenKaryawan extends JPanel {
                 dayData.put("keluar_time", "");
                 dayData.put("keluar_status", "");
 
-                String query = "SELECT waktu_masuk, waktu_keluar, status "
+                String query = "SELECT waktu_masuk, waktu_keluar "
                         + "FROM absensi "
                         + "WHERE norfid = ? AND waktu_masuk >= ? AND waktu_masuk < ?";
 
@@ -437,19 +436,11 @@ public class AbsenKaryawan extends JPanel {
                                 cal.setTime(keluarTime);
                                 int hour = cal.get(Calendar.HOUR_OF_DAY);
 
-                                if (hour >= 15) {
+                                if (hour >= 16) {
                                     dayData.put("keluar_status", "green"); // On time
                                 } else {
                                     dayData.put("keluar_status", "yellow"); // Early
                                 }
-                            }
-
-                            // Check overall status
-                            String status = rs.getString("status");
-                            if (status != null && status.equals("Belum")) {
-                                // If status is "Belum", mark as absent
-                                dayData.put("masuk_status", "red");
-                                dayData.put("keluar_status", "red");
                             }
                         } else {
                             // No record for this day, mark as absent
