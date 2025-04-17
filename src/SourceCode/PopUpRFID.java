@@ -1,56 +1,76 @@
 package SourceCode;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.RoundRectangle2D;
+import javax.swing.ImageIcon;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.Timer;
+import javax.swing.BorderFactory;
+import javax.swing.SwingUtilities;
 
 public class PopUpRFID extends JDialog {
+    private int xMouse, yMouse;
     private final int FINAL_WIDTH = 400;
     private final int FINAL_HEIGHT = 300;
-    private final int ANIMATION_DURATION = 300;
-    private final int ANIMATION_DELAY = 10;
+    private final int ANIMATION_DURATION = 300; // ms
+    private final int ANIMATION_DELAY = 10; // ms
     private float currentScale = 0.01f;
     private boolean animationStarted = false;
-    private Timer animationTimer, closeAnimationTimer, resetTimer;
+    private Timer animationTimer;
+    private Timer closeAnimationTimer;
     private JFrame parentFrame;
     
-    private JLabel rfidIcon, warningIcon, messageLabel;
-    private JLabel warningTitleLabel, warningMessageLabel;
-    private JLabel closeButton, warningCloseButton;
+    private JLabel rfidIcon;
+    private JLabel messageLabel;
+    private JLabel closeButton;
     public JTextField rfidTextField;
     
+    // Panel to serve as dark background
     private JPanel backgroundPanel;
-    private RoundedPanel warningTopPanel, mainPanel;
-    
-    private boolean isWarningMode = false;
-    
-      // Menambahkan method untuk mereset TextField
-    public void resetRfidTextField() {
-        if (rfidTextField != null) {
-            rfidTextField.setText("");
-        }
-    }
     
     public PopUpRFID(JFrame parent) {
         super(parent, true);
         this.parentFrame = parent;
         setUndecorated(true);
+        
+        // Set a fixed size of 945x570 as specified
         setSize(945, 570);
         
+        // Handle case when parent is null
         if (parent != null) {
             setLocationRelativeTo(parent);
         } else {
+            // Use screen dimensions if parent is null
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             setLocation((screenSize.width - 945) / 2, (screenSize.height - 570) / 2);
         }
         
+        // Create a semi-transparent background for the entire dialog
         setBackground(new Color(0, 0, 0, 0));
         
+        // Add semi-transparent background panel that will cover the entire dialog
         backgroundPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
+                // Semi-transparent black background
                 g2d.setColor(new Color(0, 0, 0, 180));
                 g2d.fillRect(0, 0, getWidth(), getHeight());
                 g2d.dispose();
@@ -59,6 +79,7 @@ public class PopUpRFID extends JDialog {
         
         backgroundPanel.setOpaque(false);
         backgroundPanel.setLayout(null);
+        // Set the background panel to exactly match the dialog size of 945x570
         backgroundPanel.setBounds(0, 0, 945, 570);
         
         initComponents();
@@ -67,18 +88,20 @@ public class PopUpRFID extends JDialog {
     
     private void initComponents() {
         setLayout(null);
+        
+        // First add the background panel to the dialog
         add(backgroundPanel);
         
-        // Panel utama dengan sudut bulat
-        mainPanel = new RoundedPanel(20, false);
+        // Create the main rounded panel for the popup content
+        RoundedPanel mainPanel = new RoundedPanel(20); // Radius of 20 pixels
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setLayout(null);
         
+        // Center the main panel in the dialog (based on 945x570 size)
         int x = (945 - FINAL_WIDTH) / 2;
         int y = (570 - FINAL_HEIGHT) / 2;
         mainPanel.setBounds(x, y, FINAL_WIDTH, FINAL_HEIGHT);
         
-        // Tombol tutup untuk tampilan normal
         closeButton = new JLabel("×");
         closeButton.setFont(new Font("Arial", Font.BOLD, 24));
         closeButton.setForeground(new Color(51, 51, 51));
@@ -104,108 +127,28 @@ public class PopUpRFID extends JDialog {
             }
         });
         
-        // Tombol tutup untuk warning
-        warningCloseButton = new JLabel("×");
-        warningCloseButton.setFont(new Font("Arial", Font.BOLD, 24));
-        warningCloseButton.setForeground(new Color(51, 51, 51));
-        warningCloseButton.setHorizontalAlignment(SwingConstants.CENTER);
-        warningCloseButton.setBounds(360, 10, 30, 30);
-        warningCloseButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        warningCloseButton.setVisible(false);
-        
-        warningCloseButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                warningCloseButton.setForeground(Color.WHITE);
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                warningCloseButton.setForeground(new Color(51, 51, 51));
-            }
-            
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                showNormalMode();
-            }
-        });
-        
-        // Ikon RFID
         rfidIcon = new JLabel();
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/rfid-image.png"));
             rfidIcon.setIcon(icon);
         } catch (Exception e) {
-            System.err.println("Tidak dapat memuat gambar RFID: " + e.getMessage());
+            // Handle case when image resource cannot be found
+            System.err.println("Could not load RFID image: " + e.getMessage());
         }
         
         rfidIcon.setBounds(0, -80, 400, 400);
         rfidIcon.setHorizontalAlignment(SwingConstants.CENTER);
         rfidIcon.setVisible(false);
         
-        // Panel merah untuk warning
-        warningTopPanel = new RoundedPanel(20, true);
-        warningTopPanel.setBackground(new Color(255, 77, 77));
-        warningTopPanel.setBounds(0, 0, FINAL_WIDTH, 140);
-        warningTopPanel.setLayout(null);
-        warningTopPanel.setVisible(false);
-        
-        // Ikon warning
-        warningIcon = new JLabel();
-        try {
-            ImageIcon warningIconImg = new ImageIcon(getClass().getResource("/SourceImage/warning.png"));
-            if (warningIconImg.getIconWidth() <= 0) {
-                throw new Exception("Gambar tidak dapat dimuat dengan benar");
-            }
-            warningIcon.setIcon(warningIconImg);
-        } catch (Exception e) {
-            warningIcon.setText("!");
-            warningIcon.setFont(new Font("Arial", Font.BOLD, 48));
-            warningIcon.setForeground(Color.WHITE);
-            System.err.println("Tidak dapat memuat gambar ikon peringatan: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        warningIcon.setBounds(125, 20, 150, 100);
-        warningIcon.setHorizontalAlignment(SwingConstants.CENTER);
-        warningIcon.setVisible(false);
-        
-        // Label judul warning
-        warningTitleLabel = new JLabel("Warning!");
-        warningTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        warningTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        warningTitleLabel.setBounds(50, 160, 300, 60);
-        warningTitleLabel.setVisible(false);
-        
-        // Label pesan warning
-        warningMessageLabel = new JLabel("<html><center>Card not detected.<br>Please ensure your RFID card is correct and try again</center></html>");
-        warningMessageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        warningMessageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        warningMessageLabel.setBounds(50, 200, 300, 70);
-        warningMessageLabel.setVisible(false);
-        
-        // Label pesan normal
-        messageLabel = new JLabel("Silakan tempelkan kartu RFID pada scanner");
+        messageLabel = new JLabel("Please tap your RFID card on the scanner");
         messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         messageLabel.setBounds(50, 230, 300, 30);
         messageLabel.setVisible(false);
         
-        messageLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                showWarningMode();
-            }
-            
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                messageLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-        });
-        
-        // Text field untuk input RFID
+        // Initialize and configure the text field
         rfidTextField = new JTextField();
-        rfidTextField.setBounds(100, 100, 200, 30);
+        rfidTextField.setBounds(100, 100, 200, 30);  // Adjusted position
         rfidTextField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         rfidTextField.setHorizontalAlignment(SwingConstants.CENTER);
         rfidTextField.setBorder(null);
@@ -216,92 +159,27 @@ public class PopUpRFID extends JDialog {
         rfidTextField.setEditable(true); 
         rfidTextField.setFocusable(true);
         
-        // Menambahkan komponen ke panel
-        warningTopPanel.add(warningIcon);
-        warningTopPanel.add(warningCloseButton);
-        
         mainPanel.add(closeButton);
         mainPanel.add(rfidIcon);
         mainPanel.add(messageLabel);
         mainPanel.add(rfidTextField);
-        mainPanel.add(warningTopPanel);
-        mainPanel.add(warningTitleLabel);
-        mainPanel.add(warningMessageLabel);
         
+        // Add the main panel to the background panel
         backgroundPanel.add(mainPanel);
         
+        // Add click listener to background panel to prevent clicks passing through
         backgroundPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Opsional: tutup dialog saat mengklik di luar panel utama
+                // Optional: close dialog when clicking outside the main panel
                 // startCloseAnimation();
             }
         });
     }
     
-    // Menampilkan mode warning
-    private void showWarningMode() {
-        if (isWarningMode) return;
-        
-        isWarningMode = true;
-        
-         // Reset text field saat mode warning ditampilkan
-        resetRfidTextField();
-        
-        // Sembunyikan komponen mode normal
-        rfidIcon.setVisible(false);
-        messageLabel.setVisible(false);
-        closeButton.setVisible(false);
-        
-        // Tampilkan komponen mode warning
-        warningTopPanel.setVisible(true);
-        warningIcon.setVisible(true);
-        warningTitleLabel.setVisible(true);
-        warningMessageLabel.setVisible(true);
-        warningCloseButton.setVisible(true);
-        
-        // Timer untuk kembali ke mode normal setelah 3 detik
-        resetTimer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showNormalMode();
-                resetTimer.stop();
-            }
-        });
-        resetTimer.setRepeats(false);
-        resetTimer.start();
-    }
-    
-    // Kembali ke mode normal
-    private void showNormalMode() {
-        isWarningMode = false;
-        
-        // Sembunyikan komponen mode warning
-        warningTopPanel.setVisible(false);
-        warningIcon.setVisible(false);
-        warningTitleLabel.setVisible(false);
-        warningMessageLabel.setVisible(false);
-        warningCloseButton.setVisible(false);
-        
-        // Tampilkan komponen mode normal
-        rfidIcon.setVisible(true);
-        messageLabel.setVisible(true);
-        closeButton.setVisible(true);
-        
-        // Minta fokus kembali ke rfidTextField
-        SwingUtilities.invokeLater(() -> {
-            rfidTextField.requestFocusInWindow();
-        });
-    }
-    
-    // Animasi menutup dialog
     private void startCloseAnimation() {
         if (animationTimer != null && animationTimer.isRunning()) {
             animationTimer.stop();
-        }
-        
-        if (resetTimer != null && resetTimer.isRunning()) {
-            resetTimer.stop();
         }
         
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
@@ -329,9 +207,10 @@ public class PopUpRFID extends JDialog {
         closeAnimationTimer.start();
     }
     
-    // Animasi membuka dialog
     private void startScaleAnimation() {
-        if (animationStarted) return;
+        if (animationStarted) {
+            return;
+        }
         
         animationStarted = true;
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
@@ -347,12 +226,13 @@ public class PopUpRFID extends JDialog {
                 
                 currentScale = 0.01f + 0.99f * easedProgress;
                 
-                if (progress >= 0.4 && !rfidIcon.isVisible() && !isWarningMode) {
+                if (progress >= 0.4 && !rfidIcon.isVisible()) {
                     rfidIcon.setVisible(true);
                     messageLabel.setVisible(true);
                     closeButton.setVisible(true);
                     rfidTextField.setVisible(true);
                     
+                    // Request focus after components become visible
                     SwingUtilities.invokeLater(() -> {
                         rfidTextField.requestFocusInWindow();
                     });
@@ -363,21 +243,12 @@ public class PopUpRFID extends JDialog {
                 if (currentFrame[0] >= totalFrames) {
                     animationTimer.stop();
                     currentScale = 1.0f;
-                    
-                    if (!isWarningMode) {
-                        rfidIcon.setVisible(true);
-                        messageLabel.setVisible(true);
-                        closeButton.setVisible(true);
-                    } else {
-                        warningTopPanel.setVisible(true);
-                        warningIcon.setVisible(true);
-                        warningTitleLabel.setVisible(true);
-                        warningMessageLabel.setVisible(true);
-                        warningCloseButton.setVisible(true);
-                    }
-                    
+                    rfidIcon.setVisible(true);
+                    messageLabel.setVisible(true);
+                    closeButton.setVisible(true);
                     rfidTextField.setVisible(true);
                     
+                    // Request focus again after animation completes
                     SwingUtilities.invokeLater(() -> {
                         rfidTextField.requestFocusInWindow();
                     });
@@ -390,15 +261,13 @@ public class PopUpRFID extends JDialog {
         animationTimer.start();
     }
     
-    // Kelas RoundedPanel yang disederhanakan
+    // Custom rounded panel class
     private class RoundedPanel extends JPanel {
         private int cornerRadius;
-        private boolean topOnly;
         
-        public RoundedPanel(int radius, boolean topOnly) {
+        public RoundedPanel(int radius) {
             super();
             this.cornerRadius = radius;
-            this.topOnly = topOnly;
             setOpaque(false);
         }
         
@@ -416,25 +285,15 @@ public class PopUpRFID extends JDialog {
                 g2d.scale(currentScale, currentScale);
                 g2d.translate(-centerX, -centerY);
                 
+                // Draw background with rounded corners
                 g2d.setColor(getBackground());
-                
-                if (topOnly) {
-                    // Untuk panel warning, sudut bundar hanya di bagian atas
-                    g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight() + cornerRadius, cornerRadius, cornerRadius));
-                } else {
-                    // Untuk panel normal, semua sudut bundar
-                    g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
-                }
+                g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
                 
                 g2d.setTransform(originalTransform);
             } else {
+                // Draw background with rounded corners
                 g2d.setColor(getBackground());
-                
-                if (topOnly) {
-                    g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight() + cornerRadius, cornerRadius, cornerRadius));
-                } else {
-                    g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
-                }
+                g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
             }
             
             g2d.dispose();

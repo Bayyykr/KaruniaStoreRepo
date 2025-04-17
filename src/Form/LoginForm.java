@@ -28,6 +28,7 @@ import javax.swing.event.DocumentListener;
 import java.sql.*;
 import db.conn;
 import PopUp_all.*;
+import SourceCode.PopUpRFIDWarning;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -514,8 +515,9 @@ public class LoginForm extends JFrame {
 //                    javax.swing.JFrame parentFrame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
                             System.out.println("masuk");
                             if (jabatan.equals("kasir")) {
-//                            new DashboardKasir().setVisible(true);
-//                            this.setVisible(false);
+                            new Main().setVisible(true);
+                            LoginForm.this.setVisible(false);
+                            dialog.dispose();
                                 System.out.println("ini kasir");
                             } else if (jabatan.equals("owner")) {
 //                            new Dashboard().setVisible(true);
@@ -527,16 +529,16 @@ public class LoginForm extends JFrame {
 //                        parentFrame.dispose();
 //                    }
                         } else {
-//                        userpwpsssalah popup = new userpwpsssalah();
-//                        popup.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
-//                        popup.setVisible(true);
+                        PopUpRFIDWarning popup = new PopUpRFIDWarning(LoginForm.this);
+                        popup.setLocationRelativeTo(SwingUtilities.getWindowAncestor(LoginForm.this));
+                        popup.setVisible(true);
                             System.out.println(no);
                             System.out.println("no rfid salah");
                         }
                     }
 
                     private boolean validateRFID(String norfid) {
-                        String query = "SELECT norfid FROM user WHERE norfid = ?";
+                        String query = "SELECT norfid, jabatan FROM user WHERE norfid = ?";
                         try {
                             PreparedStatement stmt = con.prepareStatement(query);
                             stmt.setString(1, norfid);
@@ -545,8 +547,8 @@ public class LoginForm extends JFrame {
 
                             // Jika ada hasil, berarti username, password, dan posisi sesuai
                             if (rs.next()) {
-//                                String rolee = rs.getString("jabatan");
-//                                jabatan = rolee;
+                                String rolee = rs.getString("jabatan");
+                                jabatan = rolee;
                                 return true;
                             } else {
                             // Reset field ketika validasi gagal
