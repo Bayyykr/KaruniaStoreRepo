@@ -16,15 +16,9 @@ import java.sql.*;
 
 public class DataKaryawan extends JPanel {
 
-    private JPanel activeTab;
-    private JWindow tooltipWindow;
-    private Timer fadeInTimer;
-    private Timer fadeOutTimer;
     private Runnable setAbsenKaryawan;
-
     private JTextField searchField;
     private JTableRounded employeeTable;
-    private JButton prevButton, nextButton, pageButton;
     private JButton dataAbsenButton, kelolaGajiButton, tambahKaryawanButton;
     private JPanel thisPanel;
     private DefaultTableModel tableModel;
@@ -34,6 +28,7 @@ public class DataKaryawan extends JPanel {
 
     public DataKaryawan() {
         thisPanel = this;
+
         // Set a rounded border for the entire panel using your RoundedBorder class
         setBorder(BorderFactory.createCompoundBorder(
                 new RoundedBorder(15, new Color(0, 0, 0), 2),
@@ -42,8 +37,9 @@ public class DataKaryawan extends JPanel {
 
         con = conn.getConnection();
 
-        getData();
         initComponents();
+        getData();
+        setupSearchFunction();
     }
 
     private void initComponents() {
@@ -611,4 +607,87 @@ public class DataKaryawan extends JPanel {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void setupSearchFunction() {
+        // Add key listener to search field
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                performSearch();
+            }
+        });
+
+        // Also handle the case when user clicks the search field and clears "Search" text
+        searchField.addActionListener(e -> performSearch());
+    }
+
+    private void performSearch() {
+        String searchText = searchField.getText();
+        if (searchText.equals("search")) {
+            return; // Don't search for the placeholder text
+        }
+
+        // Clear existing table data
+        tableModel.setRowCount(0);
+
+        try {
+            // Create a query that searches across multiple columns
+            String query = "SELECT * FROM user WHERE "
+                    + "norfid LIKE ? OR "
+                    + "nama_user LIKE ?";
+
+            try (PreparedStatement st = con.prepareStatement(query)) {
+                // Set all parameters to the same search value
+                String searchPattern = "%" + searchText + "%";
+                for (int i = 1; i <= 2; i++) {
+                    st.setString(i, searchPattern);
+                }
+
+                ResultSet rs = st.executeQuery();
+
+                int rowNumber = 1; // For numbering the rows
+
+                while (rs.next()) {
+                    // Retrieve data from result set
+                    String rfid = rs.getString("norfid");
+                    String nama = rs.getString("nama_user");
+                    String email = rs.getString("email");
+                    String pw = rs.getString("password");
+                    String nohp = rs.getString("no_hp");
+                    String alamat = rs.getString("alamat");
+
+                    // Create a row array
+                    Object[] row = {
+                        String.valueOf(rowNumber),
+                        rfid,
+                        nama,
+                        email,
+                        pw,
+                        nohp,
+                        alamat,
+                        "" // Empty string for action column
+                    };
+
+                    // Add to table model
+                    tableModel.addRow(row);
+                    rowNumber++;
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Error searching employee data: " + ex.getMessage());
+            ex.printStackTrace();
+
+            // Show an error dialog
+            JOptionPane.showMessageDialog(thisPanel,
+                    "Failed to search employee data: " + ex.getMessage(),
+                    "Search Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void refreshTable() {
+        searchField.setText("Search");
+        getData();
+    }
+
 }

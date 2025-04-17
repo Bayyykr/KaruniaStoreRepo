@@ -136,6 +136,9 @@ public class Main extends JFrame {
             remove(currentPanel);
         }
         
+        absenpanel.resetToCurrentDate();
+        absenpanel.clearSearch();
+        
         currentPanel = absenpanel;
         add(currentPanel);
         currentPanel.setVisible(true);
@@ -148,6 +151,8 @@ public class Main extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
+        
+        karyawanPanel.refreshTable();
     
         currentPanel = karyawanPanel;
         add(currentPanel);

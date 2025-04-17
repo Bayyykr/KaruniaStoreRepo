@@ -17,6 +17,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import db.conn;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.TableModelEvent;
 
 public class AbsenKaryawan extends JPanel {
 
@@ -31,6 +34,7 @@ public class AbsenKaryawan extends JPanel {
     private SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy");
     private SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+    private String currentSearchTerm = "";
 
     // Database connection parameters
     private Connection con;
@@ -42,12 +46,12 @@ public class AbsenKaryawan extends JPanel {
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
         setBackground(new Color(255, 255, 255));
-        
+
         con = conn.getConnection();
 
         // Initialize current date to current month's first day
         currentDate = Calendar.getInstance();
-        currentDate.set(Calendar.DAY_OF_MONTH, 1); // First day of current month
+        currentDate.set(Calendar.DAY_OF_MONTH, -1); // First day of current month
 
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
@@ -96,7 +100,7 @@ public class AbsenKaryawan extends JPanel {
             public void keyReleased(KeyEvent e) {
                 String searchTerm = searchField.getText();
                 if (!searchTerm.equals("Search")) {
-                    performSearch(searchTerm);
+                    performSearchh(searchTerm);
                 }
             }
         });
@@ -305,9 +309,14 @@ public class AbsenKaryawan extends JPanel {
         // Refresh the table with new data based on the current date
         loadDataFromDatabase();
     }
-    
+
     // Load data from database
     private void loadDataFromDatabase() {
+        if (!currentSearchTerm.isEmpty()) {
+            performSearchh(currentSearchTerm);
+            return;
+        }
+
         DefaultTableModel model = (DefaultTableModel) mainTable.getModel();
         model.setRowCount(0); // Clear existing data
 
@@ -376,14 +385,32 @@ public class AbsenKaryawan extends JPanel {
         return 0;
     }
 
-    // Get attendance data for a specific employee on specific dates
     private Map<String, Map<String, String>> getAttendanceData(String norfid, Date[] dates) {
         Map<String, Map<String, String>> attendanceData = new HashMap<>();
 
         try {
+            // Get today's date for comparison
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+            Date todayDate = today.getTime();
+
             for (Date date : dates) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(date);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                Date currentDate = cal.getTime();
+
+                // Is this date in the past, today, or in the future?
+                boolean isPast = currentDate.before(todayDate);
+                boolean isToday = currentDate.equals(todayDate);
+                boolean isFuture = currentDate.after(todayDate);
+
                 cal.set(Calendar.HOUR_OF_DAY, 0);
                 cal.set(Calendar.MINUTE, 0);
                 cal.set(Calendar.SECOND, 0);
@@ -398,6 +425,12 @@ public class AbsenKaryawan extends JPanel {
                 dayData.put("masuk_status", "");
                 dayData.put("keluar_time", "");
                 dayData.put("keluar_status", "");
+
+                // For future dates, we set empty values (will display as "-")
+                if (isFuture) {
+                    attendanceData.put(dateKey, dayData);
+                    continue;
+                }
 
                 String query = "SELECT waktu_masuk, waktu_keluar "
                         + "FROM absensi "
@@ -443,9 +476,13 @@ public class AbsenKaryawan extends JPanel {
                                 }
                             }
                         } else {
-                            // No record for this day, mark as absent
-                            dayData.put("masuk_status", "red");
-                            dayData.put("keluar_status", "red");
+                            // No record for this day
+                            if (isPast) {
+                                // Past days with no attendance marked as absent (red)
+                                dayData.put("masuk_status", "red");
+                                dayData.put("keluar_status", "red");
+                            }
+                            // Current day with no attendance yet or future days stay empty
                         }
                     }
                 }
@@ -459,29 +496,36 @@ public class AbsenKaryawan extends JPanel {
         return attendanceData;
     }
 
-    // Get employee's RFID based on row index
     private String getEmployeeRfid(int row) {
-        try {
-            String query = "SELECT norfid FROM user ORDER BY nama_user LIMIT ?, 1";
-            try (PreparedStatement stmt = con.prepareStatement(query)) {
-                stmt.setInt(1, row);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getString("norfid");
+        // First try to get the RFID directly from the table model
+        DefaultTableModel model = (DefaultTableModel) mainTable.getModel();
+        if (row >= 0 && row < model.getRowCount()) {
+            String employeeName = (String) model.getValueAt(row, 1); // Name is in column 1
+
+            try {
+                // Get RFID based on employee name
+                String query = "SELECT norfid FROM user WHERE nama_user = ?";
+                try (PreparedStatement stmt = con.prepareStatement(query)) {
+                    stmt.setString(1, employeeName);
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString("norfid");
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return "";
     }
 
     // Perform search on employee names
-    private void performSearch(String searchTerm) {
-        try{
+    private void performSearchh(String searchTerm) {
+        this.currentSearchTerm = searchTerm;
+        try {
             String query = "SELECT norfid, nama_user, jabatan "
-                    + "FROM user nama_user LIKE ? "
+                    + "FROM user WHERE nama_user LIKE ? "
                     + "ORDER BY nama_user";
 
             try (PreparedStatement stmt = con.prepareStatement(query)) {
@@ -511,14 +555,22 @@ public class AbsenKaryawan extends JPanel {
                     rowNum++;
                 }
 
-                // Refresh the table display
-                mainTable.repaint();
+                // This is the key fix - properly refresh the table including custom renderers
+                mainTable.tableChanged(new TableModelEvent(model));
+                mainTable.revalidate(); // Ensure layout is recalculated
+                mainTable.repaint();    // Repaint the UI
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error searching: " + e.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    }
+
+    public void clearSearch() {
+        searchField.setText("Search");
+        currentSearchTerm = "";
+        loadDataFromDatabase();
     }
 
     private void setCustomRenderers() {
@@ -544,7 +596,6 @@ public class AbsenKaryawan extends JPanel {
                 // Add special cursor and visual cue for navigation columns
                 if (column == 3 || column == 5) {
                     header.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                    header.setToolTipText(column == 3 ? "Tanggal Sebelumnya" : "Tanggal Selanjutnya");
                     // Make the navigation headers more noticeable
                     header.setForeground(new Color(52, 73, 94));
                 }
@@ -593,12 +644,10 @@ public class AbsenKaryawan extends JPanel {
                 } else if (column == 3) { // «
                     cell.setHorizontalAlignment(JLabel.CENTER);
                     cell.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                    cell.setToolTipText("Tanggal Sebelumnya");
                     cell.setBorder(BorderFactory.createEmptyBorder());
                 } else if (column == 5) { // »
                     cell.setHorizontalAlignment(JLabel.CENTER);
                     cell.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                    cell.setToolTipText("Tanggal Selanjutnya");
                     cell.setBorder(BorderFactory.createEmptyBorder());
                 } else if (column == 6) { // Total
                     cell.setHorizontalAlignment(JLabel.CENTER);
@@ -641,6 +690,14 @@ public class AbsenKaryawan extends JPanel {
             attendanceData = getAttendanceData(norfid, dates);
         }
 
+        // Get today's date for comparison
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+        Date todayDate = today.getTime();
+
         // For data rows (actual employee data)
         if (row >= 0 && !norfid.isEmpty()) {
             // Create cells with actual data
@@ -671,6 +728,22 @@ public class AbsenKaryawan extends JPanel {
                 String keluarTime = dayData.getOrDefault("keluar_time", "");
                 String keluarStatus = dayData.getOrDefault("keluar_status", "");
 
+                // Check if this date is today, past, or future
+                Calendar dateCalendar = Calendar.getInstance();
+                try {
+                    dateCalendar.setTime(dateFormat.parse(dateKey));
+                    dateCalendar.set(Calendar.HOUR_OF_DAY, 0);
+                    dateCalendar.set(Calendar.MINUTE, 0);
+                    dateCalendar.set(Calendar.SECOND, 0);
+                    dateCalendar.set(Calendar.MILLISECOND, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Date currentDate = dateCalendar.getTime();
+                boolean isPast = currentDate.before(todayDate);
+                boolean isToday = currentDate.equals(todayDate);
+                boolean isFuture = currentDate.after(todayDate);
+
                 // Masuk (check-in) cell
                 JPanel masukPanel = new JPanel(new BorderLayout());
                 masukPanel.setBackground(Color.WHITE);
@@ -684,7 +757,14 @@ public class AbsenKaryawan extends JPanel {
                 masukHeaderLabel.setForeground(Color.GRAY);
 
                 // Time label
-                JLabel masukTimeLabel = new JLabel(masukTime.isEmpty() ? "-" : masukTime, JLabel.CENTER);
+                JLabel masukTimeLabel;
+                if (masukStatus.equals("red")) {
+                    // If absent (red status), don't show dash
+                    masukTimeLabel = new JLabel("", JLabel.CENTER);
+                } else {
+                    // Otherwise show time or dash
+                    masukTimeLabel = new JLabel(masukTime.isEmpty() ? "-" : masukTime, JLabel.CENTER);
+                }
 
                 // Status indicator
                 JLabel statusDot = new JLabel("●");
@@ -695,6 +775,7 @@ public class AbsenKaryawan extends JPanel {
                 } else if (masukStatus.equals("red")) {
                     statusDot.setForeground(new Color(231, 76, 60)); // Red
                 } else {
+                    // Empty status - should be "-" for today or future
                     statusDot.setText("");
                 }
 
@@ -719,7 +800,14 @@ public class AbsenKaryawan extends JPanel {
                 keluarHeaderLabel.setForeground(Color.GRAY);
 
                 // Time label
-                JLabel keluarTimeLabel = new JLabel(keluarTime.isEmpty() ? "-" : keluarTime, JLabel.CENTER);
+                JLabel keluarTimeLabel;
+                if (keluarStatus.equals("red")) {
+                    // If absent (red status), don't show dash
+                    keluarTimeLabel = new JLabel("", JLabel.CENTER);
+                } else {
+                    // Otherwise show time or dash
+                    keluarTimeLabel = new JLabel(keluarTime.isEmpty() ? "-" : keluarTime, JLabel.CENTER);
+                }
 
                 // Status indicator
                 JLabel keluarStatusDot = new JLabel("●");
@@ -730,6 +818,7 @@ public class AbsenKaryawan extends JPanel {
                 } else if (keluarStatus.equals("red")) {
                     keluarStatusDot.setForeground(new Color(231, 76, 60)); // Red
                 } else {
+                    // Empty status - should be "-" for today or future
                     keluarStatusDot.setText("");
                 }
 
@@ -830,42 +919,24 @@ public class AbsenKaryawan extends JPanel {
         return panel;
     }
 
-    // Add this method to implement the date configuration dialog
-    public void setConfigButtonActionListener() {
-        configButton.addActionListener(e -> {
-            // This would be connected to your popup dialog for date configuration
-            // Example:
-            // popUpAturTanggal dialog = new popUpAturTanggal(
-            //     (JFrame) SwingUtilities.getWindowAncestor(this),
-            //     currentDate
-            // );
-            // dialog.setVisible(true);
-            // 
-            // if (dialog.isConfirmed()) {
-            //     // Update the currentDate with selected month and year
-            //     currentDate.set(
-            //         dialog.getSelectedYear(),
-            //         dialog.getSelectedMonth(),
-            //         1 // Set to first day of the month
-            //     );
-            //
-            //     // Update the month field text
-            //     SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy");
-            //     JTextField monthField = (JTextField) ((JPanel) configButton.getParent()).getComponent(0);
-            //     monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
-            //
-            //     // Refresh the table with new date
-            //     updateTable();
-            // }
-
-            // Temporary implementation without dialog
-            JOptionPane.showMessageDialog(this,
-                    "Fungsi pengaturan bulan dan tahun akan diimplementasikan dengan popUpAturTanggal",
-                    "Info", JOptionPane.INFORMATION_MESSAGE);
-        });
-    }
-
     public void setBackToDataKaryawan(Runnable listener) {
         this.backToDataKaryawan = listener;
     }
+
+    public void resetToCurrentDate() {
+        // Reset currentDate to current date (today)
+        currentDate = Calendar.getInstance();
+        currentDate.add(Calendar.DAY_OF_MONTH, -1);
+
+        // Update month field if it exists
+        if (configButton != null && configButton.getParent() != null) {
+            JTextField monthField = (JTextField) ((JPanel) configButton.getParent()).getComponent(0);
+            SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy");
+            monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
+        }
+
+        // Refresh the table data
+        loadDataFromDatabase();
+    }
+
 }
