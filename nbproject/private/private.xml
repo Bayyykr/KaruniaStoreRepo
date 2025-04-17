@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="3">
+        <file>
+<<<<<<< HEAD
+            <url>src/produk/Productt.java</url>
+            <bookmark id="2">
+                <name/>
+                <line>0</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/produk/ComboboxCustom.java</url>
+            <bookmark id="3">
+                <name/>
+                <line>0</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+=======
+>>>>>>> 883cb66 (bayu commit)
+            <url>src/SourceCode/RoundedBorder.java</url>
+            <bookmark id="1">
+                <name/>
+                <line>0</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/produk/Productt.java</url>
+            <bookmark id="2">
+                <name/>
+                <line>0</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+<<<<<<< HEAD
+            <file>file:/D:/project/silit2/KaruniaStoreApp/src/Form/LoginForm.java</file>
+            <file>file:/D:/project/silit2/KaruniaStoreApp/src/SourceCode/PopUpRFID.java</file>
+            <file>file:/D:/project/silit2/KaruniaStoreApp/src/produk/Productt.java</file>
+=======
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/KasirKarunia/KaruniaStoreApp/src/Form/GajiKaryawan.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/KasirKarunia/KaruniaStoreApp/src/Form/LoginForm.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/KasirKarunia/KaruniaStoreApp/src/Form/Main.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/KasirKarunia/KaruniaStoreApp/src/Form/DataKaryawan.java</file>
+>>>>>>> 883cb66 (bayu commit)
+        </group>
+    </open-files>
+</project-private>
