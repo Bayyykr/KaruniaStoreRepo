@@ -100,29 +100,6 @@ public class Transjual extends JPanel {
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
         tableModel.setRowCount(0); // Hapus semua baris yang mungkin sudah ada
 
-        // Menambahkan data otomatis ke dalam tabel
-        Object[][] data = {
-            {1, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {2, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {3, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {4, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {5, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {6, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {7, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {8, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {9, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {10, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {12, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {13, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {14, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {15, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"},
-            {16, "Adidas Simanjutak", "37", "01", "Rp. 200.000,00", "50%", "Rp. 100.000,00", "Aksi"}
-        };
-
-        for (Object[] row : data) {
-            tableModel.addRow(row);
-        }
-
         // Penyesuaian posisi dan ukuran ScrollPane untuk area table
         ScrollPane scrollPane = new ScrollPane(table);
         scrollPane.setBounds(20, 120, 750, 445); // Diperlebar dan diperpanjang
@@ -141,9 +118,6 @@ public class Transjual extends JPanel {
         table.getColumnModel().getColumn(7).setCellRenderer(new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                if (row >= data.length) {
-                    return new JLabel("");
-                }
 
                 // Create a completely transparent panel
                 // Mengubah padding vertikal dari 5 menjadi 2 agar button posisinya lebih ke atas
@@ -231,9 +205,6 @@ public class Transjual extends JPanel {
 
             @Override
             public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-                if (row >= data.length) {
-                    return new JLabel("");
-                }
 
                 currentRow = row;
                 isPushed = true;
