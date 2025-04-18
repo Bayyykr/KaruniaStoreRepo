@@ -20,6 +20,7 @@ import SourceCode.PopUp_transbelihapusdata;
 import SourceCode.JTableRounded;
 import java.awt.geom.Path2D;
 import java.math.BigInteger;
+import produk.ComboboxCustom;
 
 public class Transjual extends JPanel {
 
@@ -28,6 +29,7 @@ public class Transjual extends JPanel {
     private JTextField hargaBeliField;
     private JPanel thisPanel;
     private JTextField scanKodeField;
+    private JTextField namabarang;
     private JTableRounded roundedTable;
 
     public Transjual() {
@@ -404,11 +406,11 @@ public class Transjual extends JPanel {
                 g2.dispose();
             }
         };
-        formPanel.setBounds(800, 130, 235, 380); 
+        formPanel.setBounds(800, 130, 235, 440);
         formPanel.setOpaque(false);
         mainPanel.add(formPanel);
 
-        JLabel closeLabel = new JLabel("×");  
+        JLabel closeLabel = new JLabel("×");
         closeLabel.setBounds(215, 10, 20, 20);
         closeLabel.setForeground(Color.BLACK);
         closeLabel.setFont(new Font("Arial", Font.BOLD, 23));
@@ -420,20 +422,21 @@ public class Transjual extends JPanel {
                 System.out.println("Tombol close diklik");
                 Productt.getMainFrame().switchBackToProductPanelKasir();
                 scanKodeField.setText("");
+                namabarang.setText("");
                 hargaBeliField.setText("Rp. ");
-                closeLabel.setForeground(Color.BLACK); 
+                closeLabel.setForeground(Color.BLACK);
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
                 // Ketika mouse masuk area label
-                closeLabel.setForeground(new Color(255, 59, 48)); 
+                closeLabel.setForeground(new Color(255, 59, 48));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 // Ketika mouse keluar area label
-                closeLabel.setForeground(Color.BLACK); 
+                closeLabel.setForeground(Color.BLACK);
             }
         });
         formPanel.add(closeLabel);
@@ -451,8 +454,18 @@ public class Transjual extends JPanel {
         });
         formPanel.add(scanKodeField);
 
-        formPanel.add(createLabel("Harga Beli", 15, 105));
-        hargaBeliField = createRoundedTextField(15, 130, 205, 35);
+        formPanel.add(createLabel("Nama Barang", 15, 95));
+        namabarang = createRoundedTextField(15, 120, 205, 35);
+        formPanel.add(namabarang);
+
+        // Tambahkan label dan combo box untuk diskon
+        formPanel.add(createLabel("Atur Diskon", 15, 165));
+        ComboboxCustom diskonComboBox = new ComboboxCustom(new String[]{"Diskon", "5%", "10%", "15%", "20%", "25%", "30%", "50%"});
+        diskonComboBox.setBounds(15, 190, 205, 35);
+        formPanel.add(diskonComboBox);
+
+        formPanel.add(createLabel("Harga Beli", 15, 235));
+        hargaBeliField = createRoundedTextField(15, 260, 205, 35);
         hargaBeliField.setText("Rp. "); // Prefix "Rp. "
         hargaBeliField.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
@@ -469,6 +482,92 @@ public class Transjual extends JPanel {
             }
         });
         formPanel.add(hargaBeliField);
+
+        // Tambahkan tombol "Batal" setelah field harga beli
+        JButton btnBatal = new JButton("BATAL") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(255, 59, 48)); // Warna merah
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+
+                g2.setColor(Color.black);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                // No border
+            }
+        };
+        btnBatal.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                btnBatal.setLocation(btnBatal.getX(), btnBatal.getY() + 2); // Tombol turun sedikit
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                btnBatal.setLocation(btnBatal.getX(), btnBatal.getY() - 2); // Kembali ke posisi semula
+            }
+        });
+        btnBatal.setBounds(15, 325, 100, 35);
+        btnBatal.setOpaque(false);
+        btnBatal.setContentAreaFilled(false);
+        btnBatal.setBorderPainted(false);
+        btnBatal.setForeground(Color.WHITE);
+        btnBatal.setFont(new Font("Arial", Font.BOLD, 14));
+        btnBatal.setFocusPainted(false);
+// Tambahkan action listener sesuai kebutuhan
+        formPanel.add(btnBatal);
+
+// Tambahkan tombol "Tambah" setelah field harga beli
+        JButton btnTambah = new JButton("TAMBAH") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0, 122, 255)); // Warna biru
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+
+                g2.setColor(Color.black);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                // No border
+            }
+        };
+        btnTambah.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                btnTambah.setLocation(btnTambah.getX(), btnTambah.getY() + 2); // Tombol turun sedikit
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                btnTambah.setLocation(btnTambah.getX(), btnTambah.getY() - 2); // Kembali ke posisi semula
+            }
+        });
+        btnTambah.setBounds(120, 325, 100, 35);
+        btnTambah.setOpaque(false);
+        btnTambah.setContentAreaFilled(false);
+        btnTambah.setBorderPainted(false);
+        btnTambah.setForeground(Color.WHITE);
+        btnTambah.setFont(new Font("Arial", Font.BOLD, 14));
+        btnTambah.setFocusPainted(false);
+// Tambahkan action listener sesuai kebutuhan
+        formPanel.add(btnTambah);
 
 // Panel untuk total dan kembalian dengan latar belakang abu-abu gelap
         JPanel totalPanel = new JPanel(null) {
@@ -513,34 +612,34 @@ public class Transjual extends JPanel {
                 g2.dispose();
             }
         };
-        totalPanel.setBounds(0, 320, 235, 60);
+        totalPanel.setBounds(0, 380, 235, 60);
         totalPanel.setOpaque(false);
         formPanel.add(totalPanel);
 
-// Label Total dan nilainya
         JLabel totalLabel = new JLabel("Total");
         totalLabel.setForeground(Color.WHITE);
         totalLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         totalLabel.setBounds(20, -45, 80, 125);
         totalPanel.add(totalLabel);
 
-        JLabel totalValueLabel = new JLabel("Rp. 0");
+        JLabel totalValueLabel = new JLabel("Rp. 00000000");
         totalValueLabel.setForeground(Color.WHITE);
         totalValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
-        totalValueLabel.setBounds(180, -45, 160, 125);
+        totalValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        totalValueLabel.setBounds(80, -45, 140, 125);
         totalPanel.add(totalValueLabel);
 
-// Label Kembalian dan nilainya
         JLabel kembalianLabel = new JLabel("Kembalian");
         kembalianLabel.setForeground(Color.WHITE);
         kembalianLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         kembalianLabel.setBounds(20, -20, 80, 130);
         totalPanel.add(kembalianLabel);
 
-        JLabel kembalianValueLabel = new JLabel("Rp. 0");
+        JLabel kembalianValueLabel = new JLabel("Rp. 011111");
         kembalianValueLabel.setForeground(Color.WHITE);
         kembalianValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
-        kembalianValueLabel.setBounds(180, -15, 160, 120);
+        kembalianValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        kembalianValueLabel.setBounds(80, -15, 140, 120);
         totalPanel.add(kembalianValueLabel);
 
 // Membuat tombol BAYAR diluar panel form
@@ -565,7 +664,7 @@ public class Transjual extends JPanel {
                 // No border
             }
         };
-        btnBayar.setBounds(800, 520, 235, 40);
+        btnBayar.setBounds(800, 580, 235, 40);
         btnBayar.setOpaque(false);
         btnBayar.setContentAreaFilled(false);
         btnBayar.setBorderPainted(false);
@@ -761,5 +860,4 @@ public class Transjual extends JPanel {
         label.setBounds(x, y, 150, 20);
         return label;
     }
-
 }
