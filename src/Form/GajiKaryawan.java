@@ -1,10 +1,11 @@
 package Form;
 
+import PopUp_all.*;
 import SourceCode.RoundedBorder;
 import SourceCode.RoundedButton;
 import SourceCode.ScrollPane;
 import SourceCode.JTableRounded;
-import SourceCode.PopUp_edittransbeli;
+import SourceCode.*;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -12,6 +13,7 @@ import javax.swing.*;
 import javax.swing.table.*;
 
 public class GajiKaryawan extends JPanel {
+
     Component parentComponent = this;
     private JTextField searchField;
     private JTableRounded salaryTable;
@@ -102,9 +104,18 @@ public class GajiKaryawan extends JPanel {
             public void mousePressed(MouseEvent e) {
                 aturJadwalGajiButton.setLocation(aturJadwalGajiButton.getX(), aturJadwalGajiButton.getY() + 2); // Tombol turun sedikit
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 aturJadwalGajiButton.setLocation(aturJadwalGajiButton.getX(), aturJadwalGajiButton.getY() - 2); // Kembali ke posisi semula
+            }
+        });
+        aturJadwalGajiButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(aturJadwalGajiButton);
+                PopUp_AturBulanGajiKaryawan dialog = new PopUp_AturBulanGajiKaryawan(parentFrame);
+                dialog.setVisible(true);
             }
         });
 
@@ -125,13 +136,14 @@ public class GajiKaryawan extends JPanel {
             public void mousePressed(MouseEvent e) {
                 kembaliButton.setLocation(kembaliButton.getX(), kembaliButton.getY() + 2); // Tombol turun sedikit
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 kembaliButton.setLocation(kembaliButton.getX(), kembaliButton.getY() - 2); // Kembali ke posisi semula
             }
         });
-        
-        buttonPanel.add(periodeLabel);      
+
+        buttonPanel.add(periodeLabel);
         buttonPanel.add(aturJadwalGajiButton);
         buttonPanel.add(kembaliButton);
 
@@ -151,6 +163,8 @@ public class GajiKaryawan extends JPanel {
 
         // Get the JTable from JTableRounded
         JTable table = salaryTable.getTable();
+        table.setSelectionBackground(new Color(184, 207, 229));
+        table.setSelectionForeground(Color.WHITE);
 
         // Set table to fill the viewport height
         table.setFillsViewportHeight(true);
@@ -158,19 +172,19 @@ public class GajiKaryawan extends JPanel {
         tableModel = (DefaultTableModel) table.getModel();
         tableModel.setRowCount(0); // Clear any existing rows
         table.setRowHeight(50);
-        
+
         // Konfigurasi warna baris tabel
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 // Kolom aksi dihandle oleh ButtonRenderer sendiri, jadi kita skip
                 if (column == 5) {
                     return comp;
                 }
-                
+
                 // Jika seleksi, gunakan warna seleksi
                 if (isSelected) {
                     comp.setBackground(table.getSelectionBackground());
@@ -180,7 +194,7 @@ public class GajiKaryawan extends JPanel {
                     comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
                     comp.setForeground(table.getForeground());
                 }
-                
+
                 return comp;
             }
         });
@@ -202,8 +216,7 @@ public class GajiKaryawan extends JPanel {
             {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
             {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
             {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-        };
+            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},};
 
         for (Object[] row : data) {
             tableModel.addRow(row);
@@ -229,8 +242,8 @@ public class GajiKaryawan extends JPanel {
         scrollPane.setTrackColor(new Color(240, 240, 240, 80));
         scrollPane.setThumbThickness(8);
         scrollPane.setThumbRadius(8);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+ scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED); // Ubah ke AS_NEEDED
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Ubah ke AS_NEEDED
 
         // Table Panel
         JPanel tablePanel = new JPanel(new BorderLayout());
@@ -245,6 +258,7 @@ public class GajiKaryawan extends JPanel {
 
     // Kelas ButtonRenderer untuk menampilkan tombol dalam cell - DENGAN PERBAIKAN
     class ButtonRenderer extends JPanel implements TableCellRenderer {
+
         private JButton bayarButton, hapusButton;
 
         public ButtonRenderer() {
@@ -300,7 +314,7 @@ public class GajiKaryawan extends JPanel {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
-            
+
             // Set warna latar belakang berdasarkan kondisi baris
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
@@ -308,30 +322,31 @@ public class GajiKaryawan extends JPanel {
                 // Warna zebra-striping
                 setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
             }
-            
+
             // Memastikan border tabel tetap terlihat
             setBorder(BorderFactory.createEmptyBorder());
-            
+
             return this;
         }
     }
 
     // Kelas ButtonEditor untuk menghandle aksi klik pada tombol - DENGAN PERBAIKAN
     class ButtonEditor extends DefaultCellEditor {
+
         private JPanel panel;
         private JButton bayarButton, hapusButton;
         private String action = "";
         private boolean isPushed;
         private int clickedRow;
         private JTable table;
-        
+
         public ButtonEditor(JCheckBox checkBox, JTable table) {
             super(checkBox);
             this.table = table;
-            
+
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 10));
             panel.setOpaque(true); // Kita ubah jadi true, tapi warnanya akan disesuaikan
-            
+
             // Buat tombol bayar
             bayarButton = new JButton();
             bayarButton.setPreferredSize(new Dimension(40, 30));
@@ -352,7 +367,7 @@ public class GajiKaryawan extends JPanel {
             } catch (Exception e) {
                 bayarButton.setText("Bayar");
             }
-            
+
             bayarButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -361,7 +376,7 @@ public class GajiKaryawan extends JPanel {
                     fireEditingStopped();
                 }
             });
-            
+
             // Buat tombol hapus
             hapusButton = new JButton();
             hapusButton.setPreferredSize(new Dimension(40, 30));
@@ -382,7 +397,7 @@ public class GajiKaryawan extends JPanel {
             } catch (Exception e) {
                 hapusButton.setText("Hapus");
             }
-            
+
             hapusButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -391,32 +406,33 @@ public class GajiKaryawan extends JPanel {
                     fireEditingStopped();
                 }
             });
-            
+
             panel.add(bayarButton);
             panel.add(hapusButton);
         }
-        
+
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
-            
+
             isPushed = false;
             action = "";
             clickedRow = row;
-            
-          
-            panel.setBackground(row % 2 == 0 ? Color.WHITE : new Color(57, 105, 138));
-            
+            if (row % 2 == 0) {
+                panel.setBackground(new Color(184, 207, 229)); // Warna biru untuk baris genap
+            } else {
+                panel.setBackground(new Color(184, 207, 229)); // Warna biru untuk baris ganjil juga
+            }
             return panel;
         }
-        
+
         @Override
         public Object getCellEditorValue() {
             if (isPushed) {
                 if (action.equals("BAYAR")) {
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                     PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
-                    
+
                     // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
                     dialog.addWindowListener(new WindowAdapter() {
                         @Override
@@ -426,12 +442,12 @@ public class GajiKaryawan extends JPanel {
                             table.repaint();
                         }
                     });
-                    
+
                     dialog.setVisible(true);
                 } else if (action.equals("HAPUS")) {
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                     PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
-                    
+
                     // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
                     dialog.addWindowListener(new WindowAdapter() {
                         @Override
@@ -441,20 +457,20 @@ public class GajiKaryawan extends JPanel {
                             table.repaint();
                         }
                     });
-                    
+
                     dialog.setVisible(true);
                 }
             }
             isPushed = false;
             return "";
         }
-        
+
         @Override
         public boolean stopCellEditing() {
             isPushed = false;
             return super.stopCellEditing();
         }
-        
+
         @Override
         protected void fireEditingStopped() {
             super.fireEditingStopped();

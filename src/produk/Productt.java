@@ -26,6 +26,7 @@ public class Productt extends JFrame {
     private EditProductPanel editproductpanel;
     private DataKaryawan karyawanPanel;
     private AbsenKaryawan absenpanel;
+    private GajiKaryawan gajikaryawan;
     private Transaksibeli transaksiBeli;
     private Transjual transaksiJual;
     private Laporan laporanPanel; // Tambahkan reference untuk panel laporan
@@ -63,6 +64,7 @@ public class Productt extends JFrame {
         karyawanPanel = new DataKaryawan();
         absenpanel = new AbsenKaryawan();
         transaksiBeli = new Transaksibeli();
+        gajikaryawan = new GajiKaryawan();
         transaksiJual = new Transjual();
         laporanPanel = new Laporan(); 
 
@@ -86,6 +88,7 @@ public class Productt extends JFrame {
         absenpanel.setBounds(panelX, panelY, panelWidth, 640);
         transaksiBeli.setBounds(panelX, panelY, panelWidth, panelHeight);
         transaksiJual.setBounds(panelX,panelY, panelWidth, panelHeight);
+        gajikaryawan.setBounds(panelX,panelY, panelWidth, panelHeight);
         editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         laporanPanel.setBounds(panelX, panelY, panelWidth, panelHeight); // Set bounds untuk panel laporan
 
@@ -123,7 +126,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanel;
                         break;
                     case 1: // Produk
-                        currentPanel = produkPanelkasir;
+                        currentPanel = gajikaryawan;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan
