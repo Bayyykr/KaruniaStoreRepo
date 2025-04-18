@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.geom.AffineTransform;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.CompoundBorder;
 
 public class PopUp_LupaPasswordLogin extends JDialog {
 
@@ -13,6 +15,9 @@ public class PopUp_LupaPasswordLogin extends JDialog {
     private JTextField emailField;
     private JPasswordField newPasswordField, confirmPasswordField;
     private JButton simpanButton, backButton;
+    private ImageIcon lockIcon, unlockIcon;
+    private boolean newPasswordVisible = false;
+    private boolean confirmPasswordVisible = false;
 
     private final int RADIUS = 20;
     private final int FINAL_WIDTH = 450;
@@ -29,7 +34,7 @@ public class PopUp_LupaPasswordLogin extends JDialog {
 
     // Konstruktor tanpa parameter
     public PopUp_LupaPasswordLogin() {
-        this(null); // Memanggil konstruktor dengan parameter
+        this(null); 
     }
 
     public PopUp_LupaPasswordLogin(JFrame parent) {
@@ -44,6 +49,15 @@ public class PopUp_LupaPasswordLogin extends JDialog {
             return;
         }
         isShowingPopup = true;
+
+        lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
+        unlockIcon = new ImageIcon(getClass().getResource("/SourceImage/unlock.png"));
+        
+        // Resize icons jika perlu
+        Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        Image unlockImg = unlockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        lockIcon = new ImageIcon(lockImg);
+        unlockIcon = new ImageIcon(unlockImg);
 
         // Buat overlay transparan dengan warna hitam semi transparan
         glassPane = new JComponent() {
@@ -127,10 +141,23 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         newPasswordLabel.setBounds(50, 160, 350, 20);
         contentPanel.add(newPasswordLabel);
 
-        // New Password Field
-        newPasswordField = createRoundedPasswordField();
-        newPasswordField.setBounds(50, 185, 350, 45);
-        contentPanel.add(newPasswordField);
+        // New Password Field dengan Icon Inside
+        JPanel newPasswordPanel = createPasswordFieldWithIcon(newPasswordVisible);
+        newPasswordPanel.setBounds(50, 185, 350, 45);
+        contentPanel.add(newPasswordPanel);
+        
+        // Dapatkan referensi ke password field dan icon label
+        newPasswordField = (JPasswordField) ((Container) newPasswordPanel.getComponent(0)).getComponent(0);
+        JLabel newPasswordIconLabel = (JLabel) ((Container) newPasswordPanel.getComponent(0)).getComponent(1);
+        
+        // Tambahkan listener untuk toggle icon
+        newPasswordIconLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                newPasswordVisible = !newPasswordVisible;
+                togglePasswordVisibility(newPasswordField, newPasswordIconLabel, newPasswordVisible);
+            }
+        });
 
         // Confirm Password Label
         JLabel confirmPasswordLabel = new JLabel("Confirm Password");
@@ -138,16 +165,82 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         confirmPasswordLabel.setBounds(50, 240, 350, 20);
         contentPanel.add(confirmPasswordLabel);
 
-        // Confirm Password Field
-        confirmPasswordField = createRoundedPasswordField();
-        confirmPasswordField.setBounds(50, 265, 350, 45);
-        contentPanel.add(confirmPasswordField);
+        // Confirm Password Field dengan Icon Inside
+        JPanel confirmPasswordPanel = createPasswordFieldWithIcon(confirmPasswordVisible);
+        confirmPasswordPanel.setBounds(50, 265, 350, 45);
+        contentPanel.add(confirmPasswordPanel);
+        
+        // Dapatkan referensi ke password field dan icon label
+        confirmPasswordField = (JPasswordField) ((Container) confirmPasswordPanel.getComponent(0)).getComponent(0);
+        JLabel confirmPasswordIconLabel = (JLabel) ((Container) confirmPasswordPanel.getComponent(0)).getComponent(1);
+        
+        // Tambahkan listener untuk toggle icon
+        confirmPasswordIconLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                confirmPasswordVisible = !confirmPasswordVisible;
+                togglePasswordVisibility(confirmPasswordField, confirmPasswordIconLabel, confirmPasswordVisible);
+            }
+        });
 
         // Simpan Button
         simpanButton = createSimpanButton();
         simpanButton.setBounds(50, 330, 350, 45);
         simpanButton.addActionListener(e -> simpanPassword());
         contentPanel.add(simpanButton);
+    }
+    
+    private JPanel createPasswordFieldWithIcon(boolean isVisible) {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                g2.setColor(Color.LIGHT_GRAY);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                g2.dispose();
+            }
+        };
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
+        
+        // Sub panel untuk password field dan icon
+        JPanel innerPanel = new JPanel(new BorderLayout());
+        innerPanel.setOpaque(false);
+        
+        // Create password field
+        JPasswordField passwordField = new JPasswordField();
+        passwordField.setOpaque(false);
+        passwordField.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 5));
+        passwordField.setEchoChar('\u2022'); // Bullet character
+        
+        // Create icon label
+        JLabel iconLabel = new JLabel(isVisible ? unlockIcon : lockIcon);
+        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        iconLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        // Add components to inner panel
+        innerPanel.add(passwordField, BorderLayout.CENTER);
+        innerPanel.add(iconLabel, BorderLayout.EAST);
+        
+        // Add inner panel to main panel
+        panel.add(innerPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+
+    private void togglePasswordVisibility(JPasswordField field, JLabel iconLabel, boolean isVisible) {
+        if (isVisible) {
+            // Ubah ke mode terlihat
+            field.setEchoChar((char)0); // Menampilkan teks asli
+            iconLabel.setIcon(unlockIcon);
+        } else {
+            // Ubah ke mode tersembunyi
+            field.setEchoChar('\u2022'); // Karakter bullet
+            iconLabel.setIcon(lockIcon);
+        }
     }
 
     private JTextField createRoundedTextField() {
@@ -175,31 +268,6 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         return textField;
     }
 
-    private JPasswordField createRoundedPasswordField() {
-        JPasswordField passwordField = new JPasswordField() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-                g2.setColor(Color.LIGHT_GRAY);
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-
-            @Override
-            public void updateUI() {
-                super.updateUI();
-                setOpaque(false);
-                setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-            }
-        };
-        passwordField.setBackground(Color.WHITE);
-        return passwordField;
-    }
-
     private JButton createSimpanButton() {
         JButton button = new JButton("SIMPAN") {
             @Override
@@ -225,21 +293,6 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         String email = emailField.getText();
         String newPassword = new String(newPasswordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
-
-        if (email.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Mohon isi semua field", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (!newPassword.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(this, "Password tidak cocok", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Di sini Anda bisa menambahkan logika untuk menyimpan password baru
-        // Misalnya dengan mengirim ke database atau menyimpan ke file
-
-        // Setelah berhasil, tutup dialog
         startCloseAnimation();
     }
 
@@ -385,4 +438,4 @@ public class PopUp_LupaPasswordLogin extends JDialog {
             }
         }
     }
-    }
+}
