@@ -1,6 +1,7 @@
 package Form;
 
 import PopUp_all.*;
+import PopUp_all.PopUp_DetailGajiKaryawan.PaymentCallback;
 import SourceCode.RoundedBorder;
 import SourceCode.RoundedButton;
 import SourceCode.ScrollPane;
@@ -29,12 +30,21 @@ public class GajiKaryawan extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
 
+        // Tambahkan border rounded pada panel utama
+        setBorder(new RoundedBorder(15, Color.BLACK, 3));
+
+        // Panel dalam untuk konten (dengan padding)
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
         // Top Panel with Search and Buttons
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setBackground(Color.WHITE);
 
         JLabel titleLabel = new JLabel("Gaji Karyawan");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        titleLabel.setFont(new Font("Poppins", Font.BOLD, 30));
         titleLabel.setForeground(Color.BLACK);
 
         // Title Panel
@@ -202,21 +212,21 @@ public class GajiKaryawan extends JPanel {
         // Add sample salary data
         Object[][] data = {
             {"1", "02020121", "Haikal Zayne", "Manager", "Belum Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},
-            {"2", "20281272", "Greyson", "Karyawan", "Dibayar", ""},};
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},
+            {"2", "20281272", "Greyson", "Karyawan", "Belum Dibayar", ""},};
 
         for (Object[] row : data) {
             tableModel.addRow(row);
@@ -242,18 +252,21 @@ public class GajiKaryawan extends JPanel {
         scrollPane.setTrackColor(new Color(240, 240, 240, 80));
         scrollPane.setThumbThickness(8);
         scrollPane.setThumbRadius(8);
- scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED); // Ubah ke AS_NEEDED
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Ubah ke AS_NEEDED
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        // Table Panel
+        // Table Panel dengan border rounded
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(Color.WHITE);
         tablePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Add components to main panel
-        add(topPanel, BorderLayout.NORTH);
-        add(tablePanel, BorderLayout.CENTER);
+        // Tambahkan komponen ke content panel
+        contentPanel.add(topPanel, BorderLayout.NORTH);
+        contentPanel.add(tablePanel, BorderLayout.CENTER);
+
+        // Tambahkan content panel ke panel utama
+        add(contentPanel, BorderLayout.CENTER);
     }
 
     // Kelas ButtonRenderer untuk menampilkan tombol dalam cell - DENGAN PERBAIKAN
@@ -311,9 +324,13 @@ public class GajiKaryawan extends JPanel {
             add(hapusButton);
         }
 
+        // Pada class ButtonRenderer, ubah metode getTableCellRendererComponent
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
+
+            // Reset panel
+            removeAll();
 
             // Set warna latar belakang berdasarkan kondisi baris
             if (isSelected) {
@@ -325,6 +342,41 @@ public class GajiKaryawan extends JPanel {
 
             // Memastikan border tabel tetap terlihat
             setBorder(BorderFactory.createEmptyBorder());
+
+            // Periksa status pembayaran
+            String status = (String) table.getValueAt(row, 4);
+
+            // Jika sudah dibayar, tampilkan hanya tombol detail
+            if (status.equals("Dibayar")) {
+                JButton detailButton = new JButton();
+                detailButton.setPreferredSize(new Dimension(100, 30));
+                detailButton.setBackground(new Color(52, 152, 219)); // Warna biru
+                detailButton.setForeground(Color.WHITE);
+                detailButton.setBorderPainted(false);
+                detailButton.setFocusPainted(false);
+                detailButton.setContentAreaFilled(true);
+                detailButton.setFont(new Font("Poppins", Font.PLAIN, 15));
+                detailButton.setText("Cetak");
+                detailButton.setUI(new RoundedButton());
+                detailButton.setOpaque(false);
+                detailButton.setContentAreaFilled(true);
+
+                try {
+                    // Perhatikan path yang benar untuk icon detail
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/detail_icon.png"));
+                    Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                    detailButton.setIcon(new ImageIcon(scaledImage));
+                } catch (Exception e) {
+                    // Jika icon tidak tersedia, hanya menampilkan teks
+                    System.out.println("Icon detail tidak ditemukan: " + e.getMessage());
+                }
+
+                add(detailButton);
+            } else {
+                // Jika belum dibayar, tampilkan tombol bayar dan hapus
+                add(bayarButton);
+                add(hapusButton);
+            }
 
             return this;
         }
@@ -414,15 +466,64 @@ public class GajiKaryawan extends JPanel {
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
-
+            // Reset panel
+            panel.removeAll();
             isPushed = false;
             action = "";
             clickedRow = row;
-            if (row % 2 == 0) {
-                panel.setBackground(new Color(184, 207, 229)); // Warna biru untuk baris genap
+
+            // Periksa status pembayaran
+            String status = (String) table.getValueAt(row, 4);
+
+            // Jika sudah dibayar, tampilkan hanya tombol detail
+            if (status.equals("Dibayar")) {
+                JButton detailButton = new JButton();
+                detailButton.setPreferredSize(new Dimension(100, 30));
+                detailButton.setBackground(new Color(52, 152, 219)); // Warna biru
+                detailButton.setForeground(Color.WHITE);
+                detailButton.setBorderPainted(false);
+                detailButton.setFocusPainted(false);
+                detailButton.setContentAreaFilled(true);
+                detailButton.setFont(new Font("Poppins", Font.PLAIN, 15));
+                detailButton.setText("Cetak");
+                detailButton.setUI(new RoundedButton());
+                detailButton.setOpaque(false);
+                detailButton.setContentAreaFilled(true);
+
+                try {
+                    // Perbaiki path untuk icon, gunakan path yang sama dengan di ButtonRenderer
+                    ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/detail_icon.png"));
+                    Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                    detailButton.setIcon(new ImageIcon(scaledImage));
+                } catch (Exception e) {
+                    // Jika icon tidak tersedia, hanya menampilkan teks
+                    System.out.println("Icon detail tidak ditemukan: " + e.getMessage());
+                }
+
+                detailButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        action = "DETAIL";
+                        isPushed = true;
+                        fireEditingStopped();
+                    }
+                });
+
+                panel.add(detailButton);
             } else {
-                panel.setBackground(new Color(184, 207, 229)); // Warna biru untuk baris ganjil juga
+                // Jika belum dibayar, tampilkan tombol bayar dan hapus seperti biasa
+                panel.add(bayarButton);
+                panel.add(hapusButton);
             }
+
+            // Set warna latar belakang
+            if (isSelected) {
+                panel.setBackground(table.getSelectionBackground());
+            } else {
+                // Warna zebra-striping
+                panel.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+            }
+
             return panel;
         }
 
@@ -431,34 +532,31 @@ public class GajiKaryawan extends JPanel {
             if (isPushed) {
                 if (action.equals("BAYAR")) {
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                    PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
+                    PopUp_DetailGajiKaryawan dialog = new PopUp_DetailGajiKaryawan(parentFrame);
 
-                    // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
-                    dialog.addWindowListener(new WindowAdapter() {
+                    // Set callback untuk update status pembayaran
+                    dialog.setPaymentCallback(new PaymentCallback() {
                         @Override
-                        public void windowClosed(WindowEvent e) {
-                            // Force refresh tabel setelah dialog ditutup
+                        public void onPaymentSuccess(int rowIndex) {
+                            // Update status pembayaran di tabel
+                            table.setValueAt("Dibayar", clickedRow, 4);
+
+                            // Refresh tampilan tabel
                             table.clearSelection();
                             table.repaint();
                         }
-                    });
+                    }, clickedRow);
 
                     dialog.setVisible(true);
                 } else if (action.equals("HAPUS")) {
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                    PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
-
-                    // Tambahkan listener untuk memastikan tabel diperbarui setelah dialog ditutup
-                    dialog.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosed(WindowEvent e) {
-                            // Force refresh tabel setelah dialog ditutup
-                            table.clearSelection();
-                            table.repaint();
-                        }
-                    });
-
+                    PopUp_HapusDataGajiKaryawan dialog = new PopUp_HapusDataGajiKaryawan(parentFrame);
                     dialog.setVisible(true);
+                } else if (action.equals("DETAIL")) {
+                    // Dapatkan parent frame secara dinamis
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    PopUp_EditKaryawan tambahKaryawanDialog = new PopUp_EditKaryawan(parentFrame, true);
+                    tambahKaryawanDialog.setVisible(true);
                 }
             }
             isPushed = false;
@@ -477,6 +575,12 @@ public class GajiKaryawan extends JPanel {
             // Tambahan untuk memastikan seleksi dihapus
             table.clearSelection();
             table.repaint();
+        }
+
+        private boolean isPaid(int row) {
+            // Cek status pembayaran
+            String status = (String) table.getValueAt(row, 4);
+            return status.equals("Dibayar");
         }
     }
 }
