@@ -21,6 +21,11 @@ import SourceCode.JTableRounded;
 import java.awt.geom.Path2D;
 import java.math.BigInteger;
 import produk.ComboboxCustom;
+import java.sql.*;
+import db.conn;
+import java.util.ArrayList;
+import PopUp_all.Popup_edittransjual;
+import PopUp_all.Popup_hapustransjual;
 
 public class Transjual extends JPanel {
 
@@ -30,13 +35,20 @@ public class Transjual extends JPanel {
     private JPanel thisPanel;
     private JTextField scanKodeField;
     private JTextField namabarang;
-    private JTableRounded roundedTable;
+    public JTableRounded roundedTable;
+    private JLabel totalValueLabel;
+    private JButton btnTambah, btnBatal, btnBayar;
+    private ComboboxCustom diskonComboBox;
+    private Connection con;
+    private String currentProductSize = "";
 
     public Transjual() {
         thisPanel = this;
         setPreferredSize(new Dimension(1065, 640));
         setLayout(null);
         setBackground(Color.white);
+
+        con = conn.getConnection();
 
         // Panel utama - menggunakan seluruh area yang tersedia
         JPanel mainPanel = new JPanel(null) {
@@ -77,11 +89,11 @@ public class Transjual extends JPanel {
 
         // Mengatur lebar tiap kolom yang lebih proporsional
         roundedTable.setColumnWidth(0, 40);   // No
-        roundedTable.setColumnWidth(1, 190);  // Nama Produk 
+        roundedTable.setColumnWidth(1, 180);  // Nama Produk 
         roundedTable.setColumnWidth(2, 50);  // Size
         roundedTable.setColumnWidth(3, 50);  // Jumlah
         roundedTable.setColumnWidth(4, 130);  // Harga Satuan
-        roundedTable.setColumnWidth(5, 50);   // Diskon
+        roundedTable.setColumnWidth(5, 60);   // Diskon
         roundedTable.setColumnWidth(6, 130);   // Total
         roundedTable.setColumnWidth(7, 80);   // Aksi
 
@@ -295,10 +307,14 @@ public class Transjual extends JPanel {
                     public void actionPerformed(ActionEvent e) {
                         stopCellEditing(); // Hentikan editing sebelum menampilkan dialog
                         // Use SwingUtilities to find the parent frame
-                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                        PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
-                        dialog.setVisible(true);
-                        // fireEditingStopped sudah dipanggil oleh stopCellEditing()
+                        int selectedRow = roundedTable.getTable().getSelectedRow();
+                        if (selectedRow != -1) {
+                            handleEditTransaksi(selectedRow);
+                        } else {
+                            JOptionPane.showMessageDialog(Transjual.this,
+                                    "Pilih baris yang ingin diedit terlebih dahulu",
+                                    "Informasi", JOptionPane.INFORMATION_MESSAGE);
+                        }
                     }
                 });
 
@@ -359,12 +375,46 @@ public class Transjual extends JPanel {
                 btnDelete.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        stopCellEditing(); // Hentikan editing sebelum menampilkan dialog
-                        // Use SwingUtilities to find the parent frame
-                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                        PopUp_transbelihapusdata dialog = new PopUp_transbelihapusdata(parentFrame);
-                        dialog.setVisible(true);
-                        // fireEditingStopped sudah dipanggil oleh stopCellEditing()
+                        stopCellEditing(); // Stop editing before showing dialog
+
+                        // Get the selected row (currentRow is already defined in your table cell editor)
+                        int selectedRow = currentRow;
+
+                        if (selectedRow != -1) {
+                            // Store the row index for later deletion
+                            final int rowToDelete = selectedRow;
+
+                            // Create the confirmation popup
+                            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                            Popup_hapustransjual dialog = new Popup_hapustransjual(parentFrame);
+
+                            // Add a window listener to handle the result after the popup is closed
+                            dialog.addWindowListener(new WindowAdapter() {
+                                @Override
+                                public void windowClosed(WindowEvent e) {
+                                    // Check if delete was confirmed (this requires adding a flag in Popup_hapustransjual)
+                                    if (dialog.isDeleteConfirmed()) {
+                                        // Remove the row from the table model
+                                        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+                                        model.removeRow(rowToDelete);
+
+                                        // Renumber the remaining rows
+                                        for (int i = 0; i < model.getRowCount(); i++) {
+                                            model.setValueAt(i + 1, i, 0); // Assuming the row number is in column 0
+                                        }
+
+                                        // Update the total amount
+                                        updateTotalAmount();
+                                    }
+                                }
+                            });
+
+                            dialog.setVisible(true);
+                        } else {
+                            JOptionPane.showMessageDialog(Transjual.this,
+                                    "Pilih baris yang ingin dihapus terlebih dahulu",
+                                    "Informasi", JOptionPane.INFORMATION_MESSAGE);
+                        }
                     }
                 });
 
@@ -456,11 +506,12 @@ public class Transjual extends JPanel {
 
         formPanel.add(createLabel("Nama Barang", 15, 95));
         namabarang = createRoundedTextField(15, 120, 205, 35);
+        namabarang.setFocusable(false);
         formPanel.add(namabarang);
 
         // Tambahkan label dan combo box untuk diskon
         formPanel.add(createLabel("Atur Diskon", 15, 165));
-        ComboboxCustom diskonComboBox = new ComboboxCustom(new String[]{"Diskon", "5%", "10%", "15%", "20%", "25%", "30%", "50%"});
+        diskonComboBox = new ComboboxCustom(getDiscountOptionsFromDatabase());
         diskonComboBox.setBounds(15, 190, 205, 35);
         formPanel.add(diskonComboBox);
 
@@ -484,7 +535,7 @@ public class Transjual extends JPanel {
         formPanel.add(hargaBeliField);
 
         // Tambahkan tombol "Batal" setelah field harga beli
-        JButton btnBatal = new JButton("BATAL") {
+        btnBatal = new JButton("BATAL") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -527,7 +578,7 @@ public class Transjual extends JPanel {
         formPanel.add(btnBatal);
 
 // Tambahkan tombol "Tambah" setelah field harga beli
-        JButton btnTambah = new JButton("TAMBAH") {
+        btnTambah = new JButton("TAMBAH") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -622,7 +673,7 @@ public class Transjual extends JPanel {
         totalLabel.setBounds(20, -45, 80, 125);
         totalPanel.add(totalLabel);
 
-        JLabel totalValueLabel = new JLabel("Rp. 00000000");
+        totalValueLabel = new JLabel("Rp. ");
         totalValueLabel.setForeground(Color.WHITE);
         totalValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         totalValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -635,7 +686,7 @@ public class Transjual extends JPanel {
         kembalianLabel.setBounds(20, -20, 80, 130);
         totalPanel.add(kembalianLabel);
 
-        JLabel kembalianValueLabel = new JLabel("Rp. 011111");
+        JLabel kembalianValueLabel = new JLabel("Rp. ");
         kembalianValueLabel.setForeground(Color.WHITE);
         kembalianValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         kembalianValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -643,7 +694,7 @@ public class Transjual extends JPanel {
         totalPanel.add(kembalianValueLabel);
 
 // Membuat tombol BAYAR diluar panel form
-        JButton btnBayar = new JButton("BAYAR") {
+        btnBayar = new JButton("BAYAR") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -694,6 +745,7 @@ public class Transjual extends JPanel {
         });
 
         mainPanel.add(btnBayar);
+        actionButton();
     }
 
     private void formatHargaBeli() {
@@ -859,5 +911,247 @@ public class Transjual extends JPanel {
         JLabel label = new JLabel(text);
         label.setBounds(x, y, 150, 20);
         return label;
+    }
+
+    private void setupScanKodeFieldListener() {
+        scanKodeField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    String kode = scanKodeField.getText().trim();
+                    if (!kode.isEmpty()) {
+                        lookupProduct(kode);
+                    }
+                }
+            }
+        });
+    }
+
+    private void lookupProduct(String kode) {
+        try {
+            String query = "SELECT nama_produk, harga_jual, size FROM produk WHERE id_produk = ?";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, kode);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String nama = rs.getString("nama_produk");
+                int harga = rs.getInt("harga_jual");
+                String ukuran = rs.getString("size");
+
+                namabarang.setText(nama);
+                hargaBeliField.setText("Rp. " + formatter.format(harga));
+                currentProductSize = ukuran != null ? ukuran : "";
+            } else {
+//                JOptionPane.showMessageDialog(this, "Produk tidak ditemukan", "Error", JOptionPane.ERROR_MESSAGE);
+                System.out.println("produk tidak ada");
+                namabarang.setText("");
+                hargaBeliField.setText("Rp. ");
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error querying database: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void addItemToTable() {
+        try {
+            String nama = namabarang.getText();
+            if (nama.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Get price from hargaBeliField
+            String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+            if (hargaText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Harga tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int harga = Integer.parseInt(hargaText);
+
+            // Get discount from combobox
+            String diskonText = diskonComboBox.getSelectedItem().toString();
+            double diskon = 0;
+
+            if (!diskonText.isEmpty()) {
+                // Get the actual discount percentage from database based on the selected name
+                try {
+                    String query = "SELECT total_diskon FROM diskon WHERE nama_diskon = ?";
+                    PreparedStatement ps = con.prepareStatement(query);
+                    ps.setString(1, diskonText);
+                    ResultSet rs = ps.executeQuery();
+
+                    if (rs.next()) {
+                        diskon = rs.getDouble("total_diskon");
+                    } else {
+                        // If not found in database (fallback), try to parse from the string
+                        diskon = Double.parseDouble(diskonText.replace("%", ""));
+                    }
+
+                    rs.close();
+                    ps.close();
+                } catch (SQLException ex) {
+                    // Fallback if database query fails
+                    if (diskonText.contains("%")) {
+                        diskon = Double.parseDouble(diskonText.replace("%", ""));
+                    }
+                    System.err.println("Error fetching discount value: " + ex.getMessage());
+                }
+            }
+
+            // Calculate total for a single item
+            double diskonAmount = (diskon / 100) * harga;
+            double total = harga - diskonAmount;
+
+            // Format discount display
+            String diskonDisplay = diskon == 0 ? "-" : "" + (int) diskon + "%";
+
+            // Check if the item already exists in the table with the same discount
+            DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+            boolean itemFound = false;
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String existingName = model.getValueAt(i, 1).toString();
+                String existingSize = model.getValueAt(i, 2).toString();
+                String existingDiskon = model.getValueAt(i, 5).toString();
+
+                // Compare name, size and discount
+                if (existingName.equals(nama)
+                        && existingSize.equals(currentProductSize)
+                        && existingDiskon.equals(diskonDisplay)) {
+
+                    // Update quantity
+                    int currentQty = Integer.parseInt(model.getValueAt(i, 3).toString());
+                    int newQty = currentQty + 1;
+                    model.setValueAt(newQty, i, 3);
+
+                    // Update total price for this row
+                    double rowTotal = total * newQty;
+                    model.setValueAt("Rp. " + formatter.format(rowTotal), i, 6);
+
+                    itemFound = true;
+                    break;
+                }
+            }
+
+            // If item not found with same discount, add as new row
+            if (!itemFound) {
+                int rowCount = model.getRowCount() + 1;
+
+                model.addRow(new Object[]{
+                    rowCount,
+                    nama,
+                    currentProductSize,
+                    1, // Default quantity
+                    "Rp. " + formatter.format(harga),
+                    diskonDisplay,
+                    "Rp. " + formatter.format(total),
+                    "" // Action column
+                });
+            }
+
+            // Clear fields
+            scanKodeField.setText("");
+            namabarang.setText("");
+            hargaBeliField.setText("Rp. ");
+            diskonComboBox.setSelectedIndex(0);
+            updateTotalAmount();
+
+            // Set focus back to scan field for next item
+            scanKodeField.requestFocus();
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Format harga tidak valid", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void updateTotalAmount() {
+        double totalAmount = 0;
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            // Get the already calculated total price (after discount) from column 6
+            String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "");
+            try {
+                totalAmount += Double.parseDouble(totalStr);
+            } catch (NumberFormatException ex) {
+                System.err.println("Error parsing total amount: " + ex.getMessage());
+            }
+        }
+
+        totalValueLabel.setText("Rp. " + formatter.format(totalAmount));
+    }
+
+    private void actionButton() {
+        // Add this code in the constructor after creating btnTambah
+        btnTambah.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addItemToTable();
+            }
+        });
+
+        btnBatal.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                scanKodeField.setText("");
+                namabarang.setText("");
+                hargaBeliField.setText("Rp. ");
+                diskonComboBox.setSelectedIndex(0);
+            }
+        });
+
+// Initialize scan field listener
+        setupScanKodeFieldListener();
+    }
+
+    // Add this method to fetch discount options from database
+    private String[] getDiscountOptionsFromDatabase() {
+        try {
+            // Query to get distinct discount options from database
+            String query = "SELECT DISTINCT nama_diskon FROM diskon ORDER BY total_diskon ASC";
+            PreparedStatement ps = con.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+
+            // Count the number of results
+            ArrayList<String> options = new ArrayList<>();
+            options.add(""); // Adding empty option first
+
+            while (rs.next()) {
+                String diskonValue = rs.getString("nama_diskon");
+                options.add(diskonValue);
+            }
+
+            rs.close();
+            ps.close();
+
+            return options.toArray(new String[0]);
+        } catch (SQLException ex) {
+            System.err.println("Error fetching discount options: " + ex.getMessage());
+            // Return default options if database fails
+            return new String[]{"", "5%", "10%", "15%", "20%", "25%", "30%", "50%"};
+        }
+    }
+
+    private void handleEditTransaksi(int rowIndex) {
+        // Check if row index is valid
+        if (rowIndex < 0 || rowIndex >= roundedTable.getTable().getRowCount()) {
+            return;
+        }
+
+        // Create and show the edit popup
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+        Popup_edittransjual editPopup = new Popup_edittransjual(parentFrame, roundedTable.getTable(), rowIndex);
+        editPopup.setVisible(true);
+
+        refreshAfterEdit();
+    }
+
+    public void refreshAfterEdit() {
+        updateTotalAmount();
     }
 }
