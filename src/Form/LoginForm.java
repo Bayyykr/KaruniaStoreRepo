@@ -541,7 +541,7 @@ public class LoginForm extends JFrame {
 //                    javax.swing.JFrame parentFrame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
                             System.out.println("masuk");
                             if (jabatan.equals("kasir")) {
-                            new Main().setVisible(true);
+                            new FormKasir().setVisible(true);
                             LoginForm.this.setVisible(false);
                             dialog.dispose();
                                 System.out.println("ini kasir");
@@ -641,8 +641,8 @@ public class LoginForm extends JFrame {
                         javax.swing.JFrame parentFrame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(LoginForm.this);
                         System.out.println("masuk");
                         if (jabatan.equals("kasir")) {
-//                            new DashboardKasir().setVisible(true);
-//                            this.setVisible(false);
+                            new FormKasir().setVisible(true);
+                            LoginForm.this.setVisible(false);
                             System.out.println("ini kasir");
                         } else if (jabatan.equals("owner")) {
                             new Main().setVisible(true);
