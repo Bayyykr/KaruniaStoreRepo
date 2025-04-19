@@ -41,7 +41,7 @@ public class LoginForm extends JFrame {
     private JLabel forgotPassword;
     int xMouse, yMouse;
 
-    private final Connection con;
+    private Connection con;
     private String jabatan = "";
 
     public LoginForm() {

@@ -6,6 +6,10 @@ import javax.swing.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.CompoundBorder;
+import db.conn;
+import java.sql.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PopUp_LupaPasswordLogin extends JDialog {
 
@@ -31,10 +35,11 @@ public class PopUp_LupaPasswordLogin extends JDialog {
 
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+    private Connection con;
 
     // Konstruktor tanpa parameter
     public PopUp_LupaPasswordLogin() {
-        this(null); 
+        this(null);
     }
 
     public PopUp_LupaPasswordLogin(JFrame parent) {
@@ -42,6 +47,8 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         this.parentFrame = parent;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
+
+        con = conn.getConnection();
 
         // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
@@ -52,7 +59,7 @@ public class PopUp_LupaPasswordLogin extends JDialog {
 
         lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
         unlockIcon = new ImageIcon(getClass().getResource("/SourceImage/unlock.png"));
-        
+
         // Resize icons jika perlu
         Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         Image unlockImg = unlockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
@@ -123,7 +130,7 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         });
         backLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         contentPanel.add(backLabel);
-        
+
         // Email Label
         JLabel emailLabel = new JLabel("Email");
         emailLabel.setFont(new Font("Arial", Font.BOLD, 14));
@@ -145,11 +152,11 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         JPanel newPasswordPanel = createPasswordFieldWithIcon(newPasswordVisible);
         newPasswordPanel.setBounds(50, 185, 350, 45);
         contentPanel.add(newPasswordPanel);
-        
+
         // Dapatkan referensi ke password field dan icon label
         newPasswordField = (JPasswordField) ((Container) newPasswordPanel.getComponent(0)).getComponent(0);
         JLabel newPasswordIconLabel = (JLabel) ((Container) newPasswordPanel.getComponent(0)).getComponent(1);
-        
+
         // Tambahkan listener untuk toggle icon
         newPasswordIconLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -169,11 +176,11 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         JPanel confirmPasswordPanel = createPasswordFieldWithIcon(confirmPasswordVisible);
         confirmPasswordPanel.setBounds(50, 265, 350, 45);
         contentPanel.add(confirmPasswordPanel);
-        
+
         // Dapatkan referensi ke password field dan icon label
         confirmPasswordField = (JPasswordField) ((Container) confirmPasswordPanel.getComponent(0)).getComponent(0);
         JLabel confirmPasswordIconLabel = (JLabel) ((Container) confirmPasswordPanel.getComponent(0)).getComponent(1);
-        
+
         // Tambahkan listener untuk toggle icon
         confirmPasswordIconLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -186,10 +193,10 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         // Simpan Button
         simpanButton = createSimpanButton();
         simpanButton.setBounds(50, 330, 350, 45);
-        simpanButton.addActionListener(e -> simpanPassword());
+        simpanButton.addActionListener(e -> resetPassword());
         contentPanel.add(simpanButton);
     }
-    
+
     private JPanel createPasswordFieldWithIcon(boolean isVisible) {
         JPanel panel = new JPanel() {
             @Override
@@ -199,42 +206,42 @@ public class PopUp_LupaPasswordLogin extends JDialog {
                 g2.setColor(Color.WHITE);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
                 g2.setColor(Color.LIGHT_GRAY);
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
                 g2.dispose();
             }
         };
         panel.setLayout(new BorderLayout());
         panel.setOpaque(false);
-        
+
         // Sub panel untuk password field dan icon
         JPanel innerPanel = new JPanel(new BorderLayout());
         innerPanel.setOpaque(false);
-        
+
         // Create password field
         JPasswordField passwordField = new JPasswordField();
         passwordField.setOpaque(false);
         passwordField.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 5));
         passwordField.setEchoChar('\u2022'); // Bullet character
-        
+
         // Create icon label
         JLabel iconLabel = new JLabel(isVisible ? unlockIcon : lockIcon);
         iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         iconLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        
+
         // Add components to inner panel
         innerPanel.add(passwordField, BorderLayout.CENTER);
         innerPanel.add(iconLabel, BorderLayout.EAST);
-        
+
         // Add inner panel to main panel
         panel.add(innerPanel, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
     private void togglePasswordVisibility(JPasswordField field, JLabel iconLabel, boolean isVisible) {
         if (isVisible) {
             // Ubah ke mode terlihat
-            field.setEchoChar((char)0); // Menampilkan teks asli
+            field.setEchoChar((char) 0); // Menampilkan teks asli
             iconLabel.setIcon(unlockIcon);
         } else {
             // Ubah ke mode tersembunyi
@@ -287,13 +294,6 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
-    }
-
-    private void simpanPassword() {
-        String email = emailField.getText();
-        String newPassword = new String(newPasswordField.getPassword());
-        String confirmPassword = new String(confirmPasswordField.getPassword());
-        startCloseAnimation();
     }
 
     private void startScaleAnimation() {
@@ -374,6 +374,71 @@ public class PopUp_LupaPasswordLogin extends JDialog {
 
     private JLayeredPane parentLayeredPane() {
         return parentFrame.getLayeredPane();
+    }
+
+    private void resetPassword() {
+        String email = emailField.getText();
+        String pwbaru = newPasswordField.getText();
+        String pwconfirm = confirmPasswordField.getText();
+
+        if (email.isEmpty()) {
+//                    PopUp_login_emailtidakbolehkosong a = new PopUp_login_emailtidakbolehkosong(LoginForm.this);
+//                    a.setAlwaysOnTop(true);
+//                    a.setVisible(true);
+            System.out.println("email tidak bole kosong");
+            return;
+        } else if (pwbaru.isEmpty() || pwbaru.isEmpty()) {
+//                    PopUp_login_passwordtidakbolehkosong b = new PopUp_login_passwordtidakbolehkosong(LoginForm.this);
+//                    b.setAlwaysOnTop(true);
+//                    b.setVisible(true);
+            System.out.println("pw tidak bole kosong");
+            return;
+        }
+
+        if (!pwbaru.equals(pwconfirm)) {
+            System.out.println("pw tidak sama");
+            return;
+        }
+
+        if (!isValidGmailAddress(email)) {
+//            PopUp_login_contohpenulisanemailyangbenar mail = new PopUp_login_contohpenulisanemailyangbenar(parentFrame);
+//            mail.setAlwaysOnTop(true);
+//            mail.setVisible(true);
+            System.out.println("penulisan email salah");
+        } else {
+            try {
+                String query = "UPDATE user SET password = ? WHERE email = ?";
+                try (PreparedStatement st = con.prepareStatement(query)) {
+                    st.setString(1, pwbaru);
+                    st.setString(2, email);
+
+                    int rowUpdated = st.executeUpdate();
+                    if (rowUpdated > 0) {
+                        System.out.println("berhasil diupdate");
+                        startCloseAnimation();
+                    } else {
+                        System.out.println("email tidak tersedia");
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    private boolean isValidGmailAddress(String email) {
+        if (email == null) {
+            return false;
+        }
+
+        // Pola regex untuk memvalidasi email Gmail
+        String gmailRegex = "^[a-zA-Z0-9._%+-]+@gmail\\.com$";
+        Pattern pattern = Pattern.compile(gmailRegex);
+        Matcher matcher = pattern.matcher(email);
+
+        return matcher.matches();
     }
 
     // RoundedPanel Inner Class
