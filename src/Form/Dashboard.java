@@ -10,6 +10,11 @@ import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Connection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -20,6 +25,7 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
+import db.conn;
 
 public class Dashboard extends JPanel {
 
@@ -43,6 +49,8 @@ public class Dashboard extends JPanel {
     private Timer buttonAnimationTimer;
     private float buttonAnimationProgress = 0.0f;
     private boolean isButtonAnimating = false;
+    
+    private Connection con;
 
     // Class to track animated slide buttons
     private class SlideButton {
@@ -58,7 +66,9 @@ public class Dashboard extends JPanel {
     public Dashboard() {
         setLayout(new BorderLayout());
         setOpaque(true);
+        con = conn.getConnection();
         initComponents();
+        setNamaUser();
     }
 
     private void initComponents() {
@@ -706,5 +716,25 @@ public class Dashboard extends JPanel {
         rowPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 60));
 
         return rowPanel;
+    }
+
+    private void setNamaUser() {
+        String email = LoginForm.getNamaUser();
+        String norfid = LoginForm.getNoRFID();
+
+        String sql = "SELECT nama_user FROM user WHERE email = ? OR norfid = ?";
+        try (PreparedStatement st = con.prepareStatement(sql)) {
+            st.setString(1, email);
+            st.setString(2, norfid);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+//                txt_namakaryawn.setText(rs.getString("nama_karyawan"));
+                System.out.println(rs.getString("nama_user"));
+            } else {
+                System.out.println("No karyawan found for email: " + rs.getString("nama_user"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

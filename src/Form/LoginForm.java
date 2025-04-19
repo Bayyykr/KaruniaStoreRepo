@@ -43,12 +43,38 @@ public class LoginForm extends JFrame {
 
     private Connection con;
     private String jabatan = "";
+    private static LoginForm instance;
+    private static String namaUser = "";
+    private static String NoRFID = "";
+
+    public static String getNoRFID() {
+        return NoRFID;
+    }
+
+    public static void setNoRFID(String NoRFID) {
+        LoginForm.NoRFID = NoRFID;
+    }
+
+    public static String getNamaUser() {
+        return namaUser;
+    }
+
+    private static void setNamaUser(String namaUser) {
+        LoginForm.namaUser = namaUser;
+    }
 
     public LoginForm() {
         con = conn.getConnection();
         initComponents();
         RFIDField();
         FungsiKomponenLogin();
+    }
+    
+    public static LoginForm getInstance() {
+        if (instance == null) {
+            instance = new LoginForm();
+        }
+        return instance;
     }
 
     private void initComponents() {
@@ -549,6 +575,7 @@ public class LoginForm extends JFrame {
                             if (rs.next()) {
                                 String rolee = rs.getString("jabatan");
                                 jabatan = rolee;
+                                setNoRFID(norfid);
                                 return true;
                             } else {
                             // Reset field ketika validasi gagal
@@ -648,6 +675,7 @@ public class LoginForm extends JFrame {
                     if (rs.next()) {
                         String rolee = rs.getString("jabatan");
                         jabatan = rolee;
+                        setNamaUser(email);
                         return true;
                     } else {
                         return false;
