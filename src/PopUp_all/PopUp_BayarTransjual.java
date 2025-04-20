@@ -25,9 +25,19 @@ public class PopUp_BayarTransjual extends JDialog {
     private Timer closeAnimationTimer;
     private final int FINAL_WIDTH = 450;  // Ukuran tetap
     private final int FINAL_HEIGHT = 250; // Ukuran tetap
-    
+
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+
+    public void addOKButtonActionListener(ActionListener listener) {
+        // Hapus semua action listener yang mungkin ada sebelumnya
+        for (ActionListener al : OKButton.getActionListeners()) {
+            OKButton.removeActionListener(al);
+        }
+
+        // Tambahkan action listener baru
+        OKButton.addActionListener(listener);
+    }
 
     public PopUp_BayarTransjual(JFrame parent) {
         this.parentFrame = parent;
@@ -56,10 +66,10 @@ public class PopUp_BayarTransjual extends JDialog {
         };
         glassPane.setOpaque(false);
         glassPane.setBounds(0, 0, parent.getWidth(), parent.getHeight());
-        
+
         // Menghapus glassPane yang mungkin sudah ada sebelumnya
         cleanupExistingGlassPane();
-        
+
         parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
 
         setUndecorated(true);
@@ -102,32 +112,6 @@ public class PopUp_BayarTransjual extends JDialog {
 
         OKButton = createRoundedButton("OK", 250, 190, 130, 30, new Color(0xFFBB55), Color.WHITE);
         OKButton.setVisible(false);
-           OKButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                // Tambahkan logika untuk menghapus data di sini
-
-                // Ubah untuk menambahkan popup sukses
-                startCloseAnimation();
-
-                // Gunakan Timer untuk menampilkan popup sukses setelah animasi selesai
-                Timer successTimer = new Timer(ANIMATION_DURATION + 100, new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // Pastikan popup saat ini benar-benar tertutup sebelum membuka yang baru
-                        isShowingPopup = false;
-
-                        // Tampilkan popup sukses
-                        SwingUtilities.invokeLater(() -> {
-                            PopUp_transbelihapusdatasucces successPopup = new PopUp_transbelihapusdatasucces(parentFrame);
-                            successPopup.setVisible(true);
-                        });
-                    }
-                });
-                successTimer.setRepeats(false);
-                successTimer.start();
-            }
-        });
         contentPanel.add(OKButton);
 
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
@@ -141,12 +125,7 @@ public class PopUp_BayarTransjual extends JDialog {
         // Memulai animasi setelah pop-up muncul
         startScaleAnimation();
     }
-    
-    // Method untuk menambahkan action listener ke tombol OK
-    public void addOKButtonActionListener(ActionListener listener) {
-        OKButton.addActionListener(listener);
-    }
-    
+
     // Metode untuk membersihkan glassPane yang mungkin sudah ada
     private void cleanupExistingGlassPane() {
         Component[] components = parentLayeredPane().getComponentsInLayer(JLayeredPane.POPUP_LAYER);
@@ -205,7 +184,7 @@ public class PopUp_BayarTransjual extends JDialog {
         animationTimer.start();
     }
 
-    private void startCloseAnimation() {
+    public void startCloseAnimation() {
         if (closeAnimationTimer != null && closeAnimationTimer.isRunning()) {
             closeAnimationTimer.stop();
         }
@@ -238,10 +217,10 @@ public class PopUp_BayarTransjual extends JDialog {
     private void cleanupAndClose() {
         // Reset flag saat popup ditutup
         isShowingPopup = false;
-        
+
         // Hapus glassPane
         closePopup();
-        
+
         // Tutup dialog
         dispose();
     }
@@ -254,7 +233,7 @@ public class PopUp_BayarTransjual extends JDialog {
     private JLayeredPane parentLayeredPane() {
         return parentFrame.getLayeredPane();
     }
-    
+
     private JLabel createLabel(String path, int x, int y, int width, int height) {
         JLabel label = new JLabel();
         label.setBounds(x, y, width, height);
@@ -303,6 +282,7 @@ public class PopUp_BayarTransjual extends JDialog {
     }
 
     class RoundedPanel extends JPanel {
+
         private int radius;
 
         public RoundedPanel(int radius) {
@@ -314,52 +294,71 @@ public class PopUp_BayarTransjual extends JDialog {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+
             if (animationStarted) {
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-                
+
                 AffineTransform originalTransform = g2.getTransform();
                 g2.translate(centerX, centerY);
                 g2.scale(currentScale, currentScale);
                 g2.translate(-centerX, -centerY);
-                
+
                 // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-                
+
                 g2.setTransform(originalTransform);
             } else {
                 // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             }
-            
+
             g2.dispose();
         }
-        
+
         @Override
         protected void paintChildren(Graphics g) {
             if (animationStarted && currentScale < 0.3) {
                 return;
             }
-            
+
             if (animationStarted) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-                
+
                 g2d.translate(centerX, centerY);
                 g2d.scale(currentScale, currentScale);
                 g2d.translate(-centerX, -centerY);
-                
+
                 super.paintChildren(g2d);
                 g2d.dispose();
-            } else {    
+            } else {
                 super.paintChildren(g);
             }
         }
-    } 
+    }
+
+    private void setupOKButtonListeners() {
+        OKButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                startCloseAnimation();
+                // ActionListener akan dijalankan saat tombol diklik
+            }
+        });
+    }
+
+    // Override method setVisible untuk memastikan dialog bersifat modal
+    @Override
+    public void setVisible(boolean visible) {
+        if (visible) {
+            setupOKButtonListeners(); // Pastikan listener sudah terpasang
+        }
+        super.setVisible(visible);
+    }
 }

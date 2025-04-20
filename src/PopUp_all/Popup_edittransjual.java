@@ -554,7 +554,7 @@ public class Popup_edittransjual extends JDialog {
     private String[] getDiscountOptionsFromDatabase() {
         try {
             // Query to get distinct discount options from database
-            String query = "SELECT DISTINCT nama_diskon FROM diskon ORDER BY total_diskon ASC";
+            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' ORDER BY total_diskon ASC";
             PreparedStatement ps = con.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
 

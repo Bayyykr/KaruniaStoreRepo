@@ -26,6 +26,11 @@ import db.conn;
 import java.util.ArrayList;
 import PopUp_all.Popup_edittransjual;
 import PopUp_all.Popup_hapustransjual;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
 public class Transjual extends JPanel {
 
@@ -34,13 +39,19 @@ public class Transjual extends JPanel {
     private JTextField hargaBeliField;
     private JPanel thisPanel;
     private JTextField scanKodeField;
-    private JTextField namabarang;
+    private JTextField namabarang, txtIdTransaksi;
     public JTableRounded roundedTable;
     private JLabel totalValueLabel;
     private JButton btnTambah, btnBatal, btnBayar;
     private ComboboxCustom diskonComboBox;
     private Connection con;
     private String currentProductSize = "";
+
+    private static final String ID_PREFIX = "TRJL_";
+    private static final int PADDING_LENGTH = 5;
+
+    private String NoRFID = "";
+    private String namaUser = "";
 
     public Transjual() {
         thisPanel = this;
@@ -725,8 +736,34 @@ public class Transjual extends JPanel {
         btnBayar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Pastikan ada data di tabel sebelum menampilkan dialog pembayaran
+                DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+                if (model.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(parentComponent,
+                            "Tidak ada item untuk dibayar",
+                            "Peringatan", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
                 JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+                final PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+
+                // Tambahkan listener ke tombol OK
+                dialog.addOKButtonActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+//                         Proses transaksi hanya jika OK diklik
+                        if (saveTransactionToDatabase()) {
+                            updateTotalAmount();
+                            printReceipt();
+                            txtIdTransaksi.setText(generateNextTransaksiId());
+                            clearTransactionTable();
+                            dialog.startCloseAnimation();
+                        }
+                    }
+                });
+
+                // Tampilkan dialog
                 dialog.setVisible(true);
             }
         });
@@ -744,8 +781,16 @@ public class Transjual extends JPanel {
             }
         });
 
+        txtIdTransaksi = new JTextField();
+        txtIdTransaksi.setText(generateNextTransaksiId());
+        txtIdTransaksi.setEditable(false);
+        txtIdTransaksi.setBounds(300, 50, 235, 40);
+        txtIdTransaksi.setVisible(false);
+        mainPanel.add(txtIdTransaksi);
+
         mainPanel.add(btnBayar);
         actionButton();
+        setNamaUser();
     }
 
     private void formatHargaBeli() {
@@ -921,6 +966,7 @@ public class Transjual extends JPanel {
                     String kode = scanKodeField.getText().trim();
                     if (!kode.isEmpty()) {
                         lookupProduct(kode);
+                        System.out.println(txtIdTransaksi.getText());
                     }
                 }
             }
@@ -1113,7 +1159,7 @@ public class Transjual extends JPanel {
     private String[] getDiscountOptionsFromDatabase() {
         try {
             // Query to get distinct discount options from database
-            String query = "SELECT DISTINCT nama_diskon FROM diskon ORDER BY total_diskon ASC";
+            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' ORDER BY total_diskon ASC";
             PreparedStatement ps = con.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
 
@@ -1153,5 +1199,463 @@ public class Transjual extends JPanel {
 
     public void refreshAfterEdit() {
         updateTotalAmount();
+    }
+
+    private String generateNextTransaksiId() {
+        String nextId = ID_PREFIX + "00001"; // Default jika belum ada transaksi
+
+        try {
+            // Query untuk mendapatkan ID transaksi terakhir dari database
+            String query = "SELECT id_transaksijual FROM transaksi_jual ORDER BY id_transaksijual DESC LIMIT 1";
+            PreparedStatement pst = con.prepareStatement(query);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                String lastId = rs.getString("id_transaksijual");
+                if (lastId != null && lastId.startsWith(ID_PREFIX)) {
+                    // Ekstrak nomor dari ID terakhir
+                    String numberPart = lastId.substring(ID_PREFIX.length());
+                    try {
+                        int lastNumber = Integer.parseInt(numberPart);
+                        // Increment nomor
+                        int nextNumber = lastNumber + 1;
+                        // Format nomor dengan padding nol di depan
+                        String paddedNumber = String.format("%0" + PADDING_LENGTH + "d", nextNumber);
+                        // Gabungkan prefix dengan nomor
+                        nextId = ID_PREFIX + paddedNumber;
+                    } catch (NumberFormatException e) {
+                        System.err.println("Format ID transaksi tidak valid: " + lastId);
+                    }
+                }
+            }
+
+            rs.close();
+            pst.close();
+        } catch (SQLException e) {
+            System.err.println("Error mengambil ID transaksi terakhir: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return nextId;
+    }
+
+    private boolean saveTransactionToDatabase() {
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        int rowCount = model.getRowCount();
+
+        if (rowCount == 0) {
+            return false; // Tidak ada item untuk disimpan
+        }
+
+        try {
+            // Mulai transaksi untuk atomisitas
+            con.setAutoCommit(false);
+
+            // Buat nomor referensi untuk transaksi (norfid)
+            String norfid = NoRFID;
+
+            // Masukkan header transaksi ke tabel transaksi_jual
+            String insertTransHeader = "INSERT INTO transaksi_jual (id_transaksijual, tanggal_transaksi, norfid) VALUES (?, ?, ?)";
+            PreparedStatement psHeader = con.prepareStatement(insertTransHeader, Statement.RETURN_GENERATED_KEYS);
+
+            String transactionId = txtIdTransaksi.getText();
+            psHeader.setString(1, transactionId);
+
+            // Set tanggal transaksi
+            java.sql.Date currentDate = new java.sql.Date(System.currentTimeMillis());
+            psHeader.setDate(2, currentDate);
+
+            // Set nomor referensi
+            psHeader.setString(3, norfid);
+
+            psHeader.executeUpdate();
+
+            // Sekarang masukkan setiap item dari tabel sebagai detail transaksi
+            for (int i = 0; i < rowCount; i++) {
+                // Dapatkan data dari tabel
+                String productName = model.getValueAt(i, 1).toString();
+                String productSize = model.getValueAt(i, 2).toString();
+                System.out.println(productName);
+                System.out.println(productSize);
+                int quantity = Integer.parseInt(model.getValueAt(i, 3).toString());
+
+                // Dapatkan harga dari kolom 4, hilangkan "Rp. " dan "."
+                String priceStr = model.getValueAt(i, 4).toString().replace("Rp. ", "").replace(".", "");
+                double price = Double.parseDouble(priceStr);
+
+                // Dapatkan diskon
+                String discountStr = model.getValueAt(i, 5).toString();
+                String discountId = "DS_00"; // Default jika tidak ada diskon
+
+                if (!discountStr.equals("-")) {
+                    // Dapatkan ID diskon dari database berdasarkan nama/nilai diskon
+                    discountId = getDiscountId(discountStr);
+                    System.out.println(discountId);
+                }
+
+                // Dapatkan total harga dari kolom 6
+                String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "");
+                double totalPrice = Double.parseDouble(totalStr);
+
+                // Dapatkan ID produk dari nama dan ukuran
+                String productId = getProductIdFromNameAndSize(productName, productSize);
+                System.out.println(productId);
+
+                // Masukkan ke tabel transaksi_jual_detail
+                String insertDetail = "INSERT INTO detail_transaksijual (id_produk, id_transaksijual, total_harga, jumlah_produk, id_diskon) VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement psDetail = con.prepareStatement(insertDetail);
+
+                psDetail.setString(1, productId);
+                psDetail.setString(2, transactionId);
+                psDetail.setDouble(3, totalPrice);
+                psDetail.setInt(4, quantity);
+                psDetail.setString(5, discountId);
+
+                psDetail.executeUpdate();
+                psDetail.close();
+            }
+
+            // Commit transaksi
+            con.commit();
+            con.setAutoCommit(true);
+
+            // Tampilkan pesan sukses
+            JOptionPane.showMessageDialog(parentComponent,
+                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
+
+            return true; // Transaksi berhasil
+
+        } catch (SQLException ex) {
+            // Rollback jika terjadi kesalahan
+            try {
+                con.rollback();
+                con.setAutoCommit(true);
+            } catch (SQLException rollbackEx) {
+                System.err.println("Error melakukan rollback transaksi: " + rollbackEx.getMessage());
+            }
+
+            JOptionPane.showMessageDialog(parentComponent,
+                    "Error menyimpan transaksi: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+
+            return false; // Transaksi gagal
+        }
+    }
+
+    private void clearTransactionTable() {
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        model.setRowCount(0); // Remove all rows
+
+        // Clear related fields
+        scanKodeField.setText("");
+        namabarang.setText("");
+        hargaBeliField.setText("Rp. ");
+        diskonComboBox.setSelectedIndex(0);
+        totalValueLabel.setText("Rp. ");
+
+        // Set focus back to scan field
+        scanKodeField.requestFocus();
+    }
+
+    private String getProductIdFromNameAndSize(String productName, String productSize) {
+        String productId = "";
+
+        try {
+            String query = "SELECT id_produk FROM produk WHERE nama_produk = ? AND size = ?";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, productName);
+            ps.setString(2, productSize);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                productId = rs.getString("id_produk");
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            System.err.println("Error looking up product ID: " + ex.getMessage());
+        }
+
+        return productId;
+    }
+
+    private void setNamaUser() {
+        String email = LoginForm.getNamaUser();
+        String norfid = LoginForm.getNoRFID();
+
+        String sql = "SELECT nama_user, norfid FROM user WHERE email = ? OR norfid = ?";
+        try (PreparedStatement st = con.prepareStatement(sql)) {
+            st.setString(1, email);
+            st.setString(2, norfid);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                NoRFID = rs.getString("norfid");
+                namaUser = rs.getString("nama_user");
+            } else {
+                System.out.println("No karyawan found ");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getDiscountId(String discountStr) {
+        String discountId = "DS_00";
+        try {
+            // Menghilangkan karakter % jika ada
+            String cleanDiscount = discountStr.replace("%", "").trim();
+
+            // Konversi string diskon ke float untuk pencarian
+            float discountValue = Float.parseFloat(cleanDiscount);
+
+            // Query untuk mendapatkan ID diskon berdasarkan nilai total_diskon
+            String query = "SELECT id_diskon FROM diskon WHERE total_diskon = ?";
+            PreparedStatement pst = con.prepareStatement(query);
+            pst.setFloat(1, discountValue);
+
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                // Konversi id_diskon dari char(5) ke int
+                String strDiscountId = rs.getString("id_diskon");
+                // Parse menjadi integer
+                discountId = strDiscountId;
+            }
+
+            rs.close();
+            pst.close();
+        } catch (SQLException e) {
+            System.err.println("Error mengambil ID diskon: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return discountId;
+    }
+
+    private void printReceipt() {
+        try {
+            // Membuat objek PrinterJob
+            PrinterJob pj = PrinterJob.getPrinterJob();
+
+            // Set printable untuk menentukan konten yang akan dicetak
+            pj.setPrintable(new BillPrintable(), getPageFormat(pj));
+
+            // Mencoba untuk mencetak
+            if (pj.printDialog()) {
+                pj.print();
+                JOptionPane.showMessageDialog(parentComponent, "Struk berhasil dicetak", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (PrinterException ex) {
+            JOptionPane.showMessageDialog(parentComponent,
+                    "Error saat mencetak: " + ex.getMessage(),
+                    "Printer Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    private PageFormat getPageFormat(PrinterJob pj) {
+        PageFormat pf = pj.defaultPage();
+        Paper paper = pf.getPaper();
+
+        // Standar untuk kertas struk kasir (biasanya 80mm atau 3 inch)
+        double width = convertMmToPpi(80);      // 80mm width
+        double height = convertMmToPpi(150);    // Tinggi struk
+
+        // Setelan margin
+        double marginLeft = convertMmToPpi(5);
+        double marginRight = convertMmToPpi(5);
+        double marginTop = convertMmToPpi(5);
+        double marginBottom = convertMmToPpi(5);
+
+        paper.setSize(width, height);
+        paper.setImageableArea(
+                marginLeft,
+                marginTop,
+                width - (marginLeft + marginRight),
+                height - (marginTop + marginBottom));
+
+        pf.setPaper(paper);
+        pf.setOrientation(PageFormat.PORTRAIT);
+
+        return pf;
+    }
+
+// Konversi dari mm ke Points Per Inch (72 PPI)
+    protected static double convertMmToPpi(double mm) {
+        return mm * 72 / 25.4;
+    }
+
+    public class BillPrintable implements Printable {
+
+        @Override
+        public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+            if (pageIndex > 0) {
+                return NO_SUCH_PAGE;
+            }
+
+            Graphics2D g2d = (Graphics2D) graphics;
+            g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+
+            // Setup font
+            Font titleFont = new Font("Monospaced", Font.BOLD, 14);
+            Font normalFont = new Font("Monospaced", Font.PLAIN, 11);
+            Font smallFont = new Font("Monospaced", Font.PLAIN, 10);
+
+            g2d.setFont(titleFont);
+
+            // Drawing area width
+            float paperWidth = (float) pageFormat.getImageableWidth();
+
+            // Calculate column positions - adjust these to prevent cutting off
+            int leftCol = 10;
+            int rightCol = (int) (paperWidth - 120); // Reduce right column position to prevent text cutoff
+
+            // Header - Store name and address
+            drawCenteredString(g2d, "Karunia Store", paperWidth, 20);
+            g2d.setFont(smallFont);
+            drawCenteredString(g2d, "Jalan Jawa no 1B, depan bunderan DPRD", paperWidth, 40);
+
+            // Separator line
+            drawDashedLine(g2d, 10, 50, (int) paperWidth - 10, 50);
+
+            // Transaction details
+            g2d.setFont(normalFont);
+            int y = 70;
+
+            // Use actual transaction ID from the form
+            g2d.drawString("ID Transaksi :", leftCol, y);
+            g2d.drawString(txtIdTransaksi.getText(), rightCol, y);
+            y += 20;
+
+            // Get current date and time
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+            Date currentDate = new Date();
+
+            g2d.drawString("Tanggal :", leftCol, y);
+            g2d.drawString(dateFormat.format(currentDate), rightCol, y);
+            y += 20;
+
+            g2d.drawString("Waktu :", leftCol, y);
+            g2d.drawString(timeFormat.format(currentDate), rightCol, y);
+            y += 20;
+
+            g2d.drawString("Kasir :", leftCol, y);
+            g2d.drawString(namaUser, rightCol, y);
+            y += 20;
+
+            // Separator line
+            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
+            y += 20;
+
+            // Get data from table
+            DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+            double totalBeforeDiscount = 0;
+            double totalDiscount = 0;
+
+            // Items from table
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String nama = model.getValueAt(i, 1).toString();
+                String size = model.getValueAt(i, 2).toString();
+                int qty = Integer.parseInt(model.getValueAt(i, 3).toString());
+                String harga = model.getValueAt(i, 4).toString();
+                String diskon = model.getValueAt(i, 5).toString();
+                String total = model.getValueAt(i, 6).toString();
+
+                // Calculate values for totals
+                double itemPrice = Double.parseDouble(harga.replace("Rp. ", "").replace(".", ""));
+                double itemTotal = Double.parseDouble(total.replace("Rp. ", "").replace(".", ""));
+                double itemDiscount = itemPrice * qty - itemTotal;
+
+                totalBeforeDiscount += itemPrice * qty;
+                totalDiscount += itemDiscount;
+
+                // Item name and size
+                String itemDetail = nama + " (" + size + ")";
+                g2d.drawString(itemDetail, leftCol, y);
+                g2d.drawString(harga, rightCol, y);
+                y += 20;
+
+                // Quantity
+                g2d.drawString("x" + qty, leftCol, y);
+                y += 20;
+
+                // Discount
+                if (!diskon.equals("-")) {
+                    g2d.drawString("Diskon (" + diskon + ")", leftCol, y);
+                    if (itemDiscount > 0) {
+                        g2d.drawString("-Rp. " + formatter.format(itemDiscount), rightCol, y);
+                    } else {
+                        g2d.drawString("-", rightCol, y);
+                    }
+                    y += 20;
+                }
+            }
+
+            // Separator line
+            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
+            y += 20;
+
+            // Subtotal & total
+            g2d.drawString("Sub Total Diskon:", leftCol, y);
+            g2d.drawString("Rp. " + formatter.format(totalDiscount), rightCol, y);
+            y += 20;
+
+            g2d.drawString("Sub Total :", leftCol, y);
+            g2d.drawString("Rp. " + formatter.format(totalBeforeDiscount), rightCol, y);
+            y += 20;
+
+            // Separator line
+            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
+            y += 20;
+
+            // Get total after discount from totalValueLabel
+            String totalValueText = totalValueLabel.getText().replace("Rp. ", "").replace(".", "");
+            double totalAfterDiscount = Double.parseDouble(totalValueText);
+
+            // Total after discount
+            g2d.drawString("Total setelah Diskon :", leftCol, y);
+            g2d.drawString("Rp. " + formatter.format(totalAfterDiscount), rightCol, y);
+            y += 20;
+
+            // Payment - assuming equal to total for now
+            // In a real scenario, you might want to add a payment input field
+            double payment = totalAfterDiscount; // This can be replaced with actual payment input
+            g2d.drawString("Bayar :", leftCol, y);
+            g2d.drawString("Rp. " + formatter.format(payment), rightCol, y);
+            y += 20;
+
+            // Separator line
+            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
+            y += 20;
+
+            // Change - calculated as payment minus total
+            double change = payment - totalAfterDiscount;
+            g2d.drawString("Kembalian :", leftCol, y);
+            g2d.drawString("Rp. " + formatter.format(change), rightCol, y);
+            y += 30;
+
+            // Footer
+            g2d.setFont(smallFont);
+            drawCenteredString(g2d, "Terima Kasih telah Berbelanja!", paperWidth, y);
+
+            return PAGE_EXISTS;
+        }
+
+        private void drawCenteredString(Graphics2D g2d, String text, float width, int y) {
+            FontMetrics metrics = g2d.getFontMetrics();
+            int x = (int) (width - metrics.stringWidth(text)) / 2;
+            g2d.drawString(text, x, y);
+        }
+
+        private void drawDashedLine(Graphics2D g2d, int x1, int y, int x2, int y2) {
+            Stroke oldStroke = g2d.getStroke();
+            float[] dash = {5.0f};
+            g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
+            g2d.drawLine(x1, y, x2, y2);
+            g2d.setStroke(oldStroke);
+        }
     }
 }

@@ -731,7 +731,7 @@ public class Dashboard extends JPanel {
 //                txt_namakaryawn.setText(rs.getString("nama_karyawan"));
                 System.out.println(rs.getString("nama_user"));
             } else {
-                System.out.println("No karyawan found for email: " + rs.getString("nama_user"));
+                System.out.println("No karyawan found ");
             }
         } catch (Exception e) {
             e.printStackTrace();
