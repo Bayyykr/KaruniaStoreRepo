@@ -471,20 +471,20 @@ public class LoginForm extends JFrame {
         add(mainPanel);
 
         // Make window draggable
-        mainPanel.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                xMouse = e.getX();
-                yMouse = e.getY();
-            }
-        });
-
-        mainPanel.addMouseMotionListener(new MouseMotionAdapter() {
-            public void mouseDragged(MouseEvent e) {
-                int x = e.getXOnScreen() - xMouse;
-                int y = e.getYOnScreen() - yMouse;
-                setLocation(x, y);
-            }
-        });
+//        mainPanel.addMouseListener(new MouseAdapter() {
+//            public void mousePressed(MouseEvent e) {
+//                xMouse = e.getX();
+//                yMouse = e.getY();
+//            }
+//        });
+//
+//        mainPanel.addMouseMotionListener(new MouseMotionAdapter() {
+//            public void mouseDragged(MouseEvent e) {
+//                int x = e.getXOnScreen() - xMouse;
+//                int y = e.getYOnScreen() - yMouse;
+//                setLocation(x, y);
+//            }
+//        });
 
         setLocationRelativeTo(null);
     }

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import javax.swing.*;
 import java.lang.reflect.Method;
 
-public class PindahanAntarPopup {
+public class PindahanAntarPopupKhususLupaPw {
 
     // Daftar semua popup aktif dari berbagai jenis
     private static ArrayList<JDialog> activePopups = new ArrayList<>();
@@ -101,10 +101,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -122,10 +122,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -143,10 +143,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -164,10 +164,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -185,10 +185,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -205,10 +205,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }
@@ -225,10 +225,10 @@ public class PindahanAntarPopup {
                 public void setVisible(boolean visible) {
                     if (visible) {
                         // Daftarkan popup ke pengelola saat ditampilkan
-                        PindahanAntarPopup.registerPopup(this);
+                        PindahanAntarPopupKhususLupaPw.registerPopup(this);
                     } else {
                         // Hapus dari daftar saat disembunyikan
-                        PindahanAntarPopup.unregisterPopup(this);
+                        PindahanAntarPopupKhususLupaPw.unregisterPopup(this);
                     }
                     super.setVisible(visible);
                 }

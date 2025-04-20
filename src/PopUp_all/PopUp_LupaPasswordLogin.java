@@ -382,24 +382,30 @@ public class PopUp_LupaPasswordLogin extends JDialog {
         String pwconfirm = confirmPasswordField.getText();
 
         if (email.isEmpty()) {
-            PindahanAntarPopup.showEmailPopup(parentFrame);
+            PindahanAntarPopupKhususLupaPw.showEmailPopup(parentFrame);
             System.out.println("email tidak bole kosong");
             return;
         } else if (pwbaru.isEmpty() || pwbaru.isEmpty()) {
-            PindahanAntarPopup.showPasswordPopup(parentFrame);
+            PindahanAntarPopupKhususLupaPw.showPasswordPopup(parentFrame);
             System.out.println("pw tidak bole kosong");
             return;
         }
 
+        if (pwbaru.isEmpty() || pwconfirm.isEmpty()) {
+        PindahanAntarPopupKhususLupaPw.showKonfirmPwTidakBolehKosong(parentFrame);
+        System.out.println("pw tidak boleh kosong");
+        return;
+        }
+
         if (!pwbaru.equals(pwconfirm)) {
-            PindahanAntarPopup.showKonfirmPwTidakBolehKosong(parentFrame);
-//            PindahanAntarPopup.showPasswordsalah(parentFrame);
+            PindahanAntarPopupKhususLupaPw.showPasswordsalah(parentFrame);
             System.out.println("pw tidak sama");
             return;
         }
+        
 
         if (!isValidGmailAddress(email)) {
-            PindahanAntarPopup.showEmailsalah(parentFrame);
+            PindahanAntarPopupKhususLupaPw.showEmailsalah(parentFrame);
             System.out.println("penulisan email salah");
         } else {
             try {
@@ -410,11 +416,11 @@ public class PopUp_LupaPasswordLogin extends JDialog {
 
                     int rowUpdated = st.executeUpdate();
                     if (rowUpdated > 0) {
-                        PindahanAntarPopup.showSuksesGantiPw(parentFrame);
+                        PindahanAntarPopupKhususLupaPw.showSuksesGantiPw(parentFrame);
                         System.out.println("berhasil diupdate");
                         startCloseAnimation();
                     } else {
-                        PindahanAntarPopup.showEmailsalah(parentFrame);
+                        PindahanAntarPopupKhususLupaPw.showEmailsalah(parentFrame);
                         System.out.println("email tidak tersedia");
                     }
                 }
