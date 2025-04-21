@@ -37,11 +37,12 @@ public class Transjual extends JPanel {
     Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
     private JTextField hargaBeliField;
+    private JTextField masukuangfield;
     private JPanel thisPanel;
     private JTextField scanKodeField;
     private JTextField namabarang, txtIdTransaksi;
     public JTableRounded roundedTable;
-    private JLabel totalValueLabel;
+    private JLabel totalValueLabel, kembalianLabel, kembalianValueLabel;
     private JButton btnTambah, btnBatal, btnBayar;
     private ComboboxCustom diskonComboBox;
     private Connection con;
@@ -501,33 +502,33 @@ public class Transjual extends JPanel {
             }
         });
         formPanel.add(closeLabel);
-        formPanel.add(createLabel("Scan Kode Produk", 15, 25));
-        scanKodeField = createRoundedTextField(15, 50, 205, 35);
+        formPanel.add(createLabel("Scan Kode Produk", 15, 15));
+        scanKodeField = createRoundedTextField(15, 40, 205, 35);
         scanKodeField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
                 // Hanya menerima digit angka dan tombol kontrol (backspace, delete, dll)
-                if (!Character.isDigit(c) && !Character.isISOControl(c)) {
+                if (!Character.isLetterOrDigit(c) && c != '_' && !Character.isISOControl(c)){
                     e.consume(); // Mengabaikan karakter yang bukan angka
                 }
             }
         });
         formPanel.add(scanKodeField);
 
-        formPanel.add(createLabel("Nama Barang", 15, 95));
-        namabarang = createRoundedTextField(15, 120, 205, 35);
+        formPanel.add(createLabel("Nama Barang", 15, 80));
+        namabarang = createRoundedTextField(15, 105, 205, 35);
         namabarang.setFocusable(false);
         formPanel.add(namabarang);
 
         // Tambahkan label dan combo box untuk diskon
-        formPanel.add(createLabel("Atur Diskon", 15, 165));
+        formPanel.add(createLabel("Atur Diskon", 15, 145));
         diskonComboBox = new ComboboxCustom(getDiscountOptionsFromDatabase());
-        diskonComboBox.setBounds(15, 190, 205, 35);
+        diskonComboBox.setBounds(15, 170, 205, 35);
         formPanel.add(diskonComboBox);
 
-        formPanel.add(createLabel("Harga Beli", 15, 235));
-        hargaBeliField = createRoundedTextField(15, 260, 205, 35);
+        formPanel.add(createLabel("Harga Beli", 15, 210));
+        hargaBeliField = createRoundedTextField(15, 235, 205, 35);
         hargaBeliField.setText("Rp. "); // Prefix "Rp. "
         hargaBeliField.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
@@ -544,6 +545,28 @@ public class Transjual extends JPanel {
             }
         });
         formPanel.add(hargaBeliField);
+
+        formPanel.add(createLabel("Masukkan Uang", 15, 315));
+        masukuangfield = createRoundedTextField(15, 340, 205, 35);
+        masukuangfield.setText("Rp. "); // Prefix "Rp. "
+        masukuangfield.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) {
+                enforceRpPrefix();
+                formatMasukkanUang();
+                hitungKembalian();
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) { // Jika tombol Enter ditekan
+                    String hargaInput = masukuangfield.getText().replace("Rp. ", "").replace(".", "").trim();
+                    System.out.println(hargaInput); // Output hanya angka
+                    hitungKembalian();
+                }
+            }
+        });
+
+        formPanel.add(masukuangfield);
 
         // Tambahkan tombol "Batal" setelah field harga beli
         btnBatal = new JButton("BATAL") {
@@ -578,7 +601,7 @@ public class Transjual extends JPanel {
                 btnBatal.setLocation(btnBatal.getX(), btnBatal.getY() - 2); // Kembali ke posisi semula
             }
         });
-        btnBatal.setBounds(15, 325, 100, 35);
+        btnBatal.setBounds(15, 280, 100, 35);
         btnBatal.setOpaque(false);
         btnBatal.setContentAreaFilled(false);
         btnBatal.setBorderPainted(false);
@@ -621,7 +644,7 @@ public class Transjual extends JPanel {
                 btnTambah.setLocation(btnTambah.getX(), btnTambah.getY() - 2); // Kembali ke posisi semula
             }
         });
-        btnTambah.setBounds(120, 325, 100, 35);
+        btnTambah.setBounds(120, 280, 100, 35);
         btnTambah.setOpaque(false);
         btnTambah.setContentAreaFilled(false);
         btnTambah.setBorderPainted(false);
@@ -691,13 +714,13 @@ public class Transjual extends JPanel {
         totalValueLabel.setBounds(80, -45, 140, 125);
         totalPanel.add(totalValueLabel);
 
-        JLabel kembalianLabel = new JLabel("Kembalian");
+        kembalianLabel = new JLabel("Kembalian");
         kembalianLabel.setForeground(Color.WHITE);
         kembalianLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         kembalianLabel.setBounds(20, -20, 80, 130);
         totalPanel.add(kembalianLabel);
 
-        JLabel kembalianValueLabel = new JLabel("Rp. ");
+        kembalianValueLabel = new JLabel("Rp. ");
         kembalianValueLabel.setForeground(Color.WHITE);
         kembalianValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
         kembalianValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -807,9 +830,26 @@ public class Transjual extends JPanel {
         }
     }
 
+    private void formatMasukkanUang() {
+        try {
+            String text = masukuangfield.getText().replace("Rp. ", "").replace(".", "").trim();
+            if (text.isEmpty()) {
+                return;
+            }
+
+            int value = Integer.parseInt(text);
+            masukuangfield.setText("Rp. " + formatter.format(value));
+        } catch (NumberFormatException e) {
+            masukuangfield.setText("Rp. ");
+        }
+    }
+
     private void enforceRpPrefix() {
         if (!hargaBeliField.getText().startsWith("Rp. ")) {
             hargaBeliField.setText("Rp. ");
+        }
+        if (!masukuangfield.getText().startsWith("Rp. ")) {
+            masukuangfield.setText("Rp. ");
         }
     }
 
@@ -1657,5 +1697,51 @@ public class Transjual extends JPanel {
             g2d.drawLine(x1, y, x2, y2);
             g2d.setStroke(oldStroke);
         }
+    }
+
+    // Tambahkan fungsi untuk menghitung kembalian
+    private void hitungKembalian() {
+        try {
+            // Ambil nilai dari masukuangfield (uang yang diberikan)
+            String uangDiberikanStr = masukuangfield.getText().replace("Rp. ", "").replace(".", "").trim();
+
+            // Ambil nilai dari totalValueLabel (total belanja)
+            String totalBelanjaStr = totalValueLabel.getText().replace("Rp. ", "").replace(".", "").trim();
+
+            // Konversi ke integer
+            int uangDiberikan = 0;
+            int totalBelanja = 0;
+
+            if (!uangDiberikanStr.isEmpty()) {
+                uangDiberikan = Integer.parseInt(uangDiberikanStr);
+            }
+
+            if (!totalBelanjaStr.isEmpty()) {
+                totalBelanja = Integer.parseInt(totalBelanjaStr);
+            }
+
+            // Hitung kembalian
+            int kembalian = uangDiberikan - totalBelanja;
+
+            // Format hasil kembalian
+            String formattedKembalian = "Rp. " + formatRupiah(kembalian);
+
+            // Update kembalianValueLabel
+            kembalianValueLabel.setText(formattedKembalian);
+
+        } catch (NumberFormatException ex) {
+            // Tangani error jika input bukan angka
+            kembalianValueLabel.setText("Rp. 0");
+        }
+    }
+
+// Fungsi untuk memformat angka menjadi format Rupiah
+    private String formatRupiah(int nilai) {
+        if (nilai < 0) {
+            return "0"; // Jika kembalian negatif, tampilkan 0
+        }
+
+        DecimalFormat formatter = new DecimalFormat("#,###");
+        return formatter.format(nilai).replace(",", ".");
     }
 }
