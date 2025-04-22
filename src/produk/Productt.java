@@ -19,6 +19,7 @@ public class Productt extends JFrame {
 
     // Define panel references as class members
     private Dashboard dashboardPanel;
+    private DashboardKasir dashboardPanelKasir;
     private ProductDisplayyKasir produkPanelkasir;
     private ProductDisplayy produkPanel;
     private AddNewProductFormm addProductPanel;
@@ -56,6 +57,7 @@ public class Productt extends JFrame {
 
         // Initialize all panels
         dashboardPanel = new Dashboard();
+        dashboardPanelKasir = new DashboardKasir();
         produkPanelkasir = new ProductDisplayyKasir();
         produkPanel = new ProductDisplayy();
         addProductPanel = new AddNewProductFormm();
@@ -80,6 +82,7 @@ public class Productt extends JFrame {
 
         // Set bounds for all panels
         dashboardPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        dashboardPanelKasir.setBounds(panelX, panelY, panelWidth, panelHeight);
         produkPanel.setBounds(panelX, 50, 1100, 720);
         produkPanelkasir.setBounds(panelX, 50, 1100, 720);
         addProductPanel.setBounds(panelX, 50, 1100, 720);
@@ -123,7 +126,7 @@ public class Productt extends JFrame {
                 // Show the appropriate panel based on menu index
                 switch (index) {
                     case 0: // Dashboard
-                        currentPanel = dashboardPanel;
+                        currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
                         currentPanel = produkPanelkasir;
@@ -142,7 +145,7 @@ public class Productt extends JFrame {
                         System.exit(0);
                         break;
                     default:
-                        currentPanel = dashboardPanel;
+                        currentPanel = dashboardPanelKasir;
                         break;
                 }
 
@@ -161,7 +164,7 @@ public class Productt extends JFrame {
         add(top);
 
         // Set Dashboard as initial panel
-        currentPanel = dashboardPanel;
+        currentPanel = dashboardPanelKasir;
         add(currentPanel);
 
         // Make all components visible

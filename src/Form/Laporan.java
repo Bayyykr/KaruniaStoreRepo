@@ -1,6 +1,5 @@
 package laporan;
 
-import SourceCode.RoundedBorder;
 import SourceCode.JTableRounded;
 import SourceCode.ScrollPane;
 import calendar.CustomKalender;
@@ -8,7 +7,8 @@ import produk.ComboboxCustom;
 import Form.diagramlaporan;
 import Form.diagramlaporankeuangan;
 import Form.diagramkaryawan;
-import SourceCode.RoundedButtonLaporan;
+import PopUp_all.*;
+import SourceCode.*;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -18,15 +18,16 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 
 public class Laporan extends javax.swing.JPanel {
-
+    Component parentComponent = this; 
+    private JFrame parentFrame;
     private JPanel mainPanel, headerPanel, contentPanel, innerContentPanel, tabPanel;
     private ComboboxCustom periodCombo, exportCombo;
     private JButton dateRangeButton;
     private CustomKalender calendarPanel;
-    private JButton pemasukanTab, pengeluaranTab, labaTab;
+    private JButton pemasukanTab, pengeluaranTab, labaTab, GrafikTab;
     private diagramlaporan diagramPanel;
     private JTableRounded tabelPemasukan, tabelPengeluaran;
-    private JPanel pemasukanPanel, pengeluaranPanel, labaPanel;
+    private JPanel pemasukanPanel, pengeluaranPanel, labaPanel, grafikPanel;
 
     // Warna dan styling
     private Color selectedTabColor = new Color(20, 20, 20);
@@ -87,10 +88,18 @@ public class Laporan extends javax.swing.JPanel {
         dateRangeButton.setContentAreaFilled(false);
         dateRangeButton.setBackground(Color.WHITE);
         dateRangeButton.setForeground(Color.BLACK);
-        // Buat dan atur UI rounded dengan border hitam
         RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();
-        roundedUI.setBorderColor(Color.LIGHT_GRAY);  // Atur warna border hitam
+        roundedUI.setBorderColor(Color.LIGHT_GRAY); 
         dateRangeButton.setUI(roundedUI);
+        dateRangeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                PopUP_StartdateEndDateV2 dialog = new PopUP_StartdateEndDateV2(parentFrame);
+                dialog.setVisible(true);
+                System.out.println("start date end date di klik");
+            }
+        });
 
         // Comboboxes
         periodCombo = new ComboboxCustom();
@@ -148,22 +157,26 @@ public class Laporan extends javax.swing.JPanel {
 
         pemasukanTab = createTabButton("Pemasukan");
         pengeluaranTab = createTabButton("Pengeluaran");
-        labaTab = createTabButton("Laba & Grafik");
+        labaTab = createTabButton("Laba");
+        GrafikTab = createTabButton("Grafik");
 
         tabPanel.add(pemasukanTab);
         tabPanel.add(pengeluaranTab);
         tabPanel.add(labaTab);
+        tabPanel.add(GrafikTab);
 
         // Inisialisasi panel tab
         initPemasukanPanel();
         initPengeluaranPanel();
+        initGrafikPanel();
         initLabaPanel();
 
         JPanel dataContainer = new JPanel(new CardLayout());
         dataContainer.setOpaque(false);
         dataContainer.add(pemasukanPanel, "pemasukan");
         dataContainer.add(pengeluaranPanel, "pengeluaran");
-        dataContainer.add(labaPanel, "laba");
+        dataContainer.add(grafikPanel, "laba");
+        dataContainer.add(labaPanel, "Grafik");
 
         innerContentPanel.add(tabPanel, BorderLayout.NORTH);
         innerContentPanel.add(dataContainer, BorderLayout.CENTER);
@@ -226,12 +239,27 @@ public class Laporan extends javax.swing.JPanel {
 
         JPanel totalPanel = new JPanel(new BorderLayout());
         totalPanel.setOpaque(false);
+        totalPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
-        JLabel totalLabel = new JLabel("Total Pendapatan: Rp. 25.000.000");
-        totalLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalLabel.setForeground(Color.WHITE);
-        totalLabel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        totalPanel.add(totalLabel, BorderLayout.WEST);
+        RoundedPanelProduk totalPendapatanPanel = new RoundedPanelProduk(10);
+        totalPendapatanPanel.setLayout(null);
+        totalPendapatanPanel.setBackground(new Color(40, 50, 100));
+        totalPendapatanPanel.setPreferredSize(new Dimension(520, 40));
+
+        JLabel totalPendapatanLabel = new JLabel("Total Pendapatan");
+        totalPendapatanLabel.setForeground(Color.WHITE);
+        totalPendapatanLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        totalPendapatanLabel.setBounds(15, -5, 250, 50);
+
+        JLabel totalPendapatanValue = new JLabel("Rp. 0");
+        totalPendapatanValue.setForeground(Color.WHITE);
+        totalPendapatanValue.setFont(new Font("SansSerif", Font.BOLD, 14));
+        totalPendapatanValue.setBounds(300, -5, 235, 50);
+        totalPendapatanValue.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        totalPendapatanPanel.add(totalPendapatanLabel);
+        totalPendapatanPanel.add(totalPendapatanValue);
+        totalPanel.add(totalPendapatanPanel, BorderLayout.CENTER);
 
         String[] kolom = {"No", "Tanggal", "Total", "Kasir"};
         tabelPemasukan = new JTableRounded(kolom);
@@ -289,18 +317,207 @@ public class Laporan extends javax.swing.JPanel {
         pemasukanPanel.add(tabelContainer, BorderLayout.CENTER);
     }
 
+    private void initLabaPanel() {
+        grafikPanel = new JPanel(null);
+        grafikPanel.setOpaque(false);
+
+        JPanel mainContentPanel = new JPanel(null);
+        mainContentPanel.setOpaque(false);
+        mainContentPanel.setBounds(15, 10, 550, 500);
+
+        JLabel labaKotorLabel = new JLabel("Laba Kotor:");
+        labaKotorLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        labaKotorLabel.setForeground(Color.WHITE);
+        labaKotorLabel.setBounds(0, 0, 200, 30);
+        mainContentPanel.add(labaKotorLabel);
+
+        RoundedPanelProduk pemasukanPanel = new RoundedPanelProduk();
+        pemasukanPanel.setLayout(null);
+        pemasukanPanel.setBackground(new Color(30, 30, 50));
+        pemasukanPanel.setBounds(0, 40, 520, 50);
+
+        JLabel pemasukanLabel = new JLabel("Pemasukan");
+        pemasukanLabel.setForeground(Color.WHITE);
+        pemasukanLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        pemasukanLabel.setBounds(15, 0, 250, 50);
+
+        JLabel pemasukanValueLabel = new JLabel("Rp. 25.000.000");
+        pemasukanValueLabel.setForeground(Color.WHITE);
+        pemasukanValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        pemasukanValueLabel.setBounds(270, 0, 235, 50);
+        pemasukanValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        pemasukanPanel.add(pemasukanLabel);
+        pemasukanPanel.add(pemasukanValueLabel);
+        mainContentPanel.add(pemasukanPanel);
+
+        RoundedPanelProduk pengeluaranPanel = new RoundedPanelProduk();
+        pengeluaranPanel.setLayout(null);
+        pengeluaranPanel.setBackground(new Color(30, 30, 50));
+        pengeluaranPanel.setBounds(0, 100, 520, 50);
+
+        JLabel pengeluaranLabel = new JLabel("Pengeluaran");
+        pengeluaranLabel.setForeground(Color.WHITE);
+        pengeluaranLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        pengeluaranLabel.setBounds(15, 0, 250, 50);
+
+        JLabel pengeluaranValueLabel = new JLabel("- Rp. 14.000.000");
+        pengeluaranValueLabel.setForeground(new Color(255, 75, 75));
+        pengeluaranValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        pengeluaranValueLabel.setBounds(270, 0, 235, 50);
+        pengeluaranValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        pengeluaranPanel.add(pengeluaranLabel);
+        pengeluaranPanel.add(pengeluaranValueLabel);
+        mainContentPanel.add(pengeluaranPanel);
+
+        RoundedPanelProduk labaKotorPanel = new RoundedPanelProduk();
+        labaKotorPanel.setLayout(null);
+        labaKotorPanel.setBackground(new Color(40, 50, 100));
+        labaKotorPanel.setBounds(0, 160, 520, 50);
+
+        JLabel labaKotorItemLabel = new JLabel("Laba Kotor");
+        labaKotorItemLabel.setForeground(Color.WHITE);
+        labaKotorItemLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        labaKotorItemLabel.setBounds(15, 0, 250, 50);
+
+        JLabel labaKotorValueLabel = new JLabel("Rp. 11.000.000");
+        labaKotorValueLabel.setForeground(new Color(100, 255, 100));
+        labaKotorValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        labaKotorValueLabel.setBounds(270, 0, 235, 50);
+        labaKotorValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        labaKotorPanel.add(labaKotorItemLabel);
+        labaKotorPanel.add(labaKotorValueLabel);
+        mainContentPanel.add(labaKotorPanel);
+
+        JLabel labaBersihLabel = new JLabel("Laba Bersih:");
+        labaBersihLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        labaBersihLabel.setForeground(Color.WHITE);
+        labaBersihLabel.setBounds(0, 230, 200, 30);
+        mainContentPanel.add(labaBersihLabel);
+
+        RoundedPanelProduk labaKotorItem2Panel = new RoundedPanelProduk();
+        labaKotorItem2Panel.setLayout(null);
+        labaKotorItem2Panel.setBackground(new Color(30, 30, 50));
+        labaKotorItem2Panel.setBounds(0, 270, 520, 50);
+
+        JLabel labaKotorItem2Label = new JLabel("Laba Kotor");
+        labaKotorItem2Label.setForeground(Color.WHITE);
+        labaKotorItem2Label.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        labaKotorItem2Label.setBounds(15, 0, 250, 50);
+
+        JLabel labaKotorItem2ValueLabel = new JLabel("Rp. 11.000.000");
+        labaKotorItem2ValueLabel.setForeground(new Color(100, 255, 100));
+        labaKotorItem2ValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        labaKotorItem2ValueLabel.setBounds(270, 0, 235, 50);
+        labaKotorItem2ValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        labaKotorItem2Panel.add(labaKotorItem2Label);
+        labaKotorItem2Panel.add(labaKotorItem2ValueLabel);
+        mainContentPanel.add(labaKotorItem2Panel);
+
+        // Item Biaya Operasional
+        RoundedPanelProduk operasionalPanel = new RoundedPanelProduk();
+        operasionalPanel.setLayout(null);
+        operasionalPanel.setBackground(new Color(30, 30, 50));
+        operasionalPanel.setBounds(0, 330, 520, 50);
+
+        JLabel operasionalLabel = new JLabel("Biaya Operasional");
+        operasionalLabel.setForeground(Color.WHITE);
+        operasionalLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        operasionalLabel.setBounds(15, 0, 250, 50);
+
+        JLabel operasionalValueLabel = new JLabel("- Rp. 340.000");
+        operasionalValueLabel.setForeground(new Color(255, 75, 75));
+        operasionalValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        operasionalValueLabel.setBounds(270, 0, 235, 50);
+        operasionalValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        operasionalPanel.add(operasionalLabel);
+        operasionalPanel.add(operasionalValueLabel);
+        mainContentPanel.add(operasionalPanel);
+
+        // Item Laba Bersih
+        RoundedPanelProduk labaBersihPanel = new RoundedPanelProduk();
+        labaBersihPanel.setLayout(null);
+        labaBersihPanel.setBackground(new Color(40, 50, 100));
+        labaBersihPanel.setBounds(0, 390, 520, 50);
+
+        JLabel labaBersihItemLabel = new JLabel("Laba Bersih");
+        labaBersihItemLabel.setForeground(Color.WHITE);
+        labaBersihItemLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        labaBersihItemLabel.setBounds(15, 0, 250, 50);
+
+        JLabel labaBersihValueLabel = new JLabel("Rp. 10.660.000");
+        labaBersihValueLabel.setForeground(new Color(100, 255, 100));
+        labaBersihValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        labaBersihValueLabel.setBounds(270, 0, 235, 50);
+        labaBersihValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        labaBersihPanel.add(labaBersihItemLabel);
+        labaBersihPanel.add(labaBersihValueLabel);
+        mainContentPanel.add(labaBersihPanel);
+
+        // Menambahkan panel utama ke grafikPanel
+        grafikPanel.add(mainContentPanel);
+
+        // Method untuk mengatur ukuran panel sesuai dengan parent
+        grafikPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int width = grafikPanel.getWidth() - 30;
+                mainContentPanel.setBounds(15, 10, width, 500);
+
+                // Mengatur ulang lebar semua panel
+                pemasukanPanel.setBounds(0, 40, width, 50);
+                pengeluaranPanel.setBounds(0, 100, width, 50);
+                labaKotorPanel.setBounds(0, 160, width, 50);
+                labaKotorItem2Panel.setBounds(0, 270, width, 50);
+                operasionalPanel.setBounds(0, 330, width, 50);
+                labaBersihPanel.setBounds(0, 390, width, 50);
+
+                // Mengatur ulang posisi label nilai
+                int labelWidth = 250;
+                int valueWidth = width - labelWidth - 20;
+
+                pemasukanValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+                pengeluaranValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+                labaKotorValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+                labaKotorItem2ValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+                operasionalValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+                labaBersihValueLabel.setBounds(width - valueWidth - 15, 0, valueWidth, 50);
+            }
+        });
+    }
+
     private void initPengeluaranPanel() {
         pengeluaranPanel = new JPanel(new BorderLayout());
         pengeluaranPanel.setOpaque(false);
 
         JPanel totalPanel = new JPanel(new BorderLayout());
         totalPanel.setOpaque(false);
+        totalPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
-        JLabel totalLabel = new JLabel("Total Pengeluaran: Rp. 15.500.000");
-        totalLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalLabel.setForeground(Color.WHITE);
-        totalLabel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        totalPanel.add(totalLabel, BorderLayout.WEST);
+        RoundedPanelProduk totalPengeluaranPanel = new RoundedPanelProduk(10);
+        totalPengeluaranPanel.setLayout(null);
+        totalPengeluaranPanel.setBackground(new Color(40, 50, 100));
+        totalPengeluaranPanel.setPreferredSize(new Dimension(520, 40));
+
+        JLabel totalPengeluaranLabel = new JLabel("Total Pengeluaran");
+        totalPengeluaranLabel.setForeground(Color.WHITE);
+        totalPengeluaranLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        totalPengeluaranLabel.setBounds(15, -5, 250, 50);
+
+        JLabel totalPengeluaranValue = new JLabel("- Rp. 15.500.000");
+        totalPengeluaranValue.setForeground(new Color(255, 75, 75));
+        totalPengeluaranValue.setFont(new Font("SansSerif", Font.BOLD, 14));
+        totalPengeluaranValue.setBounds(300, -5, 235, 50);
+        totalPengeluaranValue.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        totalPengeluaranPanel.add(totalPengeluaranLabel);
+        totalPengeluaranPanel.add(totalPengeluaranValue);
+        totalPanel.add(totalPengeluaranPanel, BorderLayout.CENTER);
 
         String[] kolom = {"No", "Tanggal", "Total"};
         tabelPengeluaran = new JTableRounded(kolom);
@@ -355,25 +572,23 @@ public class Laporan extends javax.swing.JPanel {
         pengeluaranPanel.add(tabelContainer, BorderLayout.CENTER);
     }
 
-    private void initLabaPanel() {
+    private void initGrafikPanel() {
         labaPanel = new JPanel(new BorderLayout());
         labaPanel.setOpaque(false);
 
         JPanel totalPanel = new JPanel(new BorderLayout());
         totalPanel.setOpaque(false);
 
-        JLabel totalLabel = new JLabel("Laba : Rp. 11.000.000");
-        totalLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalLabel.setForeground(Color.WHITE);
-        totalLabel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        totalPanel.add(totalLabel, BorderLayout.WEST);
-
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        JPanel buttonPanel = new JPanel(new FlowLayout(10, 10, 0));
         buttonPanel.setOpaque(false);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
         JButton keuanganButton = createTabButtonForLaba("Keuangan", true);
         JButton karyawanButton = createTabButtonForLaba("Karyawan", false);
+
+        keuanganButton.setPreferredSize(new Dimension(200, 35));
+        karyawanButton.setPreferredSize(new Dimension(200, 35));
+
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
 
         buttonPanel.add(keuanganButton);
         buttonPanel.add(karyawanButton);
@@ -389,7 +604,7 @@ public class Laporan extends javax.swing.JPanel {
 
         JPanel karyawanPanel = new JPanel(new BorderLayout());
         karyawanPanel.setOpaque(false);
-           diagramkaryawan diagramKaryawan = new diagramkaryawan();
+        diagramkaryawan diagramKaryawan = new diagramkaryawan();
         diagramKaryawan.setOpaque(false);
         karyawanPanel.add(diagramKaryawan, BorderLayout.CENTER);
 
@@ -418,7 +633,6 @@ public class Laporan extends javax.swing.JPanel {
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-        headerPanel.add(totalLabel, BorderLayout.NORTH);
         headerPanel.add(buttonPanel, BorderLayout.CENTER);
 
         labaPanel.add(headerPanel, BorderLayout.NORTH);
@@ -473,6 +687,7 @@ public class Laporan extends javax.swing.JPanel {
         pemasukanTab.repaint();
         pengeluaranTab.repaint();
         labaTab.repaint();
+        GrafikTab.repaint();
         tabPanel.repaint();
 
         CardLayout cardLayout = (CardLayout) ((JPanel) innerContentPanel.getComponent(1)).getLayout();
@@ -483,6 +698,8 @@ public class Laporan extends javax.swing.JPanel {
             cardLayout.show((JPanel) innerContentPanel.getComponent(1), "pengeluaran");
         } else if (tab == labaTab) {
             cardLayout.show((JPanel) innerContentPanel.getComponent(1), "laba");
+        } else if (tab == GrafikTab) {
+            cardLayout.show((JPanel) innerContentPanel.getComponent(1), "Grafik");
         }
     }
 
@@ -490,5 +707,6 @@ public class Laporan extends javax.swing.JPanel {
         pemasukanTab.addActionListener(e -> setActiveTab(pemasukanTab));
         pengeluaranTab.addActionListener(e -> setActiveTab(pengeluaranTab));
         labaTab.addActionListener(e -> setActiveTab(labaTab));
+        GrafikTab.addActionListener(e -> setActiveTab(GrafikTab));
     }
 }

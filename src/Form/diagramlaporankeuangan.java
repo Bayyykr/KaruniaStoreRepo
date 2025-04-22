@@ -46,7 +46,7 @@ public class diagramlaporankeuangan extends JPanel {
         chartPanel = new RoundedChartPanel(chart, 20); // 20px rounded corners
         chartPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         chartPanel.setBackground(Color.white);
-        chartPanel.setPreferredSize(new Dimension(550, 320));
+        chartPanel.setPreferredSize(new Dimension(550, 350));
         
         // Add chart panel to this panel
         this.add(chartPanel);

@@ -18,8 +18,6 @@ public class PindahanAntarPopUp {
     public static void registerPopup(JDialog popup) {
         // Tambahkan popup baru ke daftar (di awal/index 0 agar berada di paling atas)
         activePopups.add(0, popup);
-        // Segera atur ulang posisi semua popup
-        repositionAllPopups();
     }
 
     public static void unregisterPopup(JDialog popup) {
