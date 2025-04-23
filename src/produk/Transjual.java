@@ -31,6 +31,8 @@ import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 public class Transjual extends JPanel {
 
@@ -322,6 +324,7 @@ public class Transjual extends JPanel {
                         int selectedRow = roundedTable.getTable().getSelectedRow();
                         if (selectedRow != -1) {
                             handleEditTransaksi(selectedRow);
+                            hitungKembalian();
                         } else {
                             JOptionPane.showMessageDialog(Transjual.this,
                                     "Pilih baris yang ingin diedit terlebih dahulu",
@@ -417,6 +420,7 @@ public class Transjual extends JPanel {
 
                                         // Update the total amount
                                         updateTotalAmount();
+                                        hitungKembalian();
                                     }
                                 }
                             });
@@ -509,7 +513,7 @@ public class Transjual extends JPanel {
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
                 // Hanya menerima digit angka dan tombol kontrol (backspace, delete, dll)
-                if (!Character.isLetterOrDigit(c) && c != '_' && !Character.isISOControl(c)){
+                if (!Character.isLetterOrDigit(c) && c != '_' && !Character.isISOControl(c)) {
                     e.consume(); // Mengabaikan karakter yang bukan angka
                 }
             }
@@ -551,9 +555,16 @@ public class Transjual extends JPanel {
         masukuangfield.setText("Rp. "); // Prefix "Rp. "
         masukuangfield.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
-                enforceRpPrefix();
-                formatMasukkanUang();
-                hitungKembalian();
+                DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+                if (model.getRowCount() == 0) {
+                    masukuangfield.setText("Rp. ");
+//                    POPUP KECIL ISIAN "BELUM ADA BARANG YANG DIMASUKKAN"
+                    return;
+                } else {
+                    enforceRpPrefix();
+                    formatMasukkanUang();
+                    hitungKembalian();
+                }
             }
 
             @Override
@@ -762,9 +773,13 @@ public class Transjual extends JPanel {
                 // Pastikan ada data di tabel sebelum menampilkan dialog pembayaran
                 DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
                 if (model.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(parentComponent,
-                            "Tidak ada item untuk dibayar",
-                            "Peringatan", JOptionPane.WARNING_MESSAGE);
+//                    POPUP KECIL ISIAN "TIDAK ADA ITEM YANG DIBELI"
+                    return;
+                }
+
+                String Masuk = masukuangfield.getText().replace("Rp. ", "").replace(".", "").trim();
+                if (Masuk.isEmpty()) {
+//                    POPUP KECIL ISIAN "MASUKKAN UANG TERLEBIH DAHULU"
                     return;
                 }
 
@@ -836,7 +851,6 @@ public class Transjual extends JPanel {
             if (text.isEmpty()) {
                 return;
             }
-
             int value = Integer.parseInt(text);
             masukuangfield.setText("Rp. " + formatter.format(value));
         } catch (NumberFormatException e) {
@@ -851,6 +865,7 @@ public class Transjual extends JPanel {
         if (!masukuangfield.getText().startsWith("Rp. ")) {
             masukuangfield.setText("Rp. ");
         }
+
     }
 
     // Method untuk mendapatkan tanggal saat ini dengan format tertentu
@@ -1029,8 +1044,7 @@ public class Transjual extends JPanel {
                 hargaBeliField.setText("Rp. " + formatter.format(harga));
                 currentProductSize = ukuran != null ? ukuran : "";
             } else {
-//                JOptionPane.showMessageDialog(this, "Produk tidak ditemukan", "Error", JOptionPane.ERROR_MESSAGE);
-                System.out.println("produk tidak ada");
+//                    POPUP KECIL ISIAN "PRODUK TIDAK DITEMUKAN"
                 namabarang.setText("");
                 hargaBeliField.setText("Rp. ");
             }
@@ -1045,8 +1059,10 @@ public class Transjual extends JPanel {
     private void addItemToTable() {
         try {
             String nama = namabarang.getText();
-            if (nama.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+            String kode = scanKodeField.getText();
+            if (kode.isEmpty()) {
+//                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+//                    POPUP KECIL ISIAN "SCAN PRODUK TERLEBIH DAHULU"
                 return;
             }
 
@@ -1178,6 +1194,7 @@ public class Transjual extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 addItemToTable();
+                hitungKembalian();
             }
         });
 
@@ -1360,10 +1377,11 @@ public class Transjual extends JPanel {
             con.setAutoCommit(true);
 
             // Tampilkan pesan sukses
-            JOptionPane.showMessageDialog(parentComponent,
-                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
-                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
-
+//            JOptionPane.showMessageDialog(parentComponent,
+//                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
+//                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            
+//                    POPUP KECIL ISIAN "TRANSAKSI BERHASIL"
             return true; // Transaksi berhasil
 
         } catch (SQLException ex) {
@@ -1394,8 +1412,9 @@ public class Transjual extends JPanel {
         hargaBeliField.setText("Rp. ");
         diskonComboBox.setSelectedIndex(0);
         totalValueLabel.setText("Rp. ");
+        kembalianValueLabel.setText("Rp. ");
+        masukuangfield.setText("");
 
-        // Set focus back to scan field
         scanKodeField.requestFocus();
     }
 
@@ -1485,7 +1504,8 @@ public class Transjual extends JPanel {
             // Mencoba untuk mencetak
             if (pj.printDialog()) {
                 pj.print();
-                JOptionPane.showMessageDialog(parentComponent, "Struk berhasil dicetak", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+//                JOptionPane.showMessageDialog(parentComponent, "Struk berhasil dicetak", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+//                    POPUP KECIL ISIAN "STRUK BERHASIL DICETAK"
             }
         } catch (PrinterException ex) {
             JOptionPane.showMessageDialog(parentComponent,
@@ -1499,17 +1519,21 @@ public class Transjual extends JPanel {
         PageFormat pf = pj.defaultPage();
         Paper paper = pf.getPaper();
 
-        // Standar untuk kertas struk kasir (biasanya 80mm atau 3 inch)
-        double width = convertMmToPpi(80);      // 80mm width
-        double height = convertMmToPpi(150);    // Tinggi struk
+        // IMPORTANT FIX: Set EXACT thermal receipt width
+        // Standard 80mm thermal width converted to points
+        double width = convertMmToPpi(100); // Changed from 100mm to standard 80mm width
 
-        // Setelan margin
-        double marginLeft = convertMmToPpi(5);
-        double marginRight = convertMmToPpi(5);
-        double marginTop = convertMmToPpi(5);
-        double marginBottom = convertMmToPpi(5);
+        // Calculate receipt height based on content
+        double height = calculateDynamicHeight();
+
+        // IMPROVED FIX: Consistent margins for proper alignment
+        double marginLeft = convertMmToPpi(3);
+        double marginRight = convertMmToPpi(3);
+        double marginTop = convertMmToPpi(1);
+        double marginBottom = convertMmToPpi(3);
 
         paper.setSize(width, height);
+        // Set imageable area with consistent margins
         paper.setImageableArea(
                 marginLeft,
                 marginTop,
@@ -1522,7 +1546,52 @@ public class Transjual extends JPanel {
         return pf;
     }
 
-// Konversi dari mm ke Points Per Inch (72 PPI)
+// Improved dynamic height calculation with better handling for many items
+    private double calculateDynamicHeight() {
+        // Get data from table
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        int rowCount = model.getRowCount();
+
+        // Fixed components height (header, transaction info, footers)
+        double fixedHeight = 200;
+
+        // Calculate exact space needed for each product row with better estimation
+        double itemsHeight = 0;
+        for (int i = 0; i < rowCount; i++) {
+            // Base height for product name and quantity
+            double rowHeight = 30;
+
+            // Get product name to check length
+            String productName = model.getValueAt(i, 1).toString();
+            String size = model.getValueAt(i, 2).toString();
+            String combinedName = productName + " (" + size + ")";
+
+            // Add extra space for long product names that might wrap
+            if (combinedName.length() > 30) {
+                rowHeight += 15; // Add space for potential wrapping
+            }
+
+            // Add space for discount line if applicable
+            String diskon = model.getValueAt(i, 5).toString();
+            if (!diskon.equals("-")) {
+                rowHeight += 15;
+            }
+
+            itemsHeight += rowHeight;
+        }
+
+        // Calculate minimum height needed with improved estimation
+        double contentHeight = fixedHeight + itemsHeight;
+
+        // Add padding to ensure blank space at bottom
+        double paddingBottom = convertMmToPpi(30); // 30mm padding at bottom
+
+        // Ensure minimum paper length even for few items
+        double minimumHeight = convertMmToPpi(150); // At least 150mm
+
+        return Math.max(contentHeight + paddingBottom, minimumHeight);
+    }
+
     protected static double convertMmToPpi(double mm) {
         return mm * 72 / 25.4;
     }
@@ -1536,66 +1605,73 @@ public class Transjual extends JPanel {
             }
 
             Graphics2D g2d = (Graphics2D) graphics;
+
+            // Enable anti-aliasing for smoother text
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            // Translate to the correct starting position
             g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 
-            // Setup font
-            Font titleFont = new Font("Monospaced", Font.BOLD, 14);
-            Font normalFont = new Font("Monospaced", Font.PLAIN, 11);
-            Font smallFont = new Font("Monospaced", Font.PLAIN, 10);
+            // Get the EXACT printable width
+            double paperWidth = pageFormat.getImageableWidth();
 
+            // Define exact positions - use full width with proper buffer for right margin
+            int leftEdge = 0;
+            int rightEdge = (int) (paperWidth - 3); // Add 2pt buffer to ensure right margin
+
+            // Define fonts
+            Font titleFont = new Font("Monospaced", Font.BOLD, 12);
+            Font normalFont = new Font("Monospaced", Font.PLAIN, 10);
+            Font smallFont = new Font("Monospaced", Font.PLAIN, 9);
+
+            int y = 15; // Starting y position
+
+            // Store name and address
             g2d.setFont(titleFont);
+            drawCenteredString(g2d, "Karunia Store", (float) paperWidth, y);
+            y += 15;
 
-            // Drawing area width
-            float paperWidth = (float) pageFormat.getImageableWidth();
-
-            // Calculate column positions - adjust these to prevent cutting off
-            int leftCol = 10;
-            int rightCol = (int) (paperWidth - 120); // Reduce right column position to prevent text cutoff
-
-            // Header - Store name and address
-            drawCenteredString(g2d, "Karunia Store", paperWidth, 20);
             g2d.setFont(smallFont);
-            drawCenteredString(g2d, "Jalan Jawa no 1B, depan bunderan DPRD", paperWidth, 40);
+            drawCenteredString(g2d, "Jalan Jawa no 1B, depan bunderan DPRD", (float) paperWidth, y);
+            y += 15;
 
-            // Separator line
-            drawDashedLine(g2d, 10, 50, (int) paperWidth - 10, 50);
+            // First separator
+            drawSeparatorLine(g2d, leftEdge, y, rightEdge, y);
+            y += 15;
 
             // Transaction details
             g2d.setFont(normalFont);
-            int y = 70;
 
-            // Use actual transaction ID from the form
-            g2d.drawString("ID Transaksi :", leftCol, y);
-            g2d.drawString(txtIdTransaksi.getText(), rightCol, y);
-            y += 20;
+            // FIX: Ensure transaction ID is properly aligned
+            String transactionId = txtIdTransaksi.getText();
+            drawFixedWidthText(g2d, "ID Transaksi :", transactionId, leftEdge, rightEdge, y);
+            y += 15;
 
-            // Get current date and time
+            // Date & Time
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
             SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
             Date currentDate = new Date();
 
-            g2d.drawString("Tanggal :", leftCol, y);
-            g2d.drawString(dateFormat.format(currentDate), rightCol, y);
-            y += 20;
+            drawFixedWidthText(g2d, "Tanggal :", dateFormat.format(currentDate), leftEdge, rightEdge, y);
+            y += 15;
 
-            g2d.drawString("Waktu :", leftCol, y);
-            g2d.drawString(timeFormat.format(currentDate), rightCol, y);
-            y += 20;
+            drawFixedWidthText(g2d, "Waktu :", timeFormat.format(currentDate), leftEdge, rightEdge, y);
+            y += 15;
 
-            g2d.drawString("Kasir :", leftCol, y);
-            g2d.drawString(namaUser, rightCol, y);
-            y += 20;
+            drawFixedWidthText(g2d, "Kasir :", namaUser, leftEdge, rightEdge, y);
+            y += 15;
 
-            // Separator line
-            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
-            y += 20;
+            // Item separator
+            drawSeparatorLine(g2d, leftEdge, y, rightEdge, y);
+            y += 15;
 
             // Get data from table
             DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
             double totalBeforeDiscount = 0;
             double totalDiscount = 0;
 
-            // Items from table
+            // Items section - IMPROVED RENDERING FOR LONG PRODUCT NAMES
             for (int i = 0; i < model.getRowCount(); i++) {
                 String nama = model.getValueAt(i, 1).toString();
                 String size = model.getValueAt(i, 2).toString();
@@ -1605,96 +1681,184 @@ public class Transjual extends JPanel {
                 String total = model.getValueAt(i, 6).toString();
 
                 // Calculate values for totals
-                double itemPrice = Double.parseDouble(harga.replace("Rp. ", "").replace(".", ""));
-                double itemTotal = Double.parseDouble(total.replace("Rp. ", "").replace(".", ""));
-                double itemDiscount = itemPrice * qty - itemTotal;
+                double itemPrice = parseAmount(harga);
+                double itemTotal = parseAmount(total);
+                double itemDiscount = (itemPrice * qty) - itemTotal;
 
-                totalBeforeDiscount += itemPrice * qty;
+                totalBeforeDiscount += (itemPrice * qty);
                 totalDiscount += itemDiscount;
 
-                // Item name and size
+                // Product name with size
                 String itemDetail = nama + " (" + size + ")";
-                g2d.drawString(itemDetail, leftCol, y);
-                g2d.drawString(harga, rightCol, y);
-                y += 20;
 
-                // Quantity
-                g2d.drawString("x" + qty, leftCol, y);
-                y += 20;
+                // IMPROVED SOLUTION: Handle long product names better with proper wrapping
+                FontMetrics metrics = g2d.getFontMetrics();
 
-                // Discount
+                // New dynamic allocation - give more space to product names
+                // Use 65% for left column when dealing with long names
+                drawAdaptiveWidthText(g2d, itemDetail, harga, leftEdge, rightEdge, y, metrics);
+                y += 15;
+
+                // Quantity line
+                g2d.drawString("x" + qty, leftEdge + 5, y);
+                y += 15;
+
+                // Discount line if applicable
                 if (!diskon.equals("-")) {
-                    g2d.drawString("Diskon (" + diskon + ")", leftCol, y);
-                    if (itemDiscount > 0) {
-                        g2d.drawString("-Rp. " + formatter.format(itemDiscount), rightCol, y);
-                    } else {
-                        g2d.drawString("-", rightCol, y);
-                    }
-                    y += 20;
+                    String discountText = "Diskon (" + diskon + ")";
+                    String discountAmount = "-Rp. " + formatter.format(itemDiscount);
+                    drawFixedWidthText(g2d, discountText, discountAmount, leftEdge, rightEdge, y);
+                    y += 15;
                 }
             }
 
-            // Separator line
-            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
-            y += 20;
+            // Separator before subtotals
+            drawSeparatorLine(g2d, leftEdge, y, rightEdge, y);
+            y += 15;
 
-            // Subtotal & total
-            g2d.drawString("Sub Total Diskon:", leftCol, y);
-            g2d.drawString("Rp. " + formatter.format(totalDiscount), rightCol, y);
-            y += 20;
+            // Subtotals
+            drawFixedWidthText(g2d, "Sub Total Diskon:", "Rp. " + formatter.format(totalDiscount), leftEdge, rightEdge, y);
+            y += 15;
 
-            g2d.drawString("Sub Total :", leftCol, y);
-            g2d.drawString("Rp. " + formatter.format(totalBeforeDiscount), rightCol, y);
-            y += 20;
+            drawFixedWidthText(g2d, "Sub Total :", "Rp. " + formatter.format(totalBeforeDiscount), leftEdge, rightEdge, y);
+            y += 15;
 
-            // Separator line
-            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
-            y += 20;
-
-            // Get total after discount from totalValueLabel
-            String totalValueText = totalValueLabel.getText().replace("Rp. ", "").replace(".", "");
-            double totalAfterDiscount = Double.parseDouble(totalValueText);
+            // Separator before totals
+            drawSeparatorLine(g2d, leftEdge, y, rightEdge, y);
+            y += 15;
 
             // Total after discount
-            g2d.drawString("Total setelah Diskon :", leftCol, y);
-            g2d.drawString("Rp. " + formatter.format(totalAfterDiscount), rightCol, y);
-            y += 20;
+            double totalAfterDiscount = parseAmount(totalValueLabel.getText());
+            drawFixedWidthText(g2d, "Total setelah Diskon :", "Rp. " + formatter.format(totalAfterDiscount), leftEdge, rightEdge, y);
+            y += 15;
 
-            // Payment - assuming equal to total for now
-            // In a real scenario, you might want to add a payment input field
-            double payment = totalAfterDiscount; // This can be replaced with actual payment input
-            g2d.drawString("Bayar :", leftCol, y);
-            g2d.drawString("Rp. " + formatter.format(payment), rightCol, y);
-            y += 20;
+            // Payment
+            double payment = parseAmount(masukuangfield.getText());
+            drawFixedWidthText(g2d, "Bayar :", "Rp. " + formatter.format(payment), leftEdge, rightEdge, y);
+            y += 15;
 
-            // Separator line
-            drawDashedLine(g2d, 10, y, (int) paperWidth - 10, y);
-            y += 20;
+            // Final separator
+            drawSeparatorLine(g2d, leftEdge, y, rightEdge, y);
+            y += 15;
 
-            // Change - calculated as payment minus total
+            // Change
             double change = payment - totalAfterDiscount;
-            g2d.drawString("Kembalian :", leftCol, y);
-            g2d.drawString("Rp. " + formatter.format(change), rightCol, y);
-            y += 30;
+            drawFixedWidthText(g2d, "Kembalian :", "Rp. " + formatter.format(change), leftEdge, rightEdge, y);
+            y += 20;
 
-            // Footer
+            // Thank you message
             g2d.setFont(smallFont);
-            drawCenteredString(g2d, "Terima Kasih telah Berbelanja!", paperWidth, y);
+            drawCenteredString(g2d, "Terima Kasih telah Berbelanja!", (float) paperWidth, y);
 
             return PAGE_EXISTS;
         }
 
+        // Helper method to parse currency amounts
+        private double parseAmount(String amount) {
+            return Double.parseDouble(amount.replace("Rp. ", "").replace(".", ""));
+        }
+
+        // NEW IMPROVED METHOD: Handle text layout with dynamic left/right allocation
+        private void drawAdaptiveWidthText(Graphics2D g2d, String leftText, String rightText,
+                int leftEdge, int rightEdge, int y, FontMetrics metrics) {
+            int totalWidth = rightEdge - leftEdge;
+            int rightTextWidth = metrics.stringWidth(rightText);
+
+            // Reserve space for right text plus buffer
+            int rightColumnWidth = rightTextWidth + 10; // 10pt safety buffer
+
+            // Calculate available width for left text
+            int leftColumnWidth = totalWidth - rightColumnWidth;
+
+            // Ensure minimum widths for both columns
+            if (leftColumnWidth < totalWidth * 0.5) {
+                leftColumnWidth = (int) (totalWidth * 0.5);
+                rightColumnWidth = totalWidth - leftColumnWidth;
+            }
+
+            // Check if left text needs truncation
+            String displayLeftText = leftText;
+            int leftTextWidth = metrics.stringWidth(leftText);
+
+            if (leftTextWidth > leftColumnWidth) {
+                int charWidth = leftTextWidth / leftText.length(); // Approximate width per character
+                int maxChars = (leftColumnWidth - metrics.stringWidth("...")) / charWidth;
+
+                if (maxChars > 3) {
+                    displayLeftText = leftText.substring(0, maxChars - 3) + "...";
+                }
+            }
+
+            // Draw left text aligned to left edge
+            g2d.drawString(displayLeftText, leftEdge, y);
+
+            // Calculate exact position for right text
+            int rightTextX = rightEdge - rightTextWidth;
+
+            // Draw right text perfectly aligned to right edge
+            g2d.drawString(rightText, rightTextX, y);
+        }
+
+        // OPTIMIZED method for standard text with fixed ratios
+        private void drawFixedWidthText(Graphics2D g2d, String leftText, String rightText,
+                int leftEdge, int rightEdge, int y) {
+            FontMetrics metrics = g2d.getFontMetrics();
+            int totalWidth = rightEdge - leftEdge;
+
+            // Allow more space for standard text fields
+            int rightTextWidth = metrics.stringWidth(rightText);
+            int leftTextWidth = metrics.stringWidth(leftText);
+
+            // Determine if we need special handling for transaction info or totals
+            boolean isTransactionInfo = leftText.contains("ID Transaksi")
+                    || leftText.contains("Tanggal")
+                    || leftText.contains("Waktu")
+                    || leftText.contains("Kasir");
+
+            boolean isTotalInfo = leftText.contains("Total")
+                    || leftText.contains("Bayar")
+                    || leftText.contains("Kembalian")
+                    || leftText.contains("Sub Total");
+
+            // Adjust ratio based on content type
+            double leftRatio = 0.6; // Default 60% for left column
+
+            if (isTransactionInfo) {
+                leftRatio = 0.5; // Equal distribution for transaction info
+            } else if (isTotalInfo) {
+                leftRatio = 0.65; // Give more space to totals text
+            }
+
+            int leftColumnWidth = (int) (totalWidth * leftRatio);
+
+            // Draw left text aligned to left edge
+            g2d.drawString(leftText, leftEdge, y);
+
+            // Calculate exact position for right text with proper right margin
+            int rightTextX = rightEdge - rightTextWidth;
+
+            // Draw right text aligned to right edge
+            g2d.drawString(rightText, rightTextX, y);
+        }
+
+        // Draw perfectly centered text
         private void drawCenteredString(Graphics2D g2d, String text, float width, int y) {
             FontMetrics metrics = g2d.getFontMetrics();
-            int x = (int) (width - metrics.stringWidth(text)) / 2;
+            int x = (int) ((width - metrics.stringWidth(text)) / 2);
             g2d.drawString(text, x, y);
         }
 
-        private void drawDashedLine(Graphics2D g2d, int x1, int y, int x2, int y2) {
+        // Draw separator line with consistent dashes
+        private void drawSeparatorLine(Graphics2D g2d, int x1, int y1, int x2, int y2) {
             Stroke oldStroke = g2d.getStroke();
-            float[] dash = {5.0f};
-            g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
-            g2d.drawLine(x1, y, x2, y2);
+
+            // Use consistent dash pattern for better appearance
+            float[] dash = {3.0f, 2.0f};
+            g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f));
+
+            // Draw line across full width
+            g2d.drawLine(x1, y1, x2, y2);
             g2d.setStroke(oldStroke);
         }
     }
