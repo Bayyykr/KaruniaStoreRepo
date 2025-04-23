@@ -1176,7 +1176,7 @@ public class Transjual extends JPanel {
 
         for (int i = 0; i < model.getRowCount(); i++) {
             // Get the already calculated total price (after discount) from column 6
-            String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "");
+            String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "").replace(",", "");
             try {
                 totalAmount += Double.parseDouble(totalStr);
             } catch (NumberFormatException ex) {
