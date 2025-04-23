@@ -4,14 +4,13 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.geom.AffineTransform;
-import produk.ComboboxCustom; // Import ComboboxCustom dari package produk
 
 public class PopUp_AturBulanGajiKaryawan extends JDialog {
 
     private JComponent glassPane;
     private JFrame parentFrame;
     private JPanel contentPanel;
-    private ComboboxCustom comboBoxBulan, comboBoxTahun;
+    private ComboboxSlideCustom comboBoxBulan, comboBoxTahun;
     private JButton terapkanButton, batalButton;
 
     private final int RADIUS = 20;
@@ -93,11 +92,15 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         bulanLabel.setBounds(25, 30, 300, 20);
         contentPanel.add(bulanLabel);
 
-        // ComboBox Bulan dengan menggunakan ComboboxCustom
+        // ComboBox Bulan dengan menggunakan ComboboxSlideCustom
         String[] bulanItems = {"Pilih Bulan", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
                               "Juli", "Agustus", "September", "Oktober", "November", "Desember"};
-        comboBoxBulan = new ComboboxCustom(bulanItems);
-        comboBoxBulan.setBounds(25, 60, 300, 38);
+        comboBoxBulan = new ComboboxSlideCustom(bulanItems);
+        comboBoxBulan.setBounds(25, 60, 300, 45); // Increased height to 45
+        comboBoxBulan.setOpaque(false); // Make it transparent
+        comboBoxBulan.setBackground(new Color(255, 255, 255, 0)); // Transparent background
+        comboBoxBulan.setBorderColor(new Color(200, 200, 200)); // Light gray border
+        comboBoxBulan.setBorderThickness(1); // Thinner border
         contentPanel.add(comboBoxBulan);
 
         // Label Atur Tahun/Year
@@ -106,10 +109,14 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         tahunLabel.setBounds(25, 120, 300, 20);
         contentPanel.add(tahunLabel);
 
-        // ComboBox Tahun dengan menggunakan ComboboxCustom
+        // ComboBox Tahun dengan menggunakan ComboboxSlideCustom
         String[] tahunItems = {"Pilih Tahun", "2023", "2024", "2025", "2026"};
-        comboBoxTahun = new ComboboxCustom(tahunItems);
-        comboBoxTahun.setBounds(25, 150, 300, 38);
+        comboBoxTahun = new ComboboxSlideCustom(tahunItems);
+        comboBoxTahun.setBounds(25, 150, 300, 45); // Increased height to 45
+        comboBoxTahun.setOpaque(false); // Make it transparent
+        comboBoxTahun.setBackground(new Color(255, 255, 255, 0)); // Transparent background
+        comboBoxTahun.setBorderColor(new Color(200, 200, 200)); // Light gray border
+        comboBoxTahun.setBorderThickness(1); // Thinner border
         contentPanel.add(comboBoxTahun);
 
         // Batal Button
@@ -154,10 +161,10 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
     }
 
     private void terapkan() {
-        String bulan = comboBoxBulan.getSelectedItem().toString();
-        String tahun = comboBoxTahun.getSelectedItem().toString();
+        String bulan = comboBoxBulan.getSelectedItem();
+        String tahun = comboBoxTahun.getSelectedItem();
 
-        if (bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
+        if (bulan == null || tahun == null || bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
             JOptionPane.showMessageDialog(this, "Mohon pilih bulan dan tahun", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
