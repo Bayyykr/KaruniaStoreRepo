@@ -7,7 +7,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.Document;
 import java.util.ArrayList;
 
-public class PopUp_SmallTransJualSuksesBayar extends JDialog {
+public class PopUp_SmallTransJualProdukBerhasilDiHapus extends JDialog {
 
     private JFrame parentFrame;
     private static final int RADIUS = 10;
@@ -27,13 +27,13 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     private static final int POPUP_VERTICAL_GAP = 10;
 
     // Untuk mengelola multiple popups
-    private static ArrayList<PopUp_SmallTransJualSuksesBayar> activePopups = new ArrayList<>();
+    private static ArrayList<PopUp_SmallTransJualProdukBerhasilDiHapus> activePopups = new ArrayList<>();
 
     // Untuk animasi kedip
     private float opacity = 0.0f;
     private boolean fadingIn = true;
 
-    public PopUp_SmallTransJualSuksesBayar(JFrame parent) {
+    public PopUp_SmallTransJualProdukBerhasilDiHapus(JFrame parent) {
         super(parent, false); // Non-modal dialog
         this.parentFrame = parent;
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
@@ -80,7 +80,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
         contentPanel.add(successLabel);
 
         // Label deskripsi
-        descriptionLabel = createTextLabel("Transaksi Berhasil!!", 40, 25, 200, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
+        descriptionLabel = createTextLabel("Produk Berhasil Dihapus!!", 40, 25, 200, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
         contentPanel.add(descriptionLabel);
 
         // Label close (X) - di pojok kanan atas
@@ -136,7 +136,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     }
 
     // Konstruktor tanpa parameter
-    public PopUp_SmallTransJualSuksesBayar() {
+    public PopUp_SmallTransJualProdukBerhasilDiHapus() {
         this(null); // Memanggil konstruktor dengan parameter
     }
 
@@ -170,7 +170,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
 
         // Atur posisi dari atas ke bawah (popup terbaru di atas)
         for (int i = 0; i < activePopups.size(); i++) {
-            PopUp_SmallTransJualSuksesBayar popup = activePopups.get(i);
+            PopUp_SmallTransJualProdukBerhasilDiHapus popup = activePopups.get(i);
             int newY = baseY + (i * (FINAL_HEIGHT + POPUP_VERTICAL_GAP));
 
             // Hanya ubah posisi Y, biarkan X sesuai dengan animasi
@@ -370,7 +370,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     // Metode untuk menampilkan popup dengan posisi kustom
     public static void showPopup(JFrame parent, int x, int y) {
         SwingUtilities.invokeLater(() -> {
-            PopUp_SmallTransJualSuksesBayar popup = new PopUp_SmallTransJualSuksesBayar(parent);
+            PopUp_SmallTransJualProdukBerhasilDiHapus popup = new PopUp_SmallTransJualProdukBerhasilDiHapus(parent);
             popup.setLocationOnClose(x, y);
         });
     }

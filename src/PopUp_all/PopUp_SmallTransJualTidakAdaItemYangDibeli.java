@@ -7,7 +7,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.Document;
 import java.util.ArrayList;
 
-public class PopUp_SmallTransJualSuksesBayar extends JDialog {
+public class PopUp_SmallTransJualTidakAdaItemYangDibeli extends JDialog {
 
     private JFrame parentFrame;
     private static final int RADIUS = 10;
@@ -27,13 +27,13 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     private static final int POPUP_VERTICAL_GAP = 10;
 
     // Untuk mengelola multiple popups
-    private static ArrayList<PopUp_SmallTransJualSuksesBayar> activePopups = new ArrayList<>();
+    private static ArrayList<PopUp_SmallTransJualTidakAdaItemYangDibeli> activePopups = new ArrayList<>();
 
     // Untuk animasi kedip
     private float opacity = 0.0f;
     private boolean fadingIn = true;
 
-    public PopUp_SmallTransJualSuksesBayar(JFrame parent) {
+    public PopUp_SmallTransJualTidakAdaItemYangDibeli(JFrame parent) {
         super(parent, false); // Non-modal dialog
         this.parentFrame = parent;
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
@@ -68,19 +68,19 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
         add(contentPanel);
 
         // Text field di kiri
-        leftTextField = createLeftTextField(new Color(135, 203, 146), 1, 0, 30, FINAL_HEIGHT, RADIUS);
+        leftTextField = createLeftTextField(new Color(254, 95, 86), 1, 0, 30, FINAL_HEIGHT, RADIUS);
         contentPanel.add(leftTextField);
 
         // Icon centang hijau (diperkecil) - digeser lebih ke atas
-        iconLabel = createLabel("/SourceImage/icon_centang_ijo.png", 15, 8, 20, 20);
+        iconLabel = createLabel("/SourceImage/icon_seru_merah.png", 15, 8, 20, 20);
         contentPanel.add(iconLabel);
 
         // Label Success
-        successLabel = createTextLabel("Berhasil", 40, 5, 100, 20, new Font("poppins", Font.BOLD, 14), new Color(0, 0, 0));
+        successLabel = createTextLabel("Gagal", 40, 5, 100, 20, new Font("poppins", Font.BOLD, 14), new Color(0, 0, 0));
         contentPanel.add(successLabel);
 
         // Label deskripsi
-        descriptionLabel = createTextLabel("Transaksi Berhasil!!", 40, 25, 200, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
+        descriptionLabel = createTextLabel("Tidak Ada Item Yang Dibeli!!", 40, 25, 200, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
         contentPanel.add(descriptionLabel);
 
         // Label close (X) - di pojok kanan atas
@@ -136,7 +136,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     }
 
     // Konstruktor tanpa parameter
-    public PopUp_SmallTransJualSuksesBayar() {
+    public PopUp_SmallTransJualTidakAdaItemYangDibeli() {
         this(null); // Memanggil konstruktor dengan parameter
     }
 
@@ -170,7 +170,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
 
         // Atur posisi dari atas ke bawah (popup terbaru di atas)
         for (int i = 0; i < activePopups.size(); i++) {
-            PopUp_SmallTransJualSuksesBayar popup = activePopups.get(i);
+            PopUp_SmallTransJualTidakAdaItemYangDibeli popup = activePopups.get(i);
             int newY = baseY + (i * (FINAL_HEIGHT + POPUP_VERTICAL_GAP));
 
             // Hanya ubah posisi Y, biarkan X sesuai dengan animasi
@@ -326,11 +326,11 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             // Background untuk panel
-            g2.setColor(new Color(231, 245, 232));
+            g2.setColor(new Color(255, 233, 220));
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
             // Border merah
-            g2.setColor(new Color(135, 203, 146));
+            g2.setColor(new Color(254, 95, 86));
             g2.setStroke(new BasicStroke(1));
             g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
 
@@ -370,7 +370,7 @@ public class PopUp_SmallTransJualSuksesBayar extends JDialog {
     // Metode untuk menampilkan popup dengan posisi kustom
     public static void showPopup(JFrame parent, int x, int y) {
         SwingUtilities.invokeLater(() -> {
-            PopUp_SmallTransJualSuksesBayar popup = new PopUp_SmallTransJualSuksesBayar(parent);
+            PopUp_SmallTransJualTidakAdaItemYangDibeli popup = new PopUp_SmallTransJualTidakAdaItemYangDibeli(parent);
             popup.setLocationOnClose(x, y);
         });
     }
