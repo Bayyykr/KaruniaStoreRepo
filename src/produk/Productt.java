@@ -129,7 +129,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
-                        currentPanel = produkPanel;
+                        currentPanel = editproductpanel;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan

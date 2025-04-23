@@ -1,5 +1,6 @@
 package Form;
 
+import PopUp_all.PopUp_AturBulanDataAbsen;
 import SourceCode.JTableRounded;
 import SourceCode.RoundedBorder;
 import SourceCode.RoundedButton;
@@ -173,6 +174,14 @@ public class AbsenKaryawan extends JPanel {
             @Override
             public void mouseReleased(MouseEvent e) {
                 configButton.setLocation(configButton.getX(), configButton.getY() - 1);
+            }
+        });
+         configButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(configButton);
+                PopUp_AturBulanDataAbsen dialog = new PopUp_AturBulanDataAbsen(parentFrame);
+                dialog.setVisible(true);
             }
         });
 

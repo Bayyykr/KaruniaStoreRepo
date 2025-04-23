@@ -188,14 +188,30 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // Inisialisasi setiap text field secara individual
-        rfidField = createRoundedTextField("No. RFID");
-        rfidField.setFocusable(false);
-        nameField = createRoundedTextField("Full Name");
-        phoneField = createRoundedTextField("Email");
-        addressField = createRoundedTextField("Password");
-        emailField = createRoundedTextField("Nomor Telepon");
-        passwordField = createRoundedPasswordField("Alamat");
+        // Buat label untuk setiap field
+        JLabel rfidLabel = new JLabel("No. RFID");
+        JLabel nameLabel = new JLabel("Full Name");
+        JLabel emailLabel = new JLabel("Email");
+        JLabel passwordLabel = new JLabel("Password");
+        JLabel phoneLabel = new JLabel("Nomor Telepon");
+        JLabel addressLabel = new JLabel("Alamat");
+
+        // Set font untuk label
+        Font labelFont = new Font("Arial", Font.PLAIN, 14);
+        rfidLabel.setFont(labelFont);
+        nameLabel.setFont(labelFont);
+        emailLabel.setFont(labelFont);
+        passwordLabel.setFont(labelFont);
+        phoneLabel.setFont(labelFont);
+        addressLabel.setFont(labelFont);
+
+        // Inisialisasi setiap text field tanpa placeholder
+        rfidField = createRoundedTextField("");
+        nameField = createRoundedTextField("");
+        emailField = createRoundedTextField("");
+        passwordField = createRoundedPasswordField("");
+        phoneField = createRoundedTextField("");
+        addressField = createRoundedTextField("");
 
         // Customize field width
         Dimension fieldDimension = new Dimension(300, 40);
@@ -204,18 +220,12 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         rfidField.setPreferredSize(fieldDimension);
         rfidField.setMaximumSize(fieldDimension);
         rfidField.setMinimumSize(fieldDimension);
+        rfidField.setEditable(false);
+        rfidField.setFocusable(false);
 
         nameField.setPreferredSize(fieldDimension);
         nameField.setMaximumSize(fieldDimension);
         nameField.setMinimumSize(fieldDimension);
-
-        phoneField.setPreferredSize(fieldDimension);
-        phoneField.setMaximumSize(fieldDimension);
-        phoneField.setMinimumSize(fieldDimension);
-
-        addressField.setPreferredSize(fieldDimension);
-        addressField.setMaximumSize(fieldDimension);
-        addressField.setMinimumSize(fieldDimension);
 
         emailField.setPreferredSize(fieldDimension);
         emailField.setMaximumSize(fieldDimension);
@@ -225,38 +235,79 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         passwordField.setMaximumSize(fieldDimension);
         passwordField.setMinimumSize(fieldDimension);
 
+        phoneField.setPreferredSize(fieldDimension);
+        phoneField.setMaximumSize(fieldDimension);
+        phoneField.setMinimumSize(fieldDimension);
+
+        addressField.setPreferredSize(fieldDimension);
+        addressField.setMaximumSize(fieldDimension);
+        addressField.setMinimumSize(fieldDimension);
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.insets = new Insets(8, 8, 0, 8);
+        gbc.anchor = GridBagConstraints.WEST;
 
         // Tambah title ke main panel
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
-        gbc.insets = new Insets(0, 8, 10, 8);
+        gbc.insets = new Insets(0, 8, 16, 8);
         mainPanel.add(titleLabel, gbc);
 
-        // Tambah fields satu per satu
+        // RFID Label dan Field
         gbc.gridy = 1;
-        gbc.weightx = 1.0;
-        gbc.gridwidth = 1;
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(rfidLabel, gbc);
+        
+        gbc.gridy = 2;
+        gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(rfidField, gbc);
 
-        gbc.gridy = 2;
+        // Name Label dan Field
+        gbc.gridy = 3;
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(nameLabel, gbc);
+        
+        gbc.gridy = 4;
+        gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(nameField, gbc);
 
-        gbc.gridy = 4;
-        mainPanel.add(phoneField, gbc);
-
+        // Email Label dan Field
         gbc.gridy = 5;
-        mainPanel.add(addressField, gbc);
-
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(emailLabel, gbc);
+        
         gbc.gridy = 6;
+        gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(emailField, gbc);
 
+        // Password Label dan Field
         gbc.gridy = 7;
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(passwordLabel, gbc);
+        
+        gbc.gridy = 8;
+        gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(passwordField, gbc);
+
+        // Phone Label dan Field
+        gbc.gridy = 9;
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(phoneLabel, gbc);
+        
+        gbc.gridy = 10;
+        gbc.insets = new Insets(2, 8, 8, 8);
+        mainPanel.add(phoneField, gbc);
+
+        // Address Label dan Field
+        gbc.gridy = 11;
+        gbc.insets = new Insets(4, 8, 0, 8);
+        mainPanel.add(addressLabel, gbc);
+        
+        gbc.gridy = 12;
+        gbc.insets = new Insets(2, 8, 8, 8);
+        mainPanel.add(addressField, gbc);
 
         // Buttons
         batalButton = createRoundedButton("Batal", Color.RED);
@@ -272,21 +323,15 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
 
         // Tambah button panel ke main panel
         gbc.gridx = 0;
-        gbc.gridy = 8;
+        gbc.gridy = 13;
         gbc.gridwidth = 1;
-        gbc.insets = new Insets(0, 8, 0, 8);
+        gbc.insets = new Insets(10, 8, 0, 8);
         mainPanel.add(buttonPanel, gbc);
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
-        addDragListeners(mainPanel);
-
         batalButton.addActionListener(e -> startCloseAnimation());
-//        simpanButton.addActionListener(e -> {
-//            JOptionPane.showMessageDialog(this, "Data Tersimpan", "Konfirmasi", JOptionPane.INFORMATION_MESSAGE);
-//            startCloseAnimation();
-//        });
 
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -297,7 +342,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
 
         pack();
         centerOnScreen();
-        setSize(400, 480);
+        setSize(400, 580); // Sedikit lebih tinggi untuk akomodasi label tambahan
         setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 25, 25));
 
         SwingUtilities.invokeLater(this::startEnterAnimation);
@@ -326,16 +371,15 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
 
                 // Pastikan semua komponen terlihat
                 if (progress >= 0.4) {
-                    titleLabel.setVisible(true);
-                    rfidField.setVisible(true);
-                    nameField.setVisible(true);
-                    phoneField.setVisible(true);
-                    addressField.setVisible(true);
-                    emailField.setVisible(true);
-                    passwordField.setVisible(true);
-                    batalButton.setVisible(true);
-                    simpanButton.setVisible(true);
-                    buttonPanel.setVisible(true);
+                    // Tampilkan semua komponen termasuk label baru
+                    for (Component comp : getContentPane().getComponents()) {
+                        if (comp instanceof JPanel) {
+                            JPanel panel = (JPanel) comp;
+                            for (Component innerComp : panel.getComponents()) {
+                                innerComp.setVisible(true);
+                            }
+                        }
+                    }
                 }
 
                 repaint();
@@ -381,8 +425,8 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         closeAnimationTimer.start();
     }
 
-    private JTextField createRoundedTextField(String placeholder) {
-        JTextField textField = new JTextField(placeholder) {
+    private JTextField createRoundedTextField(String text) {
+        JTextField textField = new JTextField(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -403,33 +447,14 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         textField.setBorder(BorderFactory.createCompoundBorder(roundBorder, paddingBorder));
 
         textField.setFont(new Font("Arial", Font.PLAIN, 14));
-        textField.setForeground(Color.GRAY);
+        textField.setForeground(Color.BLACK);
         textField.setOpaque(false);
-
-        // Add focus listeners to handle placeholder behavior
-        textField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (textField.getText().equals(placeholder)) {
-                    textField.setText("");
-                    textField.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (textField.getText().isEmpty()) {
-                    textField.setText(placeholder);
-                    textField.setForeground(Color.GRAY);
-                }
-            }
-        });
 
         return textField;
     }
 
-    private JPasswordField createRoundedPasswordField(String placeholder) {
-        JPasswordField passwordField = new JPasswordField(placeholder) {
+    private JPasswordField createRoundedPasswordField(String text) {
+        JPasswordField passwordField = new JPasswordField(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -450,30 +475,9 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         passwordField.setBorder(BorderFactory.createCompoundBorder(roundBorder, paddingBorder));
 
         passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
-        passwordField.setForeground(Color.GRAY);
+        passwordField.setForeground(Color.BLACK);
         passwordField.setOpaque(false);
-        passwordField.setEchoChar((char) 0);
-
-        // Add focus listeners to handle placeholder behavior
-        passwordField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).equals(placeholder)) {
-                    passwordField.setText("");
-                    passwordField.setForeground(Color.BLACK);
-                    passwordField.setEchoChar('•');
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (String.valueOf(passwordField.getPassword()).isEmpty()) {
-                    passwordField.setText(placeholder);
-                    passwordField.setForeground(Color.GRAY);
-                    passwordField.setEchoChar((char) 0);
-                }
-            }
-        });
+        passwordField.setEchoChar('•');
 
         return passwordField;
     }
@@ -574,5 +578,71 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
                 System.out.println(alamat);
             }
         });
+    }
+    
+    // Untuk kelas RoundedButton dan RoundedBorder, kita perlu juga sertakan di sini
+    class RoundedButton extends javax.swing.plaf.basic.BasicButtonUI {
+    @Override
+    public void installUI(JComponent c) {
+        super.installUI(c);
+        AbstractButton button = (AbstractButton) c;
+        button.setOpaque(false);
+        button.setBorderPainted(false);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AbstractButton b = (AbstractButton) c;
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int width = b.getWidth();
+        int height = b.getHeight();
+
+        // Paint background
+        g2.setColor(b.getBackground());
+        g2.fillRoundRect(0, 0, width, height, 15, 15);
+        
+        // Tambahkan border hitam di sini
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke(1));
+        g2.drawRoundRect(0, 0, width - 1, height - 1, 15, 15);
+
+        super.paint(g, c);
+        g2.dispose();
+    }
+}
+
+    class RoundedBorder extends AbstractBorder {
+        private int radius;
+        private Color color;
+        private int thickness;
+
+        public RoundedBorder(int radius, Color color, int thickness) {
+            this.radius = radius;
+            this.color = color;
+            this.thickness = thickness;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(thickness));
+            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+            g2.dispose();
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(thickness, thickness, thickness, thickness);
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c, Insets insets) {
+            insets.left = insets.top = insets.right = insets.bottom = thickness;
+            return insets;
+        }
     }
 }

@@ -192,9 +192,9 @@ public class TambahKaryawan extends javax.swing.JDialog {
         rfidField = createRoundedTextField("No. RFID");
         nameField = createRoundedTextField("Full Name");
         phoneField = createRoundedTextField("Email");
-        addressField = createRoundedTextField("Password");
+        passwordField = createRoundedPasswordField("Password");
         emailField = createRoundedTextField("Nomor Telepon");
-        passwordField = createRoundedPasswordField("Alamat");
+        addressField = createRoundedTextField("Alamat");
 
         // Customize field width
         Dimension fieldDimension = new Dimension(300, 40);
@@ -249,13 +249,13 @@ public class TambahKaryawan extends javax.swing.JDialog {
         mainPanel.add(phoneField, gbc);
 
         gbc.gridy = 5;
-        mainPanel.add(addressField, gbc);
+        mainPanel.add(passwordField, gbc);
 
         gbc.gridy = 6;
         mainPanel.add(emailField, gbc);
 
         gbc.gridy = 7;
-        mainPanel.add(passwordField, gbc);
+        mainPanel.add(addressField, gbc);
 
         // Buttons
         batalButton = createRoundedButton("Batal", Color.RED);
@@ -534,6 +534,7 @@ public class TambahKaryawan extends javax.swing.JDialog {
     }
 
     private void TambahData() {
+
         simpanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -543,6 +544,13 @@ public class TambahKaryawan extends javax.swing.JDialog {
                 String pw = passwordField.getText();
                 String notelp = phoneField.getText();
                 String alamat = addressField.getText();
+
+                if (no.equals("No. RFID") || nama.equals("Full Name") || email.equals("Email")
+                        || pw.equals("Password") || notelp.equals("Nomor Telepon") || alamat.equals("Alamat")
+                        || no.isEmpty() || nama.isEmpty() || email.isEmpty() || pw.isEmpty() || notelp.isEmpty() || alamat.isEmpty()) {
+                    System.out.println("iki memeks");
+                    return;
+                }
 
                 try {
                     String query = "INSERT INTO user (norfid, nama_user, email, password, alamat, no_hp, jabatan)"
@@ -564,13 +572,6 @@ public class TambahKaryawan extends javax.swing.JDialog {
                 } catch (Exception ee) {
                     System.err.println("Error retrieving employee data: " + ee.getMessage());
                 }
-
-                System.out.println(no);
-                System.out.println(nama);
-                System.out.println(email);
-                System.out.println(pw);
-                System.out.println(notelp);
-                System.out.println(alamat);
             }
         });
     }

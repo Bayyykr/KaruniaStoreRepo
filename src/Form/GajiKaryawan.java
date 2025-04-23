@@ -564,7 +564,7 @@ public class GajiKaryawan extends JPanel {
                 } else if (action.equals("DETAIL")) {
                     // Dapatkan parent frame secara dinamis
                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                    PopUp_EditKaryawan tambahKaryawanDialog = new PopUp_EditKaryawan(parentFrame, true);
+                    PopUp_KonfrimasiCetakGajiKaryawan tambahKaryawanDialog = new PopUp_KonfrimasiCetakGajiKaryawan(parentFrame);
                     tambahKaryawanDialog.setVisible(true);
                 }
             }

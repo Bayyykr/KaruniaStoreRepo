@@ -8,7 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 
 public class ComboboxSlideCustom extends JPanel {
-    private JLabel displayLabel; // Changed from JTextField to JLabel
+    private JLabel displayLabel;
     private JButton prevButton;
     private JButton nextButton;
     private String[] options;
@@ -31,15 +31,15 @@ public class ComboboxSlideCustom extends JPanel {
         setLayout(new BorderLayout());
         setOpaque(false); // Make the panel transparent
         
-        // Changed from JTextField to JLabel to make it non-editable/non-clickable
+        // Label untuk menampilkan teks di tengah
         displayLabel = new JLabel();
         displayLabel.setBorder(new EmptyBorder(5, 10, 5, 10));
         displayLabel.setBackground(new Color(0, 0, 0, 0)); // Transparent background
         displayLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        displayLabel.setHorizontalAlignment(JLabel.LEFT);
+        displayLabel.setHorizontalAlignment(JLabel.CENTER); // Teks berada di tengah
         displayLabel.setOpaque(false); // Make the label transparent
 
-        // Navigation buttons
+        // Tombol navigasi
         prevButton = createCircularButton("<");
         nextButton = createCircularButton(">");
         
@@ -48,46 +48,50 @@ public class ComboboxSlideCustom extends JPanel {
     }
 
     private void setupLayout() {
-        // Panel for navigation buttons with additional vertical padding to move buttons down
-        JPanel navigationPanel = new JPanel() {
-            @Override
-            public Dimension getPreferredSize() {
-                Dimension size = super.getPreferredSize();
-                return new Dimension(size.width, size.height);
-            }
-        };
-        navigationPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 2)); // Added vertical padding (2)
-        navigationPanel.setOpaque(false);
-        navigationPanel.add(prevButton);
-        navigationPanel.add(nextButton);
+        // Panel untuk tombol prev di kiri
+        JPanel leftNavPanel = new JPanel();
+        leftNavPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 10));
+        leftNavPanel.setOpaque(false);
+        leftNavPanel.add(prevButton);
         
-        // Main panel
+        // Panel untuk tombol next di kanan
+        JPanel rightNavPanel = new JPanel();
+        rightNavPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 10));
+        rightNavPanel.setOpaque(false);
+        rightNavPanel.add(nextButton);
+        
+        // Panel utama
+        add(leftNavPanel, BorderLayout.WEST);
         add(displayLabel, BorderLayout.CENTER);
-        add(navigationPanel, BorderLayout.EAST);
+        add(rightNavPanel, BorderLayout.EAST);
     }
 
     private void initEventListeners() {
         prevButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Circular navigation - jika di indeks pertama, kembali ke indeks terakhir
                 if (currentIndex > 0) {
                     currentIndex--;
-                    updateDisplay();
-                    updateNavigationButtons();
-                    playButtonClickEffect(prevButton);
+                } else {
+                    currentIndex = options.length - 1; // Kembali ke indeks terakhir
                 }
+                updateDisplay();
+                playButtonClickEffect(prevButton);
             }
         });
 
         nextButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Circular navigation - jika di indeks terakhir, kembali ke indeks pertama
                 if (currentIndex < options.length - 1) {
                     currentIndex++;
-                    updateDisplay();
-                    updateNavigationButtons();
-                    playButtonClickEffect(nextButton);
+                } else {
+                    currentIndex = 0; // Kembali ke indeks pertama
                 }
+                updateDisplay();
+                playButtonClickEffect(nextButton);
             }
         });
     }
@@ -101,16 +105,12 @@ public class ComboboxSlideCustom extends JPanel {
     }
     
     private void updateNavigationButtons() {
-        // Reset button status each time this is called
-        if (options.length <= 1) {
-            // If only one or no options, disable both buttons
-            prevButton.setEnabled(false);
-            nextButton.setEnabled(false);
-        } else {
-            // Set button status based on current index
-            prevButton.setEnabled(currentIndex > 0);
-            nextButton.setEnabled(currentIndex < options.length - 1);
-        }
+        // Karena kita menggunakan circular navigation, tombol selalu aktif
+        // kecuali jika tidak ada pilihan atau hanya satu pilihan
+        boolean hasMultipleOptions = options.length > 1;
+        
+        prevButton.setEnabled(hasMultipleOptions);
+        nextButton.setEnabled(hasMultipleOptions);
 
         // Improved visual disabled state
         if (!prevButton.isEnabled()) {

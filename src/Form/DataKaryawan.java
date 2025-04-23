@@ -1,10 +1,11 @@
 package Form;
 
+import PopUp_all.PopUp_HapusDataGajiKaryawan;
 import SourceCode.RoundedButton;
 import SourceCode.RoundedBorder;
 import SourceCode.ScrollPane;
 import SourceCode.JTableRounded;
-import SourceCode.PopUpEditDataKaryawan;
+import SourceCode.PopUp_EditKaryawan;
 import SourceCode.TambahKaryawan;
 
 import java.awt.*;
@@ -17,7 +18,8 @@ import java.sql.*;
 
 public class DataKaryawan extends JPanel {
 
-       private JFrame parentFrame;
+    Component parentComponent = this;
+    private JFrame parentFrame;
     private Runnable setAbsenKaryawan;
     private Runnable setGajiKaryawan;
     private JTextField searchField;
@@ -448,10 +450,10 @@ public class DataKaryawan extends JPanel {
                     public void actionPerformed(ActionEvent e) {
                         stopCellEditing();
 
-            Window parentWindow = SwingUtilities.getWindowAncestor(DataKaryawan.this);
-            Frame parentFrame = parentWindow instanceof Frame ? (Frame) parentWindow : null;
-            PopUpEditDataKaryawan editdataKaryawanDialog = new PopUpEditDataKaryawan(parentFrame, true);
-            editdataKaryawanDialog.setVisible(true);
+                Window parentWindow = SwingUtilities.getWindowAncestor(DataKaryawan.this);
+                Frame parentFrame = parentWindow instanceof Frame ? (Frame) parentWindow : null;
+                PopUp_EditKaryawan editdataKaryawanDialog = new PopUp_EditKaryawan(parentFrame, true);
+                editdataKaryawanDialog.setVisible(true);
                         System.out.println("ini button edit");
                     }
                 });
@@ -506,6 +508,9 @@ public class DataKaryawan extends JPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         stopCellEditing();
+                         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                 PopUp_HapusDataGajiKaryawan HapusData = new PopUp_HapusDataGajiKaryawan(parentFrame);
+                 HapusData.setVisible(true);
                         System.out.println("ini button delete");
                     }
                 });
