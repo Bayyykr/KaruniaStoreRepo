@@ -1,6 +1,7 @@
 package Form;
 
 import PopUp_all.PopUp_BayarTransjual;
+import PopUp_all.*;
 import SourceCode.PopUp_edittransbeli;
 import SourceCode.ScrollPane;
 import java.awt.*;
@@ -36,6 +37,7 @@ import javax.swing.event.TableModelListener;
 
 public class Transjual extends JPanel {
 
+    private JFrame parentFrame;
     Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
     private JTextField hargaBeliField;
@@ -325,6 +327,7 @@ public class Transjual extends JPanel {
                         if (selectedRow != -1) {
                             handleEditTransaksi(selectedRow);
                             hitungKembalian();
+                            PindahanAntarPopUp.showProdukBerhasilDiedit(parentFrame);
                         } else {
                             JOptionPane.showMessageDialog(Transjual.this,
                                     "Pilih baris yang ingin diedit terlebih dahulu",
@@ -421,6 +424,7 @@ public class Transjual extends JPanel {
                                         // Update the total amount
                                         updateTotalAmount();
                                         hitungKembalian();
+                                        PindahanAntarPopUp.showProdukBerhasilDihapus(parentFrame);
                                     }
                                 }
                             });
@@ -558,7 +562,7 @@ public class Transjual extends JPanel {
                 DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
                 if (model.getRowCount() == 0) {
                     masukuangfield.setText("Rp. ");
-//                    POPUP KECIL ISIAN "BELUM ADA BARANG YANG DIMASUKKAN"
+                    PindahanAntarPopUp.showMasukkanBarangTerlebihDahulu(parentFrame);
                     return;
                 } else {
                     enforceRpPrefix();
@@ -773,13 +777,13 @@ public class Transjual extends JPanel {
                 // Pastikan ada data di tabel sebelum menampilkan dialog pembayaran
                 DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
                 if (model.getRowCount() == 0) {
-//                    POPUP KECIL ISIAN "TIDAK ADA ITEM YANG DIBELI"
+                    PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
                     return;
                 }
 
                 String Masuk = masukuangfield.getText().replace("Rp. ", "").replace(".", "").trim();
                 if (Masuk.isEmpty()) {
-//                    POPUP KECIL ISIAN "MASUKKAN UANG TERLEBIH DAHULU"
+                    PindahanAntarPopUp.showMasukkanUangTerlebihDahulu(parentFrame);
                     return;
                 }
 
@@ -1044,7 +1048,7 @@ public class Transjual extends JPanel {
                 hargaBeliField.setText("Rp. " + formatter.format(harga));
                 currentProductSize = ukuran != null ? ukuran : "";
             } else {
-//                    POPUP KECIL ISIAN "PRODUK TIDAK DITEMUKAN"
+                PindahanAntarPopUp.showProdukTidakDitemukan(parentFrame);
                 namabarang.setText("");
                 hargaBeliField.setText("Rp. ");
             }
@@ -1062,17 +1066,12 @@ public class Transjual extends JPanel {
             String kode = scanKodeField.getText();
             if (kode.isEmpty()) {
 //                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
-//                    POPUP KECIL ISIAN "SCAN PRODUK TERLEBIH DAHULU"
+                PindahanAntarPopUp.showScanProdukTerlebihDahulu(parentFrame);
                 return;
             }
 
             // Get price from hargaBeliField
             String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
-            if (hargaText.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Harga tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             int harga = Integer.parseInt(hargaText);
 
             // Get discount from combobox
@@ -1167,7 +1166,7 @@ public class Transjual extends JPanel {
             scanKodeField.requestFocus();
 
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format harga tidak valid", "Error", JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
@@ -1380,8 +1379,7 @@ public class Transjual extends JPanel {
 //            JOptionPane.showMessageDialog(parentComponent,
 //                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
 //                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
-            
-//                    POPUP KECIL ISIAN "TRANSAKSI BERHASIL"
+            PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
             return true; // Transaksi berhasil
 
         } catch (SQLException ex) {
@@ -1505,7 +1503,7 @@ public class Transjual extends JPanel {
             if (pj.printDialog()) {
                 pj.print();
 //                JOptionPane.showMessageDialog(parentComponent, "Struk berhasil dicetak", "Informasi", JOptionPane.INFORMATION_MESSAGE);
-//                    POPUP KECIL ISIAN "STRUK BERHASIL DICETAK"
+                PindahanAntarPopUp.showStrukBerhasilDicetak(parentFrame);
             }
         } catch (PrinterException ex) {
             JOptionPane.showMessageDialog(parentComponent,
