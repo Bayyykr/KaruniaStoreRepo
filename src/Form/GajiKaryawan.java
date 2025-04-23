@@ -15,6 +15,7 @@ import javax.swing.table.*;
 
 public class GajiKaryawan extends JPanel {
 
+    private Runnable backToDataKaryawan;
     Component parentComponent = this;
     private JTextField searchField;
     private JTableRounded salaryTable;
@@ -141,6 +142,14 @@ public class GajiKaryawan extends JPanel {
         kembaliButton.setOpaque(false);
         kembaliButton.setFont(new Font("Arial", Font.BOLD, 12));
         kembaliButton.setUI(new RoundedButton());
+        
+        kembaliButton.addActionListener(e -> {
+            // Panggil callback untuk mengganti panel
+            if (backToDataKaryawan != null) {
+                backToDataKaryawan.run();
+            }
+        });
+        
         kembaliButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -582,5 +591,9 @@ public class GajiKaryawan extends JPanel {
             String status = (String) table.getValueAt(row, 4);
             return status.equals("Dibayar");
         }
+    }
+
+    public void setBackToDataKaryawan(Runnable listener) {
+        this.backToDataKaryawan = listener;
     }
 }

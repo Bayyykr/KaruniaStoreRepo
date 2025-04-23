@@ -17,6 +17,7 @@ import java.sql.*;
 public class DataKaryawan extends JPanel {
 
     private Runnable setAbsenKaryawan;
+    private Runnable setGajiKaryawan;
     private JTextField searchField;
     private JTableRounded employeeTable;
     private JButton dataAbsenButton, kelolaGajiButton, tambahKaryawanButton;
@@ -121,6 +122,13 @@ public class DataKaryawan extends JPanel {
         kelolaGajiButton.setContentAreaFilled(false);
         kelolaGajiButton.setOpaque(false);
         kelolaGajiButton.setFont(new Font("Arial", Font.BOLD, 12));
+        
+        kelolaGajiButton.addActionListener(e -> {
+            // Panggil callback untuk mengganti panel
+            if (setGajiKaryawan != null) {
+                setGajiKaryawan.run();
+            }
+        });
 
         // TAMBAH KARYAWAN button - dark gray with white text and user icon
         tambahKaryawanButton = new JButton("TAMBAH KARYAWAN");
@@ -542,6 +550,9 @@ public class DataKaryawan extends JPanel {
     // Method untuk menetapkan listener tombol plus
     public void setAbsenKaryawan(Runnable listener) {
         this.setAbsenKaryawan = listener;
+    }
+    public void setGajiKaryawan(Runnable listener) {
+        this.setGajiKaryawan = listener;
     }
 
     public void getData() {

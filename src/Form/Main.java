@@ -16,6 +16,7 @@ public class Main extends JFrame {
     private Dashboard dashboardPanel;
 //    private Produk produkPanel;
     private DataKaryawan karyawanPanel;
+    private GajiKaryawan gajikaryawanPanel;
     private AbsenKaryawan absenpanel;
 //    private Laporan laporanPanel;
     private Transaksibeli transaksiBeli;
@@ -42,6 +43,7 @@ public class Main extends JFrame {
         dashboardPanel = new Dashboard();
 //        produkPanel = new Produk();
         karyawanPanel = new DataKaryawan();
+        gajikaryawanPanel = new GajiKaryawan();
         absenpanel = new AbsenKaryawan();
 //        laporanPanel = new Laporan();
         transaksiBeli = new Transaksibeli();
@@ -60,6 +62,7 @@ public class Main extends JFrame {
         dashboardPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
 //        produkPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         absenpanel.setBounds(panelX, panelY, panelWidth, 640);
+        gajikaryawanPanel.setBounds(panelX, panelY, panelWidth, 640);
         karyawanPanel.setBounds(panelX, panelY, panelWidth, 640);
 //        laporanPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         transaksiBeli.setBounds(panelX, panelY, panelWidth, panelHeight);
@@ -67,6 +70,13 @@ public class Main extends JFrame {
         karyawanPanel.setAbsenKaryawan(() -> {
             switchToAbsenKaryawan();
         });
+        karyawanPanel.setGajiKaryawan(() -> {
+            switchToGajiKaryawan();
+        });
+        // Di dalam constructor Main(), setelah inisialisasi panel:
+gajikaryawanPanel.setBackToDataKaryawan(() -> {
+    switchToDataKaryawan();
+});
         
         absenpanel.setBackToDataKaryawan(() -> {
             switchToDataKaryawan();
@@ -161,6 +171,20 @@ public class Main extends JFrame {
         revalidate();
         repaint();
     }
+    public void switchToGajiKaryawan() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+    
+        currentPanel = gajikaryawanPanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+    
+        revalidate();
+        repaint();
+    }
+    
+    
     
     public static void main(String args[]) {
         SwingUtilities.invokeLater(() -> {
