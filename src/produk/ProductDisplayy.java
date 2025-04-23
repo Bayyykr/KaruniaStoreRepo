@@ -13,6 +13,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.border.Border;
@@ -22,6 +23,11 @@ import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 import javax.swing.plaf.basic.ComboPopup;
 import Form.Productt;
+import java.sql.*;
+import db.conn;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Locale;
 
 public class ProductDisplayy extends javax.swing.JPanel {
 // Deklarasikan plusButton sebagai field class
@@ -44,18 +50,96 @@ public class ProductDisplayy extends javax.swing.JPanel {
 // Deklarasi label tooltip
     private JLabel tooltipLabel = new JLabel();
 
-    private JPanel createProductsGrid() {
+    private Connection con;
 
+    public ProductDisplayy() {
+
+        // Tetapkan ukuran preferensi yang tetap
+        setPreferredSize(new Dimension(1065, 640));
+        setLayout(new BorderLayout(0, 15));
+        setBackground(Color.WHITE);
+        setBorder(new EmptyBorder(20, 20, 20, 20));
+        con = conn.getConnection();
+
+        // Add product category panel
+        add(createCategoryPanel(), BorderLayout.NORTH);
+
+        // Add main panel with filters and fixed-height product grid
+        add(initializeMainPanel(), BorderLayout.CENTER);
+
+        // Add button panel on the right
+        add(createActionButtons(), BorderLayout.EAST);
+    }
+
+    private JPanel createProductsGrid() {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 4, 20, 25)); // 0 baris, 4 kolom dengan spacing lebih besar
+        panel.setLayout(new GridLayout(0, 4, 20, 25)); // 0 rows, 4 columns with spacing
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        try {
+            // Create a list to store products with their stock info
+            List<Map<String, Object>> productsWithStock = new ArrayList<>();
+            // First query to get all products
+            String productSql = "SELECT id_produk, nama_produk, harga_jual, size, gambar, merk, jenis_produk, gender "
+                    + "FROM produk";
+            try (PreparedStatement st = con.prepareStatement(productSql)) {
+                ResultSet rs = st.executeQuery();
+                while (rs.next()) {
+                    String productId = rs.getString("id_produk");
+                    int stock = 0;
+                    // Get the latest stock for each product
+                    String stokSql = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
+                    try (PreparedStatement stockStmt = con.prepareStatement(stokSql)) {
+                        stockStmt.setString(1, productId);
+                        ResultSet stockRs = stockStmt.executeQuery();
+                        if (stockRs.next()) {
+                            stock = stockRs.getInt("produk_sisa");
+                        }
+                    }
+                    // Store product data and stock in a Map
+                    Map<String, Object> productData = new HashMap<>();
+                    productData.put("id_produk", productId);
+                    productData.put("nama_produk", rs.getString("nama_produk"));
+                    productData.put("harga_jual", rs.getDouble("harga_jual"));
+                    productData.put("size", rs.getInt("size"));
+                    productData.put("stock", stock);
 
-        // Buat 13 produk (akan ditampilkan 4 per baris)
-        for (int i = 0; i < 80; i++) {
-            panel.add(createProductCard());
+                    // Properly handle BLOB image data
+                    byte[] imageData = null;
+                    Blob blob = rs.getBlob("gambar");
+                    if (blob != null) {
+                        imageData = blob.getBytes(1, (int) blob.length());
+                    }
+                    productData.put("gambar", imageData);
+
+                    productData.put("merk", rs.getString("merk"));
+                    productData.put("jenis_produk", rs.getString("jenis_produk"));
+                    productData.put("gender", rs.getString("gender"));
+                    productsWithStock.add(productData);
+                }
+            }
+            // Sort the products by stock (ascending)
+            productsWithStock.sort((p1, p2)
+                    -> Integer.compare((Integer) p1.get("stock"), (Integer) p2.get("stock")));
+            // Add sorted products to the panel
+            for (Map<String, Object> product : productsWithStock) {
+                panel.add(createProductCard(
+                        (String) product.get("id_produk"),
+                        (String) product.get("nama_produk"),
+                        (Double) product.get("harga_jual"),
+                        (Integer) product.get("size"),
+                        (Integer) product.get("stock"),
+                        (byte[]) product.get("gambar"), // Changed to byte array instead of String
+                        (String) product.get("merk"),
+                        (String) product.get("jenis_produk"),
+                        (String) product.get("gender")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error connecting to database: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
-
         return panel;
     }
 
@@ -81,24 +165,6 @@ public class ProductDisplayy extends javax.swing.JPanel {
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         return mainPanel;
-    }
-
-    public ProductDisplayy() {
-
-        // Tetapkan ukuran preferensi yang tetap
-        setPreferredSize(new Dimension(1065, 640));
-        setLayout(new BorderLayout(0, 15));
-        setBackground(Color.WHITE);
-        setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        // Add product category panel
-        add(createCategoryPanel(), BorderLayout.NORTH);
-
-        // Add main panel with filters and fixed-height product grid
-        add(initializeMainPanel(), BorderLayout.CENTER);
-
-        // Add button panel on the right
-        add(createActionButtons(), BorderLayout.EAST);
     }
 
     private JPanel createCategoryPanel() {
@@ -265,7 +331,8 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return panel;
     }
 
-    private JPanel createProductCard() {
+    private JPanel createProductCard(String productId, String productName, double price, int size,
+            int stock, byte[] imageData, String merk, String jenis, String gender) {
         JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
@@ -290,7 +357,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 // Buat warna background abu-abu muda
-                g2d.setColor(new Color(245, 245, 245));
+                g2d.setColor(new Color(255, 255, 255));
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
 
                 // Tambahkan border 2px dengan warna abu-abu lebih gelap
@@ -308,6 +375,9 @@ public class ProductDisplayy extends javax.swing.JPanel {
         imagePanel.setPreferredSize(new Dimension(220, 220));
         imagePanel.setMinimumSize(new Dimension(220, 220));
         imagePanel.setMaximumSize(new Dimension(220, 220));
+
+        // Store product ID as a property to use in click listener
+        imagePanel.putClientProperty("productId", productId);
         addPanelClickListener(imagePanel);
 
         // Menggunakan GridBagLayout untuk lebih presisi dalam pengaturan posisi
@@ -317,29 +387,26 @@ public class ProductDisplayy extends javax.swing.JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = 1;
         gbc.gridheight = 1;
-        gbc.insets = new Insets(0, -20, 0, 20);
+        gbc.insets = new Insets(0, 0, 0, 0);
         gbc.anchor = GridBagConstraints.CENTER;
 
         JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(JLabel.CENTER);
+
         try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/gambar_sepatu.png"));
-            if (icon.getIconWidth() == -1) {
-                JLabel placeholderLabel = new JLabel("SEPATU");
-                placeholderLabel.setFont(new Font("Arial", Font.BOLD, 14));
-                placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
-                placeholderLabel.setForeground(Color.DARK_GRAY);
-                imageLabel.add(placeholderLabel);
-            } else {
-                Image img = icon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
+            // Handle byte array image data
+            if (imageData != null && imageData.length > 0) {
+                ImageIcon icon = new ImageIcon(imageData);
+                Image img = icon.getImage().getScaledInstance(180, 180, Image.SCALE_SMOOTH);
                 imageLabel.setIcon(new ImageIcon(img));
+            } else {
+                // If no image data, show placeholder with product name
+                createPlaceholderLabel(imageLabel, productName);
             }
         } catch (Exception e) {
-            JLabel placeholderLabel = new JLabel("SEPATU");
-            placeholderLabel.setFont(new Font("Arial", Font.BOLD, 14));
-            placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
-            placeholderLabel.setForeground(Color.DARK_GRAY);
-            imageLabel.add(placeholderLabel);
+            // If error occurs, show placeholder
+            createPlaceholderLabel(imageLabel, productName);
+            e.printStackTrace();
         }
 
         imageLabelContainer.add(imageLabel, gbc);
@@ -362,30 +429,38 @@ public class ProductDisplayy extends javax.swing.JPanel {
         infoPanel.setMinimumSize(new Dimension(230, 100));
         infoPanel.setMaximumSize(new Dimension(230, 100));
 
-        JLabel nameLabel = new JLabel("Adidas Simanjutak");
+        // Use data from the database
+        JLabel nameLabel = new JLabel(productName);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addLabelClickListener(nameLabel); // <- di sini
+        nameLabel.putClientProperty("productId", productId);
+        addLabelClickListener(nameLabel);
 
-        JLabel priceLabel = new JLabel("Rp. 250.000,00");
+        // Format the price with proper formatting
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        String formattedPrice = currencyFormat.format(price);
+        JLabel priceLabel = new JLabel(formattedPrice);
         priceLabel.setFont(new Font("Arial", Font.BOLD, 14));
         priceLabel.setForeground(new Color(0, 102, 204));
         priceLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addLabelClickListener(priceLabel); // <- di sini
+        priceLabel.putClientProperty("productId", productId);
+        addLabelClickListener(priceLabel);
 
-        JLabel sizeLabel = new JLabel("Uk : 37");
+        JLabel sizeLabel = new JLabel("Uk : " + size);
         sizeLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         sizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addLabelClickListener(sizeLabel); // <- di sini
+        sizeLabel.putClientProperty("productId", productId);
+        addLabelClickListener(sizeLabel);
 
         JPanel stockAddPanel = new JPanel(new BorderLayout(5, 0));
         stockAddPanel.setBackground(Color.WHITE);
         stockAddPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         stockAddPanel.setMaximumSize(new Dimension(230, 30));
 
-        JLabel stockLabel = new JLabel("Stok : 10");
+        JLabel stockLabel = new JLabel("Stok : " + stock);
         stockLabel.setFont(new Font("Arial", Font.PLAIN, 13));
-        addLabelClickListener(stockLabel); // <- di sini
+        stockLabel.putClientProperty("productId", productId);
+        addLabelClickListener(stockLabel);
 
         stockAddPanel.add(stockLabel, BorderLayout.WEST);
 
@@ -405,23 +480,93 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return card;
     }
 
-    // Buat method untuk menambahkan MouseListener ke label
+    // Helper method to create a placeholder label
+    private void createPlaceholderLabel(JLabel imageLabel, String productName) {
+        // Create a placeholder panel for better visual appearance
+        JPanel placeholderPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(230, 230, 230));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.setColor(new Color(180, 180, 180));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+                g2d.dispose();
+            }
+        };
+        placeholderPanel.setPreferredSize(new Dimension(180, 180));
+
+        // Create the text label
+        String displayText = productName.length() > 15
+                ? productName.substring(0, 15) + "..." : productName;
+        JLabel textLabel = new JLabel(displayText);
+        textLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        textLabel.setForeground(Color.DARK_GRAY);
+        textLabel.setHorizontalAlignment(JLabel.CENTER);
+
+        // Add icon representing missing image
+        JLabel iconLabel = new JLabel(new ImageIcon(getClass().getResource("/icons/no_image.png")));
+        iconLabel.setHorizontalAlignment(JLabel.CENTER);
+
+        // If icon fails to load, use text only
+        if (iconLabel.getIcon() == null || iconLabel.getIcon().getIconWidth() <= 0) {
+            placeholderPanel.setLayout(new GridBagLayout());
+            placeholderPanel.add(textLabel);
+        } else {
+            placeholderPanel.setLayout(new BorderLayout());
+            placeholderPanel.add(iconLabel, BorderLayout.CENTER);
+            placeholderPanel.add(textLabel, BorderLayout.SOUTH);
+        }
+
+        imageLabel.setLayout(new BorderLayout());
+        imageLabel.add(placeholderPanel, BorderLayout.CENTER);
+    }
+
     private void addLabelClickListener(JLabel label) {
-        label.setCursor(new Cursor(Cursor.HAND_CURSOR)); // ubah kursor jadi tangan biar lebih UX-friendly
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                Productt.getMainFrame().switchToEditProductPanel();
+                String productId = (String) label.getClientProperty("productId");
+                if (productId != null) {
+//                    showProductDetail(productId);
+                    System.out.println("transbel");
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
     }
 
     private void addPanelClickListener(JPanel panel) {
-        panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                Productt.getMainFrame().switchToEditProductPanel();
+                String productId = (String) panel.getClientProperty("productId");
+                if (productId != null) {
+                    // Open product detail or perform other action with the specific product
+                    System.out.println("transbel");
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                panel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
     }
