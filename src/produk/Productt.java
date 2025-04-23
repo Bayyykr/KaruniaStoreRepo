@@ -129,7 +129,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
-                        currentPanel = produkPanelkasir;
+                        currentPanel = produkPanel;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan
@@ -164,7 +164,7 @@ public class Productt extends JFrame {
         add(top);
 
         // Set Dashboard as initial panel
-        currentPanel = dashboardPanelKasir;
+        currentPanel = produkPanel;
         add(currentPanel);
 
         // Make all components visible

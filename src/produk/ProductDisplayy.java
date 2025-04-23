@@ -25,7 +25,8 @@ import Form.Productt;
 
 public class ProductDisplayy extends javax.swing.JPanel {
 // Deklarasikan plusButton sebagai field class
-  Component parentComponent = this; 
+
+    Component parentComponent = this;
     private JButton plusButton;
     private Runnable trashButtonListener;
     private JButton trashButton; // Add this as a field to match the plusButton approach
@@ -44,7 +45,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
     private JLabel tooltipLabel = new JLabel();
 
     private JPanel createProductsGrid() {
-        
+
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(0, 4, 20, 25)); // 0 baris, 4 kolom dengan spacing lebih besar
         panel.setBackground(Color.WHITE);
@@ -83,7 +84,6 @@ public class ProductDisplayy extends javax.swing.JPanel {
     }
 
     public ProductDisplayy() {
-        initComponents();
 
         // Tetapkan ukuran preferensi yang tetap
         setPreferredSize(new Dimension(1065, 640));
@@ -188,22 +188,22 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return tabContainer;
     }
 
- private JPanel createFilterPanel() {
+    private JPanel createFilterPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 0));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
-        
+
         // Left side with Filter label and icon
         JPanel filterLabelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         filterLabelPanel.setBackground(Color.WHITE);
-        
+
         // Cara lebih simpel untuk memuat gambar
         ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/filter.png"));
         Image resizedImg = originalIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         JLabel filterIcon = new JLabel(new ImageIcon(resizedImg));
         JLabel filterText = new JLabel("Filter");
         filterText.setFont(new Font("Arial", Font.BOLD, 14));
-        
+
         // Box layout yang lebih simpel
         Box verticalBox = Box.createVerticalBox();
         verticalBox.add(Box.createVerticalStrut(5));
@@ -213,40 +213,40 @@ public class ProductDisplayy extends javax.swing.JPanel {
         textBox.add(filterText);
         filterLabelPanel.add(verticalBox);
         filterLabelPanel.add(textBox);
-        
+
         // Panel dropdown dengan FlowLayout
         JPanel dropdownsPanel = new JPanel();
         dropdownsPanel.setLayout(new BoxLayout(dropdownsPanel, BoxLayout.X_AXIS));
         dropdownsPanel.setBackground(Color.WHITE);
-        
+
         // Definisi opsi untuk dropdown
         String[] merkOptions = {"Merk", "Adidas", "Nike", "Puma", "Reebok"};
         String[] ukuranOptions = {"Ukuran", "< 25", "25 - 30", "30 - 35", "35 - 40", "> 40"};
         String[] hargaOptions = {"Harga", "< 50.000", "50.000 - 150.000", "151.000 - 300.000", "301.000 - 450.000"};
         String[] styleOptions = {"Style", "Olahraga", "Formal", "Kasual", "Boots"};
         String[] genderOptions = {"Gender", "Male", "Female", "Unisex"};
-        
+
         // Buat ComboboxCustomKhususProduk untuk setiap dropdown
         ComboboxCustomKhususProduk merkDropdown = new ComboboxCustomKhususProduk(merkOptions);
         merkDropdown.setPreferredSize(new Dimension(180, 35));
         merkDropdown.setMaximumSize(new Dimension(180, 35));
-        
+
         ComboboxCustomKhususProduk ukuranDropdown = new ComboboxCustomKhususProduk(ukuranOptions);
         ukuranDropdown.setPreferredSize(new Dimension(180, 35));
         ukuranDropdown.setMaximumSize(new Dimension(180, 35));
-        
+
         ComboboxCustomKhususProduk hargaDropdown = new ComboboxCustomKhususProduk(hargaOptions);
         hargaDropdown.setPreferredSize(new Dimension(180, 35));
         hargaDropdown.setMaximumSize(new Dimension(180, 35));
-        
+
         ComboboxCustomKhususProduk styleDropdown = new ComboboxCustomKhususProduk(styleOptions);
         styleDropdown.setPreferredSize(new Dimension(180, 35));
         styleDropdown.setMaximumSize(new Dimension(180, 35));
-        
+
         ComboboxCustomKhususProduk genderDropdown = new ComboboxCustomKhususProduk(genderOptions);
         genderDropdown.setPreferredSize(new Dimension(180, 35));
         genderDropdown.setMaximumSize(new Dimension(180, 35));
-        
+
         // Tambahkan dengan rigid area di antara komponen
         dropdownsPanel.add(merkDropdown);
         dropdownsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -257,11 +257,11 @@ public class ProductDisplayy extends javax.swing.JPanel {
         dropdownsPanel.add(styleDropdown);
         dropdownsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         dropdownsPanel.add(genderDropdown);
-        
+
         // Tambahkan panel label dan dropdown ke panel utama
         panel.add(filterLabelPanel, BorderLayout.WEST);
         panel.add(dropdownsPanel, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
@@ -404,102 +404,105 @@ public class ProductDisplayy extends javax.swing.JPanel {
         card.add(infoPanel, BorderLayout.SOUTH);
         return card;
     }
-    
-    // Buat method untuk menambahkan MouseListener ke label
-private void addLabelClickListener(JLabel label) {
-    label.setCursor(new Cursor(Cursor.HAND_CURSOR)); // ubah kursor jadi tangan biar lebih UX-friendly
-    label.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            Productt.getMainFrame().switchToEditProductPanel();
-        }
-    });
-}
 
-private void addPanelClickListener(JPanel panel) {
-    panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    panel.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            Productt.getMainFrame().switchToEditProductPanel();
-        }
-    });
-}
+    // Buat method untuk menambahkan MouseListener ke label
+    private void addLabelClickListener(JLabel label) {
+        label.setCursor(new Cursor(Cursor.HAND_CURSOR)); // ubah kursor jadi tangan biar lebih UX-friendly
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Productt.getMainFrame().switchToEditProductPanel();
+            }
+        });
+    }
+
+    private void addPanelClickListener(JPanel panel) {
+        panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Productt.getMainFrame().switchToEditProductPanel();
+            }
+        });
+    }
+
     private JPanel createActionButtons() {
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setBackground(Color.WHITE);
-    panel.setBorder(new EmptyBorder(380, 5, 10, 0));
-    
-    // Tombol Fullscreen/Scan
-    JButton fullscreenButton = createRoundedIconButton("scan.png", new Color(20, 20, 20), "Scan Cari Produk");
-    fullscreenButton.addActionListener(e -> {
-        animateHideTooltip();
-        // Dapatkan parent frame dari tombol
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(fullscreenButton);
-        if (parentFrame != null) { // Cek apakah berhasil mendapatkan parentFrame
-            ScanBarcodeDialog dialog = new ScanBarcodeDialog(parentFrame);
-            dialog.setVisible(true);
-        } else {
-            System.out.println("Gagal mendapatkan parent frame.");
-        }
-    });
-    panel.add(fullscreenButton);
-    panel.add(Box.createVerticalStrut(15));
-    
-    // Tombol Sampah
-    trashButton = createRoundedIconButton("sampah.png", new Color(20, 20, 20), "Hapus Produk");
-    trashButton.addActionListener(e -> {
-        // Sembunyikan tooltip
-        animateHideTooltip();
-        // Panggil callback untuk mengganti panel
-        if (trashButtonListener != null) {
-            trashButtonListener.run();
-        }
-    });
-    panel.add(trashButton);
-    panel.add(Box.createVerticalStrut(15));
-    
-    // Tombol Dokumen (Discount)
-    JButton docButton = createRoundedIconButton("discount.png", new Color(20, 20, 20), "Discount");
-     docButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        animateHideTooltip();
-                        // Use SwingUtilities to find the parent frame
-                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                        PopUp_aturdiskon dialog = new PopUp_aturdiskon(parentFrame);
-                        dialog.setVisible(true);
-                        // fireEditingStopped sudah dipanggil oleh stopCellEditing()
-                    }
-                });
-    panel.add(docButton);
-    panel.add(Box.createVerticalStrut(15));
-    
-    // Tombol Plus (Tambah Produk)
-    plusButton = createRoundedIconButton("add.png", new Color(20, 20, 20), "Tambah Produk");
-    plusButton.addActionListener(e -> {
-        // Sembunyikan tooltip
-        animateHideTooltip();
-        // Panggil callback untuk mengganti panel
-        if (plusButtonListener != null) {
-            plusButtonListener.run();
-        }
-    });
-    panel.add(plusButton);  
-    
-    return panel;
-}
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(380, 5, 10, 0));
+
+        // Tombol Fullscreen/Scan
+        JButton fullscreenButton = createRoundedIconButton("scan.png", new Color(20, 20, 20), "Scan Cari Produk");
+        fullscreenButton.addActionListener(e -> {
+            animateHideTooltip();
+            // Dapatkan parent frame dari tombol
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(fullscreenButton);
+            if (parentFrame != null) { // Cek apakah berhasil mendapatkan parentFrame
+                ScanBarcodeDialog dialog = new ScanBarcodeDialog(parentFrame);
+                dialog.setVisible(true);
+            } else {
+                System.out.println("Gagal mendapatkan parent frame.");
+            }
+        });
+        panel.add(fullscreenButton);
+        panel.add(Box.createVerticalStrut(15));
+
+        // Tombol Sampah
+        trashButton = createRoundedIconButton("sampah.png", new Color(20, 20, 20), "Hapus Produk");
+        trashButton.addActionListener(e -> {
+            // Sembunyikan tooltip
+            animateHideTooltip();
+            // Panggil callback untuk mengganti panel
+            if (trashButtonListener != null) {
+                trashButtonListener.run();
+            }
+        });
+        panel.add(trashButton);
+        panel.add(Box.createVerticalStrut(15));
+
+        // Tombol Dokumen (Discount)
+        JButton docButton = createRoundedIconButton("discount.png", new Color(20, 20, 20), "Discount");
+        docButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                animateHideTooltip();
+                // Use SwingUtilities to find the parent frame
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                PopUp_aturdiskon dialog = new PopUp_aturdiskon(parentFrame);
+                dialog.setVisible(true);
+                // fireEditingStopped sudah dipanggil oleh stopCellEditing()
+            }
+        });
+        panel.add(docButton);
+        panel.add(Box.createVerticalStrut(15));
+
+        // Tombol Plus (Tambah Produk)
+        plusButton = createRoundedIconButton("add.png", new Color(20, 20, 20), "Tambah Produk");
+        plusButton.addActionListener(e -> {
+            // Sembunyikan tooltip
+            animateHideTooltip();
+            // Panggil callback untuk mengganti panel
+            if (plusButtonListener != null) {
+                plusButtonListener.run();
+            }
+        });
+        panel.add(plusButton);
+
+        return panel;
+    }
 
 // Method untuk menetapkan listener tombol sampah
-public void setTrashButtonListener(Runnable listener) {
-    this.trashButtonListener = listener;
-}
+    public void setTrashButtonListener(Runnable listener) {
+        this.trashButtonListener = listener;
+    }
 // Method untuk menetapkan listener tombol plus
+
     public void setPlusButtonListener(Runnable listener) {
         this.plusButtonListener = listener;
     }
 // Animator untuk menghilangkan tooltip dengan efek fade-out
+
     private void animateHideTooltip() {
         if (tooltipWindow != null && tooltipWindow.isVisible()) {
             fadeInTimer.stop();
@@ -702,27 +705,4 @@ public void setTrashButtonListener(Runnable listener) {
         return button;
     }
 
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
-    private void initComponents() {
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 300, Short.MAX_VALUE)
-        );
-    }// </editor-fold>                        
-
-    // Variables declaration - do not modify                     
-    // End of variables declaration                   
 }
