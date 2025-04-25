@@ -95,7 +95,7 @@ public class Laporan extends javax.swing.JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                PopUP_StartdateEndDateV2 dialog = new PopUP_StartdateEndDateV2(parentFrame);
+                PopUp_StartDateEndDate dialog = new PopUp_StartDateEndDate(parentFrame);
                 dialog.setVisible(true);
                 System.out.println("start date end date di klik");
             }
