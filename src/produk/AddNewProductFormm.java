@@ -1,5 +1,16 @@
 package produk;
 
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import net.sourceforge.barbecue.Barcode;
+import net.sourceforge.barbecue.BarcodeFactory;
+import net.sourceforge.barbecue.BarcodeImageHandler;
 import SourceCode.RoundedButton;
 import SourceCode.RoundedPanelProduk;
 import SourceCode.RoundedTextField;
@@ -21,27 +32,41 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import java.awt.dnd.*;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.util.List;
-import java.util.HashMap;
+import java.util.Random;
 
 public class AddNewProductFormm extends JPanel {
-
+    
+    private JTextField txtInput;
+    private JButton btnGenerate;
+    private JButton btnSave;
+    private JPanel barcodePanel;
+    private Barcode barcode;
     // Komponen form
     private RoundedTextField txtNamaProduct, txtHargaJual, txtHargaBeli, txtMerk, txtUkuran, txtStok;
     private JRadioButton rbMale, rbFemale, rbUnisex;
     private ButtonGroup genderGroup;
     private ComboboxCustom cbDiscount, cbCategory;
-    private JLabel lblStyle,barcodeLabel,lblPhotoCount,imagePreview;
-    private JButton btnAddProduct, btnCancel, btnBrowseFile, btnGenerateBarcode, btnPrint,btnPrevStyle, btnNextStyle,btnRemoveImage;
-    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory;
-    private JPanel dragDropPanel,uploadInstructionsPanel;
+    private JLabel lblStyle;
+    private JButton btnAddProduct, btnCancel, btnBrowseFile;
+    private JButton btnGenerateBarcode, btnPrint;
+    private JButton btnPrevStyle, btnNextStyle;
+    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory,barcodeArea;
+    private JPanel dragDropPanel;
+    private JLabel lblPhotoCount;
     private JFrame parentFrame; // Reference to parent frame for closing
     private Productt mainFrame; // Tambahkan referensi ke main frame
     private File selectedImageFile;
     private ImageIcon displayedImage;
-    private BufferedImage barcodeImage; // Menyimpan gambar barcode
-    
+    private JLabel imagePreview;
+    private JButton btnRemoveImage;
+    private JPanel uploadInstructionsPanel;
+
     // Current style options and index
     private String[] currentStyleOptions = {""};
     private int currentStyleIndex = 0;
@@ -49,7 +74,7 @@ public class AddNewProductFormm extends JPanel {
     // Definisi ukuran ikon yang lebih kecil
     private static final int ICON_SIZE = 16; // ukuran ikon yang lebih kecil
     private int cornerRadius = 15;
-
+  
     public AddNewProductFormm() {
         this(null);
     }
@@ -109,8 +134,8 @@ public class AddNewProductFormm extends JPanel {
 
         initEventListeners();
     }
-    
-     private void createGeneralInfoPanel() {
+
+    private void createGeneralInfoPanel() {
         panelGeneral = new RoundedPanelProduk();
         panelGeneral.setBackground(new Color(240, 240, 240));
         panelGeneral.setBounds(20, 80, 730, 260);
@@ -169,208 +194,208 @@ public class AddNewProductFormm extends JPanel {
         panelGeneral.add(cbDiscount);
     }
 
-  private void createUploadImagesPanel() {
-    // Main panel
-    panelImages = new RoundedPanelProduk();
-    panelImages.setBackground(new Color(240, 240, 240));
-    panelImages.setBounds(770, 80, 280, 310); // Tetap mempertahankan posisi dan ukuran
-    panelImages.setLayout(null);
-    add(panelImages);
+    private void createUploadImagesPanel() {
+        // Main panel
+        panelImages = new RoundedPanelProduk();
+        panelImages.setBackground(new Color(240, 240, 240));
+        panelImages.setBounds(770, 80, 280, 310); // Tetap mempertahankan posisi dan ukuran
+        panelImages.setLayout(null);
+        add(panelImages);
 
-    // Label for the main panel
-    JLabel lblImageUpload = new JLabel("Uploud Images");
-    lblImageUpload.setFont(new Font("Arial", Font.BOLD, 14));
-    lblImageUpload.setBounds(20, 10, 240, 30);
-    panelImages.add(lblImageUpload);
+        // Label for the main panel
+        JLabel lblImageUpload = new JLabel("Uploud Images");
+        lblImageUpload.setFont(new Font("Arial", Font.BOLD, 14));
+        lblImageUpload.setBounds(20, 10, 240, 30);
+        panelImages.add(lblImageUpload);
 
-    // Inner rounded panel for content - Tetap menggunakan RoundedPanelProduk
-    RoundedPanelProduk contentPanel = new RoundedPanelProduk();
-    contentPanel.setBackground(Color.WHITE);
-    contentPanel.setBounds(20, 50, 240, 240);
-    contentPanel.setLayout(null);
-    panelImages.add(contentPanel);
-    
-    // Panel untuk instruksi upload (visible di awal)
-    uploadInstructionsPanel = new JPanel(null);
-    uploadInstructionsPanel.setBounds(0, 0, 240, 240);
-    uploadInstructionsPanel.setBackground(Color.WHITE);
-    uploadInstructionsPanel.setOpaque(false); // Penting: agar tidak menutupi rounded corner dari parent
-    contentPanel.add(uploadInstructionsPanel);
+        // Inner rounded panel for content - Tetap menggunakan RoundedPanelProduk
+        RoundedPanelProduk contentPanel = new RoundedPanelProduk();
+        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBounds(20, 50, 240, 240);
+        contentPanel.setLayout(null);
+        panelImages.add(contentPanel);
 
-    // Upload Icon (scaled)
-    ImageIcon origUploadIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_uploud.png"));
-    Image scaledUpImage = origUploadIcon.getImage().getScaledInstance(ICON_SIZE * 3, ICON_SIZE * 2, Image.SCALE_SMOOTH);
-    ImageIcon scaledUploadIcon = new ImageIcon(scaledUpImage);
-    JLabel uploadIcon = new JLabel(scaledUploadIcon);
-    uploadIcon.setBounds(95, 50, scaledUploadIcon.getIconWidth(), scaledUploadIcon.getIconHeight());
-    uploadInstructionsPanel.add(uploadIcon);
+        // Panel untuk instruksi upload (visible di awal)
+        uploadInstructionsPanel = new JPanel(null);
+        uploadInstructionsPanel.setBounds(0, 0, 240, 240);
+        uploadInstructionsPanel.setBackground(Color.WHITE);
+        uploadInstructionsPanel.setOpaque(false); // Penting: agar tidak menutupi rounded corner dari parent
+        contentPanel.add(uploadInstructionsPanel);
 
-    // First Label (Drag and Drop text)
-    JLabel lblDragDrop = new JLabel("Drag and drop files here");
-    lblDragDrop.setFont(new Font("Arial", Font.BOLD, 12));
-    lblDragDrop.setBounds(20, 100, 200, 20);
-    lblDragDrop.setHorizontalAlignment(JLabel.CENTER);
-    uploadInstructionsPanel.add(lblDragDrop);
+        // Upload Icon (scaled)
+        ImageIcon origUploadIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_uploud.png"));
+        Image scaledUpImage = origUploadIcon.getImage().getScaledInstance(ICON_SIZE * 3, ICON_SIZE * 2, Image.SCALE_SMOOTH);
+        ImageIcon scaledUploadIcon = new ImageIcon(scaledUpImage);
+        JLabel uploadIcon = new JLabel(scaledUploadIcon);
+        uploadIcon.setBounds(95, 50, scaledUploadIcon.getIconWidth(), scaledUploadIcon.getIconHeight());
+        uploadInstructionsPanel.add(uploadIcon);
 
-    // Second Label (Supported Formats)
-    JLabel lblFileSupported = new JLabel("Files supported JPG, JPEG, PNG");
-    lblFileSupported.setFont(new Font("Arial", Font.PLAIN, 10));
-    lblFileSupported.setBounds(20, 120, 200, 20);
-    lblFileSupported.setHorizontalAlignment(JLabel.CENTER);
-    uploadInstructionsPanel.add(lblFileSupported);
+        // First Label (Drag and Drop text)
+        JLabel lblDragDrop = new JLabel("Drag and drop files here");
+        lblDragDrop.setFont(new Font("Arial", Font.BOLD, 12));
+        lblDragDrop.setBounds(20, 100, 200, 20);
+        lblDragDrop.setHorizontalAlignment(JLabel.CENTER);
+        uploadInstructionsPanel.add(lblDragDrop);
 
-    // OR Label
-    JLabel lblor = new JLabel("OR");
-    lblor.setFont(new Font("Arial", Font.BOLD, 14));
-    lblor.setBounds(20, 140, 200, 20);
-    lblor.setHorizontalAlignment(JLabel.CENTER);
-    uploadInstructionsPanel.add(lblor);
+        // Second Label (Supported Formats)
+        JLabel lblFileSupported = new JLabel("Files supported JPG, JPEG, PNG");
+        lblFileSupported.setFont(new Font("Arial", Font.PLAIN, 10));
+        lblFileSupported.setBounds(20, 120, 200, 20);
+        lblFileSupported.setHorizontalAlignment(JLabel.CENTER);
+        uploadInstructionsPanel.add(lblFileSupported);
 
-    // Browse File Button
-    btnBrowseFile = createStyledButton("Browse File", Color.WHITE, Color.BLACK, 30);
-    btnBrowseFile.setBounds(70, 170, 100, 30);
-    uploadInstructionsPanel.add(btnBrowseFile);
+        // OR Label
+        JLabel lblor = new JLabel("OR");
+        lblor.setFont(new Font("Arial", Font.BOLD, 14));
+        lblor.setBounds(20, 140, 200, 20);
+        lblor.setHorizontalAlignment(JLabel.CENTER);
+        uploadInstructionsPanel.add(lblor);
 
-    // Photo Count Label
-    lblPhotoCount = new JLabel("foto maks (0/1)");
-    lblPhotoCount.setFont(new Font("Arial", Font.PLAIN, 10));
-    lblPhotoCount.setBounds(20, 200, 200, 20);
-    lblPhotoCount.setHorizontalAlignment(JLabel.CENTER);
-    uploadInstructionsPanel.add(lblPhotoCount);
-    
-    // Label untuk preview gambar
-    imagePreview = new JLabel();
-    imagePreview.setBounds(20, 20, 200, 200);
-    imagePreview.setHorizontalAlignment(JLabel.CENTER);
-    imagePreview.setVisible(false);
-    contentPanel.add(imagePreview);
-    
-    // Tombol remove image (X)
-    btnRemoveImage = new RoundedCircularButton("X");
-    btnRemoveImage.setFont(new Font("Arial", Font.BOLD, 10));
-    btnRemoveImage.setBackground(new Color(220, 53, 69)); // Warna merah
-    btnRemoveImage.setForeground(Color.WHITE);
-    btnRemoveImage.setBounds(200, 10, 25, 25);
-    btnRemoveImage.setVisible(false); // Awalnya tidak terlihat
-    contentPanel.add(btnRemoveImage);
-    
-    // Tambahkan action listener untuk tombol Browse File
-    btnBrowseFile.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            browseForImage();
-        }
-    });
-    
-    // Tambahkan action listener untuk tombol Remove Image
-    btnRemoveImage.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            removeSelectedImage();
-        }
-    });
-    
-    // Setup drag and drop di contentPanel
-    setupDragAndDrop(contentPanel);
-}
+        // Browse File Button
+        btnBrowseFile = createStyledButton("Browse File", Color.WHITE, Color.BLACK, 30);
+        btnBrowseFile.setBounds(70, 170, 100, 30);
+        uploadInstructionsPanel.add(btnBrowseFile);
 
-private void browseForImage() {
-    JFileChooser fileChooser = new JFileChooser();
-    // Set filter untuk hanya menerima file gambar
-    fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-        @Override
-        public boolean accept(File f) {
-            if (f.isDirectory()) {
-                return true;
+        // Photo Count Label
+        lblPhotoCount = new JLabel("foto maks (0/1)");
+        lblPhotoCount.setFont(new Font("Arial", Font.PLAIN, 10));
+        lblPhotoCount.setBounds(20, 200, 200, 20);
+        lblPhotoCount.setHorizontalAlignment(JLabel.CENTER);
+        uploadInstructionsPanel.add(lblPhotoCount);
+
+        // Label untuk preview gambar
+        imagePreview = new JLabel();
+        imagePreview.setBounds(20, 20, 200, 200);
+        imagePreview.setHorizontalAlignment(JLabel.CENTER);
+        imagePreview.setVisible(false);
+        contentPanel.add(imagePreview);
+
+        // Tombol remove image (X)
+        btnRemoveImage = new RoundedCircularButton("X");
+        btnRemoveImage.setFont(new Font("Arial", Font.BOLD, 10));
+        btnRemoveImage.setBackground(new Color(220, 53, 69)); // Warna merah
+        btnRemoveImage.setForeground(Color.WHITE);
+        btnRemoveImage.setBounds(200, 10, 25, 25);
+        btnRemoveImage.setVisible(false); // Awalnya tidak terlihat
+        contentPanel.add(btnRemoveImage);
+
+        // Tambahkan action listener untuk tombol Browse File
+        btnBrowseFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                browseForImage();
             }
-            String name = f.getName().toLowerCase();
-            return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
-        }
+        });
 
-        @Override
-        public String getDescription() {
-            return "Image Files (*.jpg, *.jpeg, *.png)";
-        }
-    });
+        // Tambahkan action listener untuk tombol Remove Image
+        btnRemoveImage.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                removeSelectedImage();
+            }
+        });
 
-    int result = fileChooser.showOpenDialog(this);
-    if (result == JFileChooser.APPROVE_OPTION) {
-        selectedImageFile = fileChooser.getSelectedFile();
-        displaySelectedImage(selectedImageFile);
+        // Setup drag and drop di contentPanel
+        setupDragAndDrop(contentPanel);
     }
-}
 
-private void displaySelectedImage(File file) {
-    try {
-        // Baca gambar
-        BufferedImage originalImage = ImageIO.read(file);
-        if (originalImage != null) {
-            // Resize gambar agar pas dengan area preview
-            Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-            displayedImage = new ImageIcon(resizedImage);
-            
-            // Tampilkan gambar
-            imagePreview.setIcon(displayedImage);
-            
-            // Update tampilan
-            uploadInstructionsPanel.setVisible(false);
-            imagePreview.setVisible(true);
-            btnRemoveImage.setVisible(true);
-            
-            // Update label foto maks
-            lblPhotoCount.setText("foto maks (1/1)");
-        } else {
-            JOptionPane.showMessageDialog(this, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.", 
-                                         "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    } catch (IOException ex) {
-        JOptionPane.showMessageDialog(this, "Gagal membuka file gambar: " + ex.getMessage(), 
-                                     "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-private void removeSelectedImage() {
-    // Hapus referensi gambar
-    selectedImageFile = null;
-    displayedImage = null;
-    imagePreview.setIcon(null);
-    
-    // Kembalikan tampilan ke mode upload
-    uploadInstructionsPanel.setVisible(true);
-    imagePreview.setVisible(false);
-    btnRemoveImage.setVisible(false);
-    
-    // Reset label foto maks
-    lblPhotoCount.setText("foto maks (0/1)");
-}
-
-private void setupDragAndDrop(JPanel targetPanel) {
-    // Setup drag and drop handler
-    targetPanel.setDropTarget(new DropTarget() {
-        @Override
-        public synchronized void drop(DropTargetDropEvent evt) {
-            try {
-                evt.acceptDrop(DnDConstants.ACTION_COPY);
-                List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                
-                if (!droppedFiles.isEmpty()) {
-                    File droppedFile = droppedFiles.get(0);
-                    String fileName = droppedFile.getName().toLowerCase();
-                    if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png")) {
-                        selectedImageFile = droppedFile;
-                        displaySelectedImage(selectedImageFile);
-                    } else {
-                        JOptionPane.showMessageDialog(targetPanel, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.", 
-                                                     "Error", JOptionPane.ERROR_MESSAGE);
-                    }
+    private void browseForImage() {
+        JFileChooser fileChooser = new JFileChooser();
+        // Set filter untuk hanya menerima file gambar
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                if (f.isDirectory()) {
+                    return true;
                 }
-            } catch (UnsupportedFlavorException | IOException e) {
-                JOptionPane.showMessageDialog(targetPanel, "Error saat menerima file: " + e.getMessage(), 
-                                             "Error", JOptionPane.ERROR_MESSAGE);
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
             }
+
+            @Override
+            public String getDescription() {
+                return "Image Files (*.jpg, *.jpeg, *.png)";
+            }
+        });
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            selectedImageFile = fileChooser.getSelectedFile();
+            displaySelectedImage(selectedImageFile);
         }
-    });
-}
+    }
+
+    private void displaySelectedImage(File file) {
+        try {
+            // Baca gambar
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage != null) {
+                // Resize gambar agar pas dengan area preview
+                Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                displayedImage = new ImageIcon(resizedImage);
+
+                // Tampilkan gambar
+                imagePreview.setIcon(displayedImage);
+
+                // Update tampilan
+                uploadInstructionsPanel.setVisible(false);
+                imagePreview.setVisible(true);
+                btnRemoveImage.setVisible(true);
+
+                // Update label foto maks
+                lblPhotoCount.setText("foto maks (1/1)");
+            } else {
+                JOptionPane.showMessageDialog(this, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Gagal membuka file gambar: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void removeSelectedImage() {
+        // Hapus referensi gambar
+        selectedImageFile = null;
+        displayedImage = null;
+        imagePreview.setIcon(null);
+
+        // Kembalikan tampilan ke mode upload
+        uploadInstructionsPanel.setVisible(true);
+        imagePreview.setVisible(false);
+        btnRemoveImage.setVisible(false);
+
+        // Reset label foto maks
+        lblPhotoCount.setText("foto maks (0/1)");
+    }
+
+    private void setupDragAndDrop(JPanel targetPanel) {
+        // Setup drag and drop handler
+        targetPanel.setDropTarget(new DropTarget() {
+            @Override
+            public synchronized void drop(DropTargetDropEvent evt) {
+                try {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (!droppedFiles.isEmpty()) {
+                        File droppedFile = droppedFiles.get(0);
+                        String fileName = droppedFile.getName().toLowerCase();
+                        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png")) {
+                            selectedImageFile = droppedFile;
+                            displaySelectedImage(selectedImageFile);
+                        } else {
+                            JOptionPane.showMessageDialog(targetPanel, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } catch (UnsupportedFlavorException | IOException e) {
+                    JOptionPane.showMessageDialog(targetPanel, "Error saat menerima file: " + e.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+    }
 
     private void createGenderPanel() {
         JLabel lblGender = new JLabel("Gender");
@@ -440,234 +465,171 @@ private void createBarcodePanel() {
     panelBarcode.setBounds(20, 450, 730, 180);
     add(panelBarcode);
     panelBarcode.setLayout(null);
-    
     JLabel lblBarcode = new JLabel("Generate Barcode");
     lblBarcode.setFont(new Font("Arial", Font.BOLD, 14));
     lblBarcode.setBounds(20, 15, 200, 20);
     panelBarcode.add(lblBarcode);
-    
     // Area barcode menggunakan RoundedPanelProduk dengan RoundedBorder
-    RoundedPanelProduk barcodeArea = new RoundedPanelProduk();
+    barcodeArea = new RoundedPanelProduk(); // Gunakan variabel kelas
     barcodeArea.setBounds(20, 45, 450, 120);
     barcodeArea.setBackground(Color.WHITE);
-    barcodeArea.setLayout(new BorderLayout());
-    
-    // Tambahkan RoundedBorder dengan radius 15, warna hitam, ketebalan 1
+    // Tambahkan RoundedBorder dengan radius 15, warna abu-abu muda, ketebalan 1
     barcodeArea.setBorder(new RoundedBorder(15, Color.BLACK));
     panelBarcode.add(barcodeArea);
-    
-    // Tambahkan label untuk menampilkan barcode di dalam barcodeArea
-    barcodeLabel = new JLabel("", SwingConstants.CENTER);
-    barcodeArea.add(barcodeLabel, BorderLayout.CENTER);
-    
     // Button Generate Barcode (dengan RoundedButton)
     btnGenerateBarcode = createStyledButton("GENERATE BARCODE", new Color(52, 58, 64), Color.WHITE, 15);
     btnGenerateBarcode.setBounds(500, 45, 210, 40);
     panelBarcode.add(btnGenerateBarcode);
-    
-    // Tambahkan ActionListener untuk button Generate Barcode
     btnGenerateBarcode.addActionListener(new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
-            // Dapatkan ID produk atau kode yang ingin dibuat barcode
-            String productId = getProductId(); // Buat method ini sesuai dengan struktur aplikasi Anda
-            generateBarcodeWithoutLibrary(productId);
+            generateBarcode();
         }
     });
     
-    // Button Print (dengan ikon yang diperkecil)
     btnPrint = createStyledButton("PRINT", new Color(52, 58, 64), Color.WHITE, 15);
     btnPrint.setBounds(500, 100, 210, 40);
-    
-    // Ikon print diperkecil
     ImageIcon origPrintIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_print.png"));
     Image scaledPrintImage = origPrintIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
     ImageIcon scaledPrintIcon = new ImageIcon(scaledPrintImage);
-    btnPrint.setIcon(scaledPrintIcon);
-    
-    // Atur posisi teks di center
-    btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
-    // Atur ikon di sebelah kiri teks
-    btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
-    // Atur jarak antara ikon dan teks
-    btnPrint.setIconTextGap(10);
-    // Atur margin untuk mengontrol posisi ikon
-    btnPrint.setMargin(new Insets(0, 0, 0, 0));
-    panelBarcode.add(btnPrint);
-    
-    // Tambahkan ActionListener untuk button Print
-    btnPrint.addActionListener(new ActionListener() {
+        btnPrint.addActionListener(new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             printBarcode();
         }
     });
+    btnPrint.setIcon(scaledPrintIcon);
+    btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
+    btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
+    btnPrint.setIconTextGap(10);
+    btnPrint.setMargin(new Insets(0, 0, 0, 0));
+    panelBarcode.add(btnPrint);
 }
-
-// Method untuk mendapatkan ID produk
-private String getProductId() {
-    // Jika mengambil dari seleksi tabel
-    // return selectedProductId;
-    
-    // Atau Anda bisa membuat dialog untuk input kode
-    String input = JOptionPane.showInputDialog(this, 
-                                         "Masukkan kode produk:",
-                                         "Input Kode Produk", 
-                                         JOptionPane.QUESTION_MESSAGE);
-    if(input == null || input.trim().isEmpty()) {
-        return "PRODUK" + System.currentTimeMillis(); // Generate ID default jika tidak ada input
-    }
-    return input;
-}
-
-// Method untuk menghasilkan barcode Code 128 tanpa library
-private void generateBarcodeWithoutLibrary(String productCode) {
-    // Dimensi barcode
-    int height = 80;
-    int width = 320;
-    int barWidth = 2; // Lebar setiap bar
-    
-    // Buat gambar baru
-    barcodeImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-    Graphics2D g2d = barcodeImage.createGraphics();
-    
-    // Isi dengan warna putih untuk background
-    g2d.setColor(Color.WHITE);
-    g2d.fillRect(0, 0, width, height);
-    
-    // Ubah productCode menjadi representasi bars sederhana
-    boolean[] bars = generateCode128Bars(productCode);
-    
-    // Gambar bars
-    g2d.setColor(Color.BLACK);
-    int currentX = 10; // Mulai dengan margin 10px
-    
-    for (boolean isBar : bars) {
-        if (isBar) {
-            // Gambar bar hitam
-            g2d.fillRect(currentX, 10, barWidth, height - 30);
-        }
-        currentX += barWidth;
-    }
-    
-    // Tambahkan teks kode di bawah barcode
-    g2d.setFont(new Font("Arial", Font.PLAIN, 12));
-    FontMetrics fm = g2d.getFontMetrics();
-    int textWidth = fm.stringWidth(productCode);
-    g2d.drawString(productCode, (width - textWidth) / 2, height - 10);
-    
-    g2d.dispose();
-    
-    // Tampilkan barcode pada label
-    barcodeLabel.setIcon(new ImageIcon(barcodeImage));
-    barcodeLabel.setText("");
-    
-    // Refresh panel
-    barcodeLabel.revalidate();
-    barcodeLabel.repaint();
-}
-
-// Implementasi sederhana untuk menghasilkan barcode Code 39
-// Code 39 adalah salah satu format barcode paling sederhana untuk diimplementasikan
-private boolean[] generateCode128Bars(String code) {
-    // Ini adalah implementasi yang sangat disederhanakan dari Code 39
-    // Code 39 asli memiliki aturan encoding yang lebih rumit
-    
-    HashMap<Character, boolean[]> encodingMap = new HashMap<>();
-    
-    // Definisikan pola untuk beberapa karakter dalam Code 39
-    // Format: hitam-putih-hitam-putih-hitam-putih-hitam-putih-hitam
-    encodingMap.put('0', new boolean[]{true, false, true, false, false, true, true, false, true});
-    encodingMap.put('1', new boolean[]{true, true, false, false, true, false, false, false, true});
-    encodingMap.put('2', new boolean[]{false, false, true, true, false, false, true, false, true});
-    encodingMap.put('3', new boolean[]{true, false, false, false, false, true, true, false, true});
-    encodingMap.put('4', new boolean[]{true, false, true, true, false, true, false, false, true});
-    encodingMap.put('5', new boolean[]{false, true, false, false, true, true, false, false, true});
-    encodingMap.put('6', new boolean[]{true, false, false, true, true, false, false, false, true});
-    encodingMap.put('7', new boolean[]{true, false, true, false, true, false, true, false, true});
-    encodingMap.put('8', new boolean[]{false, true, false, true, false, false, true, false, true});
-    encodingMap.put('9', new boolean[]{false, false, true, false, false, true, false, false, true});
-    encodingMap.put('A', new boolean[]{true, true, false, false, false, true, false, false, true});
-    encodingMap.put('B', new boolean[]{false, false, true, true, false, true, false, false, true});
-    encodingMap.put('C', new boolean[]{true, false, false, true, false, true, false, false, true});
-    encodingMap.put('D', new boolean[]{true, false, true, true, false, false, false, false, true});
-    encodingMap.put('E', new boolean[]{false, true, false, true, false, true, false, false, true});
-    encodingMap.put('F', new boolean[]{true, false, false, true, false, false, true, false, true});
-    // Tambahkan karakter lain sesuai kebutuhan
-    
-    // Start dan stop karakter untuk Code 39 adalah '*'
-    boolean[] startStop = {true, false, false, true, false, false, true, false, true};
-    
-    // Hitung panjang total array hasil
-    int totalBars = (code.length() * 10) + 20; // 9 bar per karakter + 1 spasi antar karakter + start/stop
-    boolean[] result = new boolean[totalBars];
-    
-    // Tambahkan start karakter
-    System.arraycopy(startStop, 0, result, 0, 9);
-    
-    // Konversi string ke sequence bar
-    int position = 10; // setelah start karakter dan spasi
-    for (int i = 0; i < code.length(); i++) {
-        char c = Character.toUpperCase(code.charAt(i));
-        boolean[] pattern = encodingMap.get(c);
-        
-        if (pattern != null) {
-            System.arraycopy(pattern, 0, result, position, 9);
-        } else {
-            // Jika karakter tidak didukung, gunakan pola untuk 'A'
-            System.arraycopy(encodingMap.get('A'), 0, result, position, 9);
-        }
-        
-        position += 10; // 9 bar + 1 spasi antar karakter
-    }
-    
-    // Tambahkan stop karakter
-    System.arraycopy(startStop, 0, result, position - 1, 9);
-    
-    return result;
-}
-
-// Method untuk mencetak barcode
-private void printBarcode() {
-    if (barcodeImage == null) {
-        JOptionPane.showMessageDialog(this, 
-                                 "Silakan generate barcode terlebih dahulu",
-                                 "Peringatan", 
-                                 JOptionPane.WARNING_MESSAGE);
-        return;
-    }
-    
-    // Implementasi fungsi print
+private void generateBarcode() {
     try {
-        java.awt.print.PrinterJob job = java.awt.print.PrinterJob.getPrinterJob();
-        job.setPrintable(new java.awt.print.Printable() {
-            public int print(Graphics g, java.awt.print.PageFormat pf, int page) throws java.awt.print.PrinterException {
-                if (page > 0) {
-                    return java.awt.print.Printable.NO_SUCH_PAGE;
+        barcodeArea.removeAll();
+
+        String barcodeValue = generateRandom16DigitNumber();
+        Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
+
+        barcode.setBarWidth(2); 
+
+        barcodeArea.setLayout(new BorderLayout());
+
+        JPanel barcodeImagePanel = new JPanel();
+        barcodeImagePanel.setOpaque(false); 
+
+        barcodeImagePanel.setLayout(new BoxLayout(barcodeImagePanel, BoxLayout.Y_AXIS));
+
+        barcodeImagePanel.add(Box.createVerticalStrut(25)); 
+
+        JPanel barcodeContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        barcodeContainer.setOpaque(false);
+        
+        Component barcodeComp = barcode;
+        int newHeight = 80; 
+
+        JPanel heightPanel = new JPanel(new BorderLayout()) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension dim = super.getPreferredSize();
+                return new Dimension(dim.width, newHeight);
+            }
+        };
+        heightPanel.setOpaque(false);
+        heightPanel.add(barcodeComp, BorderLayout.CENTER);
+        
+        barcodeContainer.add(heightPanel);
+
+        barcodeImagePanel.add(barcodeContainer);
+       
+        barcodeArea.add(barcodeImagePanel, BorderLayout.CENTER);
+        
+        // Perbarui tampilan
+        barcodeArea.revalidate();
+        barcodeArea.repaint();
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, 
+            "Error saat membuat barcode: " + e.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+private String generateRandom16DigitNumber() {
+    StringBuilder sb = new StringBuilder(26);
+    Random random = new Random();
+    
+    sb.append(random.nextInt(9) + 1);
+    
+    for (int i = 0; i < 15; i++) {
+        sb.append(random.nextInt(10));
+    }
+    
+    return sb.toString();
+}
+private void printBarcode() {
+    try { 
+        if (barcodeArea.getComponentCount() == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "Silakan generate barcode terlebih dahulu sebelum mencetak.", 
+                "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setJobName("Cetak Barcode");
+         
+        barcodeArea.setBorder(new RoundedBorder(15, Color.WHITE));
+        
+        // Set Printable
+        job.setPrintable(new Printable() {
+            @Override
+            public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+                if (pageIndex > 0) {
+                    return Printable.NO_SUCH_PAGE;
                 }
                 
-                // Print barcode
-                Graphics2D g2d = (Graphics2D)g;
-                g2d.translate(pf.getImageableX(), pf.getImageableY());
+                Graphics2D g2d = (Graphics2D) graphics;
                 
-                // Dapatkan gambar barcode
-                g2d.drawImage(barcodeImage, 100, 100, null);
+                // Translate ke area yang bisa dicetak
+                g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
                 
-                return java.awt.print.Printable.PAGE_EXISTS;
+                // Skala untuk mencetak barcode dengan ukuran yang tepat
+                double scaleX = pageFormat.getImageableWidth() / barcodeArea.getWidth() * 0.8;
+                double scaleY = pageFormat.getImageableHeight() / barcodeArea.getHeight() * 0.3;
+                double scale = Math.min(scaleX, scaleY);
+                
+                g2d.scale(scale, scale);
+                
+                // Tengahkan di halaman
+                double xPos = (pageFormat.getImageableWidth() / scale - barcodeArea.getWidth()) / 2;
+                g2d.translate(xPos, 0);
+                
+                // Render barcode
+                barcodeArea.paint(g2d);
+                
+                return Printable.PAGE_EXISTS;
             }
         });
         
+        // Tampilkan dialog print
         if (job.printDialog()) {
-            job.print();
+            // Informasi kepada user
             JOptionPane.showMessageDialog(this, 
-                                     "Barcode berhasil dicetak!",
-                                     "Sukses", 
-                                     JOptionPane.INFORMATION_MESSAGE);
+                "Barcode sedang dikirim ke printer.", 
+                "Informasi", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Jalankan pencetakan
+            job.print();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
+    } catch (PrinterException pe) {
         JOptionPane.showMessageDialog(this, 
-                                 "Gagal mencetak barcode: " + e.getMessage(),
-                                 "Error", 
-                                 JOptionPane.ERROR_MESSAGE);
+            "Error saat mencetak barcode: " + pe.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, 
+            "Error: " + e.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
 

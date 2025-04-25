@@ -11,9 +11,26 @@ import java.io.File;
 import java.lang.reflect.Field;
 import Form.Productt;
 import PopUp_all.Popup_keluaraddnewproduct;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.util.List;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Random;
+import javax.imageio.ImageIO;
+import net.sourceforge.barbecue.Barcode;
+import net.sourceforge.barbecue.BarcodeFactory;
 
 public class EditProductPanel extends JPanel {
 
@@ -23,14 +40,21 @@ public class EditProductPanel extends JPanel {
     private ButtonGroup genderGroup;
     private ComboboxCustom cbDiscount, cbCategory;
     private JLabel lblStyle;
+    private Barcode barcode;
     private JButton btnAddProduct, btnCancel, btnBrowseFile;
     private JButton btnGenerateBarcode, btnPrint;
     private JButton btnPrevStyle, btnNextStyle;
-    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory;
+    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory,barcodeArea;
     private JPanel dragDropPanel;
     private JLabel lblPhotoCount;
     private JFrame parentFrame; // Reference to parent frame for closing
     private Productt mainFrame; // Tambahkan referensi ke main frame
+    private File selectedImageFile;
+    private ImageIcon displayedImage;
+    private JLabel imagePreview;
+    private JButton btnRemoveImage;
+    private JPanel uploadInstructionsPanel;
+    private String defaultImagePath = "/SourceImage/gambar_sepatu.png";
 
     // Current style options and index
     private String[] currentStyleOptions = {""};
@@ -39,9 +63,22 @@ public class EditProductPanel extends JPanel {
     // Definisi ukuran ikon yang lebih kecil
     private static final int ICON_SIZE = 16; // ukuran ikon yang lebih kecil
     private int cornerRadius = 15;
-
+    
     public EditProductPanel() {
         this(null);
+               SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                generateBarcode(); 
+            }
+        });
+                   // Panggil loadDefaultImage menggunakan SwingUtilities.invokeLater
+    SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+            loadDefaultImage(); 
+        }
+    });
     }
 
     public void setMainFrame(Productt frame) {
@@ -159,11 +196,42 @@ public class EditProductPanel extends JPanel {
         panelGeneral.add(cbDiscount);
     }
 
-    private void createUploadImagesPanel() {
+    private void loadDefaultImage() {
+    try {
+        // Coba memuat gambar dari resource
+        URL resourceURL = getClass().getResource(defaultImagePath);
+        if (resourceURL != null) {
+            // Baca gambar dari resource
+            BufferedImage originalImage = ImageIO.read(resourceURL);
+            if (originalImage != null) {
+                // Resize gambar agar pas dengan area preview
+                Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                displayedImage = new ImageIcon(resizedImage);
+
+                // Tampilkan gambar
+                imagePreview.setIcon(displayedImage);
+
+                // Update tampilan
+                uploadInstructionsPanel.setVisible(false);
+                imagePreview.setVisible(true);
+                btnRemoveImage.setVisible(true);
+
+                // Update label foto maks
+                lblPhotoCount.setText("foto maks (1/1)");
+
+            }
+        } else {
+            System.out.println("File gambar default tidak ditemukan: " + defaultImagePath);
+        }
+    } catch (IOException ex) {
+        System.err.println("Gagal memuat gambar default: " + ex.getMessage());
+    }
+}
+     private void createUploadImagesPanel() {
         // Main panel
         panelImages = new RoundedPanelProduk();
         panelImages.setBackground(new Color(240, 240, 240));
-        panelImages.setBounds(770, 80, 280, 310); // Reduced height
+        panelImages.setBounds(770, 80, 280, 310); // Tetap mempertahankan posisi dan ukuran
         panelImages.setLayout(null);
         add(panelImages);
 
@@ -173,12 +241,19 @@ public class EditProductPanel extends JPanel {
         lblImageUpload.setBounds(20, 10, 240, 30);
         panelImages.add(lblImageUpload);
 
-        // Inner rounded panel for content
+        // Inner rounded panel for content - Tetap menggunakan RoundedPanelProduk
         RoundedPanelProduk contentPanel = new RoundedPanelProduk();
         contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBounds(20, 50, 240, 240); // Adjusted to fit within reduced main panel
+        contentPanel.setBounds(20, 50, 240, 240);
         contentPanel.setLayout(null);
         panelImages.add(contentPanel);
+
+        // Panel untuk instruksi upload (visible di awal)
+        uploadInstructionsPanel = new JPanel(null);
+        uploadInstructionsPanel.setBounds(0, 0, 240, 240);
+        uploadInstructionsPanel.setBackground(Color.WHITE);
+        uploadInstructionsPanel.setOpaque(false); // Penting: agar tidak menutupi rounded corner dari parent
+        contentPanel.add(uploadInstructionsPanel);
 
         // Upload Icon (scaled)
         ImageIcon origUploadIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_uploud.png"));
@@ -186,41 +261,175 @@ public class EditProductPanel extends JPanel {
         ImageIcon scaledUploadIcon = new ImageIcon(scaledUpImage);
         JLabel uploadIcon = new JLabel(scaledUploadIcon);
         uploadIcon.setBounds(95, 50, scaledUploadIcon.getIconWidth(), scaledUploadIcon.getIconHeight());
-        contentPanel.add(uploadIcon);
+        uploadInstructionsPanel.add(uploadIcon);
 
         // First Label (Drag and Drop text)
         JLabel lblDragDrop = new JLabel("Drag and drop files here");
         lblDragDrop.setFont(new Font("Arial", Font.BOLD, 12));
         lblDragDrop.setBounds(20, 100, 200, 20);
         lblDragDrop.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(lblDragDrop);
+        uploadInstructionsPanel.add(lblDragDrop);
 
         // Second Label (Supported Formats)
         JLabel lblFileSupported = new JLabel("Files supported JPG, JPEG, PNG");
         lblFileSupported.setFont(new Font("Arial", Font.PLAIN, 10));
         lblFileSupported.setBounds(20, 120, 200, 20);
         lblFileSupported.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(lblFileSupported);
+        uploadInstructionsPanel.add(lblFileSupported);
 
-        // Second Label (Supported Formats)
+        // OR Label
         JLabel lblor = new JLabel("OR");
         lblor.setFont(new Font("Arial", Font.BOLD, 14));
         lblor.setBounds(20, 140, 200, 20);
         lblor.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(lblor);
+        uploadInstructionsPanel.add(lblor);
 
         // Browse File Button
         btnBrowseFile = createStyledButton("Browse File", Color.WHITE, Color.BLACK, 30);
         btnBrowseFile.setBounds(70, 170, 100, 30);
-        contentPanel.add(btnBrowseFile);
+        uploadInstructionsPanel.add(btnBrowseFile);
 
         // Photo Count Label
         lblPhotoCount = new JLabel("foto maks (0/1)");
         lblPhotoCount.setFont(new Font("Arial", Font.PLAIN, 10));
         lblPhotoCount.setBounds(20, 200, 200, 20);
         lblPhotoCount.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(lblPhotoCount);
+        uploadInstructionsPanel.add(lblPhotoCount);
+
+        // Label untuk preview gambar
+        imagePreview = new JLabel();
+        imagePreview.setBounds(20, 20, 200, 200);
+        imagePreview.setHorizontalAlignment(JLabel.CENTER);
+        imagePreview.setVisible(false);
+        contentPanel.add(imagePreview);
+
+        // Tombol remove image (X)
+        btnRemoveImage = new RoundedCircularButton("X");
+        btnRemoveImage.setFont(new Font("Arial", Font.BOLD, 10));
+        btnRemoveImage.setBackground(new Color(220, 53, 69)); // Warna merah
+        btnRemoveImage.setForeground(Color.WHITE);
+        btnRemoveImage.setBounds(200, 10, 25, 25);
+        btnRemoveImage.setVisible(false); // Awalnya tidak terlihat
+        contentPanel.add(btnRemoveImage);
+
+        // Tambahkan action listener untuk tombol Browse File
+        btnBrowseFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                browseForImage();
+            }
+        });
+
+        // Tambahkan action listener untuk tombol Remove Image
+        btnRemoveImage.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                removeSelectedImage();
+            }
+        });
+
+        // Setup drag and drop di contentPanel
+        setupDragAndDrop(contentPanel);
     }
+
+    private void browseForImage() {
+        JFileChooser fileChooser = new JFileChooser();
+        // Set filter untuk hanya menerima file gambar
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                if (f.isDirectory()) {
+                    return true;
+                }
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
+            }
+
+            @Override
+            public String getDescription() {
+                return "Image Files (*.jpg, *.jpeg, *.png)";
+            }
+        });
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            selectedImageFile = fileChooser.getSelectedFile();
+            displaySelectedImage(selectedImageFile);
+        }
+    }
+
+    private void displaySelectedImage(File file) {
+        try {
+            // Baca gambar
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage != null) {
+                // Resize gambar agar pas dengan area preview
+                Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                displayedImage = new ImageIcon(resizedImage);
+
+                // Tampilkan gambar
+                imagePreview.setIcon(displayedImage);
+
+                // Update tampilan
+                uploadInstructionsPanel.setVisible(false);
+                imagePreview.setVisible(true);
+                btnRemoveImage.setVisible(true);
+
+                // Update label foto maks
+                lblPhotoCount.setText("foto maks (1/1)");
+            } else {
+                JOptionPane.showMessageDialog(this, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Gagal membuka file gambar: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void removeSelectedImage() {
+        // Hapus referensi gambar
+        selectedImageFile = null;
+        displayedImage = null;
+        imagePreview.setIcon(null);
+
+        // Kembalikan tampilan ke mode upload
+        uploadInstructionsPanel.setVisible(true);
+        imagePreview.setVisible(false);
+        btnRemoveImage.setVisible(false);
+
+        // Reset label foto maks
+        lblPhotoCount.setText("foto maks (0/1)");
+    }
+
+    private void setupDragAndDrop(JPanel targetPanel) {
+        // Setup drag and drop handler
+        targetPanel.setDropTarget(new DropTarget() {
+            @Override
+            public synchronized void drop(DropTargetDropEvent evt) {
+                try {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (!droppedFiles.isEmpty()) {
+                        File droppedFile = droppedFiles.get(0);
+                        String fileName = droppedFile.getName().toLowerCase();
+                        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png")) {
+                            selectedImageFile = droppedFile;
+                            displaySelectedImage(selectedImageFile);
+                        } else {
+                            JOptionPane.showMessageDialog(targetPanel, "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } catch (UnsupportedFlavorException | IOException e) {
+                    JOptionPane.showMessageDialog(targetPanel, "Error saat menerima file: " + e.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+    }
+    
 
     private void createGenderPanel() {
         JLabel lblGender = new JLabel("Gender");
@@ -284,56 +493,179 @@ public class EditProductPanel extends JPanel {
         add(txtStok);
     }
 
-    private void createBarcodePanel() {
-        panelBarcode = new RoundedPanelProduk();
-        panelBarcode.setBackground(new Color(240, 240, 240));
-        panelBarcode.setBounds(20, 450, 730, 180);
-        add(panelBarcode);
-        panelBarcode.setLayout(null);
+private void createBarcodePanel() {
+    panelBarcode = new RoundedPanelProduk();
+    panelBarcode.setBackground(new Color(240, 240, 240));
+    panelBarcode.setBounds(20, 450, 730, 180);
+    add(panelBarcode);
+    panelBarcode.setLayout(null);
+    JLabel lblBarcode = new JLabel("Generate Barcode");
+    lblBarcode.setFont(new Font("Arial", Font.BOLD, 14));
+    lblBarcode.setBounds(20, 15, 200, 20);
+    panelBarcode.add(lblBarcode);
+    barcodeArea = new RoundedPanelProduk(); 
+    barcodeArea.setBounds(20, 45, 450, 120);
+    barcodeArea.setBackground(Color.WHITE);
+    barcodeArea.setBorder(new RoundedBorder(15, Color.BLACK));
+    panelBarcode.add(barcodeArea);
+    btnGenerateBarcode = createStyledButton("GENERATE BARCODE", new Color(52, 58, 64), Color.WHITE, 15);
+    btnGenerateBarcode.setBounds(500, 45, 210, 40);
+    panelBarcode.add(btnGenerateBarcode);
+    btnGenerateBarcode.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            generateBarcode();
+        }
+    });
+    
+    btnPrint = createStyledButton("PRINT", new Color(52, 58, 64), Color.WHITE, 15);
+    btnPrint.setBounds(500, 100, 210, 40);
+    ImageIcon origPrintIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_print.png"));
+    Image scaledPrintImage = origPrintIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+    ImageIcon scaledPrintIcon = new ImageIcon(scaledPrintImage);
+        btnPrint.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            printBarcode();
+        }
+    });
+    btnPrint.setIcon(scaledPrintIcon);
+    btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
+    btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
+    btnPrint.setIconTextGap(10);
+    btnPrint.setMargin(new Insets(0, 0, 0, 0));
+    panelBarcode.add(btnPrint);
+}
 
-        JLabel lblBarcode = new JLabel("Generate Barcode");
-        lblBarcode.setFont(new Font("Arial", Font.BOLD, 14));
-        lblBarcode.setBounds(20, 15, 200, 20);
-        panelBarcode.add(lblBarcode);
+private void generateBarcode() {
+    try {
+        barcodeArea.removeAll();
 
-        // Area barcode menggunakan RoundedPanelProduk dengan RoundedBorder
-        RoundedPanelProduk barcodeArea = new RoundedPanelProduk();
-        barcodeArea.setBounds(20, 45, 450, 120);
-        barcodeArea.setBackground(Color.WHITE);
+        String barcodeValue = generateRandom16DigitNumber();
+        Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
 
-        // Tambahkan RoundedBorder dengan radius 15, warna abu-abu muda, ketebalan 1
-        barcodeArea.setBorder(new RoundedBorder(15, Color.BLACK));
+        barcode.setBarWidth(2); 
 
-        panelBarcode.add(barcodeArea);
+        barcodeArea.setLayout(new BorderLayout());
 
-        // Button Generate Barcode (dengan RoundedButton)
-        btnGenerateBarcode = createStyledButton("GENERATE BARCODE", new Color(52, 58, 64), Color.WHITE, 15);
-        btnGenerateBarcode.setBounds(500, 45, 210, 40);
-        panelBarcode.add(btnGenerateBarcode);
+        JPanel barcodeImagePanel = new JPanel();
+        barcodeImagePanel.setOpaque(false); 
 
-        // Button Print (dengan ikon yang diperkecil)
-        btnPrint = createStyledButton("PRINT", new Color(52, 58, 64), Color.WHITE, 15);
-        btnPrint.setBounds(500, 100, 210, 40);
+        barcodeImagePanel.setLayout(new BoxLayout(barcodeImagePanel, BoxLayout.Y_AXIS));
 
-        // Ikon print diperkecil
-        ImageIcon origPrintIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_print.png"));
-        Image scaledPrintImage = origPrintIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-        ImageIcon scaledPrintIcon = new ImageIcon(scaledPrintImage);
-        btnPrint.setIcon(scaledPrintIcon);
+        barcodeImagePanel.add(Box.createVerticalStrut(25)); 
 
-        // Atur posisi teks di center
-        btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
+        JPanel barcodeContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        barcodeContainer.setOpaque(false);
+        
+        Component barcodeComp = barcode;
+        int newHeight = 80; 
 
-        // Atur ikon di sebelah kiri teks
-        btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
+        JPanel heightPanel = new JPanel(new BorderLayout()) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension dim = super.getPreferredSize();
+                return new Dimension(dim.width, newHeight);
+            }
+        };
+        heightPanel.setOpaque(false);
+        heightPanel.add(barcodeComp, BorderLayout.CENTER);
+        
+        barcodeContainer.add(heightPanel);
 
-        // Atur jarak antara ikon dan teks
-        btnPrint.setIconTextGap(10);
-
-        // Atur margin untuk mengontrol posisi ikon
-        btnPrint.setMargin(new Insets(0, 0, 0, 0));
-        panelBarcode.add(btnPrint);
+        barcodeImagePanel.add(barcodeContainer);
+       
+        barcodeArea.add(barcodeImagePanel, BorderLayout.CENTER);
+        
+        // Perbarui tampilan
+        barcodeArea.revalidate();
+        barcodeArea.repaint();
+        
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, 
+            "Error saat membuat barcode: " + e.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
+
+private String generateRandom16DigitNumber() {
+    StringBuilder sb = new StringBuilder(16);
+    Random random = new Random();
+    
+    sb.append(random.nextInt(9) + 1);
+    
+    for (int i = 0; i < 15; i++) {
+        sb.append(random.nextInt(10));
+    }
+    
+    return sb.toString();
+}
+
+private void printBarcode() {
+    try { 
+        if (barcodeArea.getComponentCount() == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "Silakan generate barcode terlebih dahulu sebelum mencetak.", 
+                "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setJobName("Cetak Barcode");
+        
+           barcodeArea.setBorder(new RoundedBorder(15, Color.WHITE));
+        
+        // Set Printable
+        job.setPrintable(new Printable() {
+            @Override
+            public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+                if (pageIndex > 0) {
+                    return Printable.NO_SUCH_PAGE;
+                }
+                
+                Graphics2D g2d = (Graphics2D) graphics;
+                
+                // Translate ke area yang bisa dicetak
+                g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+                
+                // Skala untuk mencetak barcode dengan ukuran yang tepat
+                double scaleX = pageFormat.getImageableWidth() / barcodeArea.getWidth() * 0.8;
+                double scaleY = pageFormat.getImageableHeight() / barcodeArea.getHeight() * 0.3;
+                double scale = Math.min(scaleX, scaleY);
+                
+                g2d.scale(scale, scale);
+                
+                // Tengahkan di halaman
+                double xPos = (pageFormat.getImageableWidth() / scale - barcodeArea.getWidth()) / 2;
+                g2d.translate(xPos, 0);
+                
+                // Render barcode
+                barcodeArea.paint(g2d);
+                
+                return Printable.PAGE_EXISTS;
+            }
+        });
+        
+        // Tampilkan dialog print
+        if (job.printDialog()) {
+            // Informasi kepada user
+            JOptionPane.showMessageDialog(this, 
+                "Barcode sedang dikirim ke printer.", 
+                "Informasi", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Jalankan pencetakan
+            job.print();
+        }
+    } catch (PrinterException pe) {
+        JOptionPane.showMessageDialog(this, 
+            "Error saat mencetak barcode: " + pe.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, 
+            "Error: " + e.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
 
     private void createCategoryPanel() {
         panelCategory = new RoundedPanelProduk();
