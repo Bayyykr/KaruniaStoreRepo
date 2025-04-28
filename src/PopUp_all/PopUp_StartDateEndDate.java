@@ -1,5 +1,6 @@
 package PopUp_all;
 
+import SourceCode.RoundedBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -7,7 +8,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
-import javax.swing.Timer; // Bukan java.util.Timer
+import javax.swing.Timer; 
 
 public class PopUp_StartDateEndDate extends JDialog {
 
@@ -23,10 +24,11 @@ public class PopUp_StartDateEndDate extends JDialog {
     private JButton prevButton, nextButton;
     private JPanel selectionPanel;
     private JLabel rangeLabel;
+    private JTextField yearField;
 
     private final int RADIUS = 20;
-    private final int FINAL_WIDTH = 500;
-    private final int FINAL_HEIGHT = 550;
+    private final int FINAL_WIDTH = 700;
+    private final int FINAL_HEIGHT = 500;
     private final int ANIMATION_DURATION = 300;
     private final int ANIMATION_DELAY = 10;
     private float currentScale = 0.01f;
@@ -34,7 +36,6 @@ public class PopUp_StartDateEndDate extends JDialog {
     private Timer animationTimer;
     private Timer closeAnimationTimer;
 
-    // Flag to avoid adding glassPane multiple times
     private static boolean isShowingPopup = false;
     
     // Date selection
@@ -55,8 +56,7 @@ public class PopUp_StartDateEndDate extends JDialog {
     private final Color SELECTED_TEXT_COLOR = Color.WHITE;
     private final Color HOVER_COLOR = new Color(220, 230, 255);
     private final Color TODAY_COLOR = new Color(245, 245, 245);
-    
-    // Interface callback untuk mengirim tanggal yang dipilih
+
     public interface DateRangeCallback {
         void onDateRangeSelected(Date startDate, Date endDate);
     }
@@ -73,24 +73,21 @@ public class PopUp_StartDateEndDate extends JDialog {
     }
 
     public PopUp_StartDateEndDate(JFrame parent) {
-        super(parent, "Pilih Rentang Tanggal", true);
+        super(parent, "Manual", true);
         this.parentFrame = parent;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
 
-        // Check if popup is already being displayed
         if (isShowingPopup) {
             dispose();
             return;
         }
         isShowingPopup = true;
 
-        // Inisialisasi calendar
         displayedMonth1 = Calendar.getInstance();
         displayedMonth2 = Calendar.getInstance();
         displayedMonth2.add(Calendar.MONTH, 1);
 
-        // Create transparent overlay with semi-transparent black color
         glassPane = new JComponent() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -121,7 +118,6 @@ public class PopUp_StartDateEndDate extends JDialog {
 
         createComponents();
 
-        // Add WindowListener to clean up when popup is closed
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -134,11 +130,17 @@ public class PopUp_StartDateEndDate extends JDialog {
 
     private void createComponents() {
         // Form Title
-        JLabel titleLabel = new JLabel("Pilih Rentang Tanggal");
+        JLabel titleLabel = new JLabel("Manual");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBounds(0, 15, FINAL_WIDTH, 30);
+        titleLabel.setBounds(80, 15, FINAL_WIDTH, 30);
         contentPanel.add(titleLabel);
+        
+        JLabel titleLabelOpsi = new JLabel("Opsi Cepat");
+        titleLabelOpsi.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabelOpsi.setHorizontalAlignment(SwingConstants.LEFT);
+        titleLabelOpsi.setBounds(30, 15, FINAL_WIDTH, 30);
+        contentPanel.add(titleLabelOpsi);
 
         // Quick Option Panel (Left side)
         createQuickOptionsPanel();
@@ -149,6 +151,7 @@ public class PopUp_StartDateEndDate extends JDialog {
         // Divider
         JSeparator separator = new JSeparator(JSeparator.VERTICAL);
         separator.setBounds(160, 50, 1, FINAL_HEIGHT - 130);
+        separator.setForeground(Color.GRAY);
         contentPanel.add(separator);
         
         // Selection Panel (Bottom)
@@ -205,21 +208,115 @@ public class PopUp_StartDateEndDate extends JDialog {
         }
         
         // Custom year text field
-        JTextField yearField = new JTextField();
+        yearField = new JTextField();
         yearField.setBounds(10, options.length * 40 + 10, 130, 30);
         yearField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.LIGHT_GRAY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+        yearField.addActionListener(e -> handleYearInput());
         quickOptionPanel.add(yearField);
         
         contentPanel.add(quickOptionPanel);
     }
     
+private void handleYearInput() {
+    String yearInput = yearField.getText().trim();
+    String[] years = yearInput.split("-");
+
+    if (years.length == 1) {
+        // Handle input satu tahun
+        try {
+            int year = Integer.parseInt(years[0]);
+            if (year >= 1900 && year <= 2100) {
+                Calendar startCal = Calendar.getInstance();
+                Calendar endCal = Calendar.getInstance();
+
+                // Set untuk tanggal 1 Januari tahun yang dimasukkan
+                startCal.set(Calendar.YEAR, year);
+                startCal.set(Calendar.MONTH, Calendar.JANUARY);
+                startCal.set(Calendar.DAY_OF_MONTH, 1);
+
+                // Set untuk tanggal 31 Desember tahun yang dimasukkan
+                endCal.set(Calendar.YEAR, year);
+                endCal.set(Calendar.MONTH, Calendar.DECEMBER);
+                endCal.set(Calendar.DAY_OF_MONTH, 31);
+
+                startDate = startCal.getTime();
+                endDate = endCal.getTime();
+
+                // Update tampilan kalender ke tahun yang dipilih
+                displayedMonth1.setTime(startDate);
+                displayedMonth2.setTime(startDate);
+                displayedMonth2.add(Calendar.MONTH, 1);
+
+                updateCalendarDisplay();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Masukkan tahun antara 1900-2100",
+                        "Format Tahun Invalid",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Masukkan angka tahun yang valid",
+                    "Format Tahun Invalid",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    } else if (years.length == 2) {
+        // Handle input rentang tahun
+        try {
+            int startYear = Integer.parseInt(years[0]);
+            int endYear = Integer.parseInt(years[1]);
+
+            if (startYear >= 1900 && startYear <= 2100 && endYear >= 1900 && endYear <= 2100 && startYear <= endYear) {
+                Calendar startCal = Calendar.getInstance();
+                Calendar endCal = Calendar.getInstance();
+
+                // Set untuk tanggal 1 Januari tahun awal
+                startCal.set(Calendar.YEAR, startYear);
+                startCal.set(Calendar.MONTH, Calendar.JANUARY);
+                startCal.set(Calendar.DAY_OF_MONTH, 1);
+
+                // Set untuk tanggal 31 Desember tahun akhir
+                endCal.set(Calendar.YEAR, endYear);
+                endCal.set(Calendar.MONTH, Calendar.DECEMBER);
+                endCal.set(Calendar.DAY_OF_MONTH, 31);
+
+                startDate = startCal.getTime();
+                endDate = endCal.getTime();
+
+                // Update tampilan kalender ke tahun awal
+                displayedMonth1.setTime(startDate);
+                displayedMonth2.setTime(startDate);
+                displayedMonth2.add(Calendar.MONTH, 1);
+
+                updateCalendarDisplay();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Masukkan rentang tahun yang valid antara 1900-2100 (format: TTTT-TTTT, tahun awal harus lebih kecil atau sama dengan tahun akhir)",
+                        "Format Tahun Invalid",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Masukkan angka tahun yang valid untuk rentang",
+                    "Format Tahun Invalid",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    } else {
+        // Handle format input yang tidak valid
+        JOptionPane.showMessageDialog(this,
+                "Format input tahun tidak valid. Masukkan satu tahun (TTTT) atau rentang tahun (TTTT-TTTT)",
+                "Format Tahun Invalid",
+                JOptionPane.WARNING_MESSAGE);
+    }
+}
     private void createCalendarPanel() {
         calendarContainer = new JPanel();
         calendarContainer.setLayout(null);
         calendarContainer.setBounds(170, 50, FINAL_WIDTH - 180, FINAL_HEIGHT - 130);
         calendarContainer.setBackground(Color.WHITE);
+        calendarContainer.setOpaque(false);
         
         // Create navigation panel
         JPanel navigationPanel = new JPanel(new BorderLayout());
@@ -296,7 +393,6 @@ public class PopUp_StartDateEndDate extends JDialog {
         
         monthPanel.add(weekDaysPanel, BorderLayout.NORTH);
         
-        // Days grid (will be populated in updateCalendarDisplay)
         JPanel daysGrid = new JPanel(new GridLayout(6, 7));
         daysGrid.setBackground(Color.WHITE);
         monthPanel.add(daysGrid, BorderLayout.CENTER);
@@ -532,23 +628,33 @@ public class PopUp_StartDateEndDate extends JDialog {
         updateCalendarDisplay();
     }
     
-    private void createSelectionPanel() {
-        selectionPanel = new JPanel(null);
-        selectionPanel.setBounds(10, FINAL_HEIGHT - 120, FINAL_WIDTH - 20, 40);
-        selectionPanel.setBackground(Color.BLACK);
-        selectionPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
-        
-        rangeLabel = new JLabel("17 Feb 2025 - 23 Feb 2025", SwingConstants.CENTER);
-        rangeLabel.setBounds(0, 10, FINAL_WIDTH - 10, 10);
-        rangeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        
-        selectionPanel.add(rangeLabel);
-        contentPanel.add(selectionPanel);
-    }
+private void createSelectionPanel() {
+    selectionPanel = new JPanel(null);
+    
+    selectionPanel.setBounds(10, FINAL_HEIGHT - 105, FINAL_WIDTH - 20, 30);
+    
+    // Warna latar yang lebih lembut
+    selectionPanel.setBackground(new Color(250, 250, 250));
+    selectionPanel.setOpaque(false);
+    
+    selectionPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+    
+    // Label dengan format yang sama
+    rangeLabel = new JLabel("Pilih rentang tanggal", SwingConstants.CENTER);
+    rangeLabel.setBounds(-80, 5, FINAL_WIDTH - 20, 20);
+    rangeLabel.setForeground(Color.BLACK);
+    rangeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+    
+    selectionPanel.add(rangeLabel);
+    contentPanel.add(selectionPanel); 
+    contentPanel.setComponentZOrder(selectionPanel, 0);
+    contentPanel.revalidate();
+    contentPanel.repaint();
+}
     
     private void updateRangeLabel() {
          if (rangeLabel == null) {
-        return; // Jangan update jika rangeLabel belum dibuat
+        return; 
     }
         if (startDate != null && endDate != null) {
             rangeLabel.setText(displayFormat.format(startDate) + " - " + displayFormat.format(endDate));
@@ -560,15 +666,14 @@ public class PopUp_StartDateEndDate extends JDialog {
     }
     
     private void createButtons() {
-        // Cancel Button
         batalButton = createButton("Batal", new Color(255, 255, 255), Color.BLACK);
-        batalButton.setBounds(FINAL_WIDTH / 2 - 10, FINAL_HEIGHT - 70, 110, 30);
+        batalButton.setBounds(FINAL_WIDTH / 2 + 100, FINAL_HEIGHT - 50, 110, 30);
+        batalButton.setBorder(new RoundedBorder(10, Color.BLACK, 1));
         batalButton.addActionListener(e -> startCloseAnimation());
         contentPanel.add(batalButton);
-
-        // Process Button
         prosesButton = createButton("Proses", new Color(64, 72, 82), Color.WHITE);
-        prosesButton.setBounds(FINAL_WIDTH / 2 + 110, FINAL_HEIGHT - 70, 110, 30);
+        prosesButton.setBorder(new RoundedBorder(10, Color.DARK_GRAY, 2));
+        prosesButton.setBounds(FINAL_WIDTH / 2 + 230, FINAL_HEIGHT - 50, 110, 30);
         prosesButton.addActionListener(e -> processDateSelection());
         contentPanel.add(prosesButton);
     }
@@ -588,7 +693,6 @@ public class PopUp_StartDateEndDate extends JDialog {
         button.setForeground(foreground);
         button.setFont(new Font("Arial", Font.BOLD, 14));
         button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
@@ -671,11 +775,8 @@ public class PopUp_StartDateEndDate extends JDialog {
     }
 
     private void cleanupAndClose() {
-        // Reset flag when popup is closed
         isShowingPopup = false;
-        // Remove glassPane
         closePopup();
-        // Close dialog
         dispose();
     }
 
@@ -690,7 +791,6 @@ public class PopUp_StartDateEndDate extends JDialog {
         return parentFrame.getLayeredPane();
     }
 
-    // RoundedPanel Inner Class
     class RoundedPanel extends JPanel {
 
         private int radius;
