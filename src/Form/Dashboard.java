@@ -32,7 +32,7 @@ public class Dashboard extends JPanel {
     private CardLayout headerCardLayout;
     private JPanel headerCardsPanel;
     private int currentCardIndex = 0;
-    private final String[] cardNames = {"welcome", "barangTelaris", "promo"};
+    private final String[] cardNames = {"welcome", "aturBiayaOperasional","barangTelaris", "promo"};
 
     // Animation properties
     private JPanel animationPanel;
@@ -86,8 +86,10 @@ public class Dashboard extends JPanel {
         JPanel welcomeHeaderPanel = createWelcomeHeader();
         JPanel barangTelarisPanelSlide = createBarangTelarisPanelSlide();
         JPanel promoHeaderPanel = createPromoHeader();
+        JPanel AturBiayaOperasionalPanel = createAturBiayaOperasional();
 
         headerCardsPanel.add(welcomeHeaderPanel, "welcome");
+        headerCardsPanel.add(AturBiayaOperasionalPanel, "aturBiayaOperasional");
         headerCardsPanel.add(barangTelarisPanelSlide, "barangTelaris");
         headerCardsPanel.add(promoHeaderPanel, "promo");
 
@@ -315,7 +317,6 @@ public class Dashboard extends JPanel {
         return headerPanel;
     }
 
-// In createBarangTelarisPanelSlide() method:
     private JPanel createBarangTelarisPanelSlide() {
         JPanel headerPanel = new JPanel() {
             @Override
@@ -364,6 +365,71 @@ public class Dashboard extends JPanel {
         JButton barangTelarisCekButton = createRegularButton("CEK BARANG", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         barangTelarisCekButton.addActionListener(e -> {
             System.out.println("Cek Barang Telaris");
+        });
+
+        // Fix right button position
+        JButton slideRightButton = createAnimatedSlideButton("→", new Dimension(50, 50), 1010, 100);
+        slideRightButton.addActionListener(e -> {
+            animateTransition(true);
+        });
+
+        headerPanel.add(slideLeftButton);
+        headerPanel.add(titleLabel);
+//        headerPanel.add(imageLabel);
+        headerPanel.add(barangTelarisCekButton);
+        headerPanel.add(slideRightButton);
+
+        return headerPanel;
+    }
+    
+    private JPanel createAturBiayaOperasional() {
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                try {
+                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide_biaya_operasional.png"));
+                    // Draw the image to fit the entire panel
+                    g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
+                } catch (Exception e) {
+                    // Fallback if image not found
+                    g.setColor(new Color(200, 220, 255));
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        headerPanel.setLayout(null);
+        headerPanel.setPreferredSize(new Dimension(800, 233));
+
+        // Fix left button position
+        JButton slideLeftButton = createAnimatedSlideButton("←", new Dimension(50, 50), 5, 100);
+        slideLeftButton.addActionListener(e -> {
+            animateTransition(false);
+        });
+
+        JLabel titleLabel = new JLabel("Welcome Sy.syluss");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        titleLabel.setForeground(Color.white);
+        titleLabel.setBounds(80, 50, 400, 40);
+
+        // Correctly position and size the product image
+//        JLabel imageLabel = new JLabel();
+//        try {
+//            BufferedImage shoeImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-laporan.png"));
+//            ImageIcon icon = new ImageIcon(shoeImage.getScaledInstance(150, 150, Image.SCALE_SMOOTH));
+//            imageLabel.setIcon(icon);
+//            imageLabel.setBounds(600, 40, 150, 150);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+        // Fix button position and size
+        JButton barangTelarisCekButton = createRegularButton("Atur Biaya Operasional", new Dimension(370, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        barangTelarisCekButton.addActionListener(e -> {
+            System.out.println("Atur Biaya Operasional");
         });
 
         // Fix right button position
