@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import db.conn;
+import java.text.ParseException;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
@@ -25,7 +26,7 @@ import javax.swing.event.TableModelEvent;
 public class AbsenKaryawan extends JPanel {
 
     private Runnable backToDataKaryawan;
-    private JTextField searchField;
+    private JTextField searchField, monthField;
     private JButton configButton, backButton;
     private JTableRounded tableRounded;
     private JTable mainTable;
@@ -36,9 +37,13 @@ public class AbsenKaryawan extends JPanel {
     private SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
     private String currentSearchTerm = "";
+    Locale indonesianLocale = new Locale("id", "ID");
 
     // Database connection parameters
     private Connection con;
+
+    private int selectedMonth;
+    private int selectedYear;
 
     public AbsenKaryawan() {
         setLayout(new BorderLayout(10, 10));
@@ -116,8 +121,8 @@ public class AbsenKaryawan extends JPanel {
         buttonsPanel.setOpaque(false);
 
         // Month field - UPDATED with rounded border
-        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy");
-        JTextField monthField = new JTextField(monthYearFormat.format(currentDate.getTime()).toUpperCase());
+        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy" , indonesianLocale);
+        monthField = new JTextField(monthYearFormat.format(currentDate.getTime()).toUpperCase());
         monthField.setPreferredSize(new Dimension(140, 40));
         monthField.setEnabled(false);
         monthField.setBackground(Color.WHITE);
@@ -176,12 +181,42 @@ public class AbsenKaryawan extends JPanel {
                 configButton.setLocation(configButton.getX(), configButton.getY() - 1);
             }
         });
-         configButton.addActionListener(new ActionListener() {
+        configButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(configButton);
-                PopUp_AturBulanDataAbsen dialog = new PopUp_AturBulanDataAbsen(parentFrame);
-                dialog.setVisible(true);
+                PopUp_AturBulanDataAbsen.resetShowingPopupFlag();
+
+                // Ambil teks dari monthField
+                String monthYearText = monthField.getText().trim();
+
+                // Parse bulan dan tahun
+                int bulanIndex = 1; // Default ke Januari
+                int tahun = Calendar.getInstance().get(Calendar.YEAR); // Default ke tahun sekarang
+
+                try {
+                    // Format monthField: "BULAN TAHUN" (contoh: "APRIL 2025")
+                    String[] parts = monthYearText.split("\\s+");
+                    System.out.println(parts[0]);
+                    if (parts.length >= 2) {
+                        // Ambil nama bulan dan convert ke indeks
+                        String bulanName = parts[0];
+                        bulanIndex = getMonthIndexFromName(bulanName);
+                        System.out.println(bulanIndex);
+
+                        // Ambil tahun
+                        tahun = Integer.parseInt(parts[parts.length - 1]);
+                    }
+
+                    System.out.println("Membuka popup dengan bulan index: " + bulanIndex + ", tahun: " + tahun);
+                } catch (Exception f) {
+                    System.out.println("Error parsing bulan/tahun: " +f.getMessage());
+                    f.printStackTrace();
+                }
+
+                // Buka popup dengan indeks bulan dan tahun
+                PopUp_AturBulanDataAbsen popup = new PopUp_AturBulanDataAbsen(parentFrame, bulanIndex, tahun);
+                popup.setVisible(true);
             }
         });
 
@@ -277,12 +312,26 @@ public class AbsenKaryawan extends JPanel {
                 if (column == 3) {
                     // Move back 3 days
                     currentDate.add(Calendar.DAY_OF_MONTH, -3);
-                    updateTable();
+
+                    updateSelectedMonthYearFromCurrentDate();
+                    if (!currentSearchTerm.isEmpty()) {
+                        performSearchh(currentSearchTerm);
+                    } else {
+                        // Otherwise load all data
+                        updateTable();
+                    }
                 } // If the next button (column 5, ») is clicked
                 else if (column == 5) {
                     // Move forward 3 days
                     currentDate.add(Calendar.DAY_OF_MONTH, 3);
-                    updateTable();
+
+                    updateSelectedMonthYearFromCurrentDate();
+                    if (!currentSearchTerm.isEmpty()) {
+                        performSearchh(currentSearchTerm);
+                    } else {
+                        // Otherwise load all data
+                        updateTable();
+                    }
                 }
             }
         });
@@ -298,25 +347,36 @@ public class AbsenKaryawan extends JPanel {
                 if (column == 3) {
                     // Move back 3 days
                     currentDate.add(Calendar.DAY_OF_MONTH, -3);
-                    updateTable();
+                    updateSelectedMonthYearFromCurrentDate();
+                    if (!currentSearchTerm.isEmpty()) {
+                        performSearchh(currentSearchTerm);
+                    } else {
+                        // Otherwise load all data
+                        updateTable();
+                    }
                 } // If the next button header (column 5, ») is clicked
                 else if (column == 5) {
                     // Move forward 3 days
                     currentDate.add(Calendar.DAY_OF_MONTH, 3);
-                    updateTable();
+                    updateSelectedMonthYearFromCurrentDate();
+                    if (!currentSearchTerm.isEmpty()) {
+                        performSearchh(currentSearchTerm);
+                    } else {
+                        // Otherwise load all data
+                        updateTable();
+                    }
                 }
             }
         });
     }
 
     private void updateTable() {
-        // Update month field if month changes
-        JTextField monthField = (JTextField) ((JPanel) configButton.getParent()).getComponent(0);
-        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy");
-        monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
-
-        // Refresh the table with new data based on the current date
-        loadDataFromDatabase();
+        if (!currentSearchTerm.isEmpty()) {
+            performSearchh(currentSearchTerm);
+        } else {
+            // Otherwise load all data
+            loadDataFromDatabase();
+        }
     }
 
     // Load data from database
@@ -330,7 +390,7 @@ public class AbsenKaryawan extends JPanel {
         model.setRowCount(0); // Clear existing data
 
         try {
-            // First, get all employees with their positions from karyawan table
+            // Get all employees with their positions
             String employeeQuery = "SELECT norfid, nama_user, jabatan "
                     + "FROM user "
                     + "ORDER BY nama_user";
@@ -344,8 +404,8 @@ public class AbsenKaryawan extends JPanel {
                     String name = empRs.getString("nama_user");
                     String position = empRs.getString("jabatan");
 
-                    // Get total attendance days for this employee for current month
-                    int totalAttendance = getTotalAttendanceDays(norfid);
+                    // Get total attendance days for this employee for the selected month and year
+                    int totalAttendance = getTotalAttendanceDays(norfid, selectedMonth, selectedYear);
 
                     // Create a new row for this employee
                     Object[] row = new Object[model.getColumnCount()];
@@ -361,6 +421,7 @@ public class AbsenKaryawan extends JPanel {
 
             // Refresh the table display
             mainTable.repaint();
+            updateSelectedMonthYearFromCurrentDate();
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage(),
@@ -369,29 +430,29 @@ public class AbsenKaryawan extends JPanel {
         }
     }
 
-    // Get total attendance days for a specific employee
-    private int getTotalAttendanceDays(String norfid) throws SQLException {
-        Calendar cal = (Calendar) currentDate.clone();
-        int currentMonth = cal.get(Calendar.MONTH) + 1; // Month is 0-based in Calendar
-        int currentYear = cal.get(Calendar.YEAR);
+    private int getTotalAttendanceDays(String norfid, int month, int year) {
+        int total = 0;
+        try {
+            // SQL query to count distinct days for specific month and year based on waktu_masuk
+            String query = "SELECT COUNT(DISTINCT DATE(waktu_masuk)) AS total FROM absensi "
+                    + "WHERE norfid = ? AND MONTH(waktu_masuk) = ? AND YEAR(waktu_masuk) = ?";
 
-        String query = "SELECT COUNT(DISTINCT DATE(waktu_masuk)) as total_days "
-                + "FROM absensi "
-                + "WHERE norfid = ? AND MONTH(waktu_masuk) = ? AND YEAR(waktu_masuk) = ? ";
+            try (PreparedStatement stmt = con.prepareStatement(query)) {
+                stmt.setString(1, norfid);
+                stmt.setInt(2, month);
+                stmt.setInt(3, year);
 
-        try (PreparedStatement stmt = con.prepareStatement(query)) {
-            stmt.setString(1, norfid);
-            stmt.setInt(2, currentMonth);
-            stmt.setInt(3, currentYear);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("total_days");
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        total = rs.getInt("total");
+                    }
                 }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-        return 0;
+        return total;
     }
 
     private Map<String, Map<String, String>> getAttendanceData(String norfid, Date[] dates) {
@@ -529,29 +590,25 @@ public class AbsenKaryawan extends JPanel {
         return "";
     }
 
-    // Perform search on employee names
     private void performSearchh(String searchTerm) {
         this.currentSearchTerm = searchTerm;
         try {
             String query = "SELECT norfid, nama_user, jabatan "
                     + "FROM user WHERE nama_user LIKE ? "
                     + "ORDER BY nama_user";
-
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 stmt.setString(1, "%" + searchTerm + "%");
-
                 ResultSet rs = stmt.executeQuery();
                 DefaultTableModel model = (DefaultTableModel) mainTable.getModel();
                 model.setRowCount(0); // Clear existing data
-
                 int rowNum = 1;
                 while (rs.next()) {
                     String norfid = rs.getString("norfid");
                     String name = rs.getString("nama_user");
                     String position = rs.getString("jabatan");
 
-                    // Get total attendance days for this employee
-                    int totalAttendance = getTotalAttendanceDays(norfid);
+                    // Use the current selectedMonth and selectedYear for filtering
+                    int totalAttendance = getTotalAttendanceDays(norfid, selectedMonth, selectedYear);
 
                     // Create a new row for this employee
                     Object[] row = new Object[model.getColumnCount()];
@@ -559,11 +616,9 @@ public class AbsenKaryawan extends JPanel {
                     row[1] = name;
                     row[2] = position != null ? position : "";
                     row[6] = totalAttendance > 0 ? String.valueOf(totalAttendance) : "";
-
                     model.addRow(row);
                     rowNum++;
                 }
-
                 // This is the key fix - properly refresh the table including custom renderers
                 mainTable.tableChanged(new TableModelEvent(model));
                 mainTable.revalidate(); // Ensure layout is recalculated
@@ -940,7 +995,7 @@ public class AbsenKaryawan extends JPanel {
         // Update month field if it exists
         if (configButton != null && configButton.getParent() != null) {
             JTextField monthField = (JTextField) ((JPanel) configButton.getParent()).getComponent(0);
-            SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy");
+            SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", indonesianLocale);
             monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
         }
 
@@ -948,4 +1003,71 @@ public class AbsenKaryawan extends JPanel {
         loadDataFromDatabase();
     }
 
+    public void updateTableByMonth(int month, int year) {
+        // Update the selected month and year
+        this.selectedMonth = month;
+        this.selectedYear = year;
+
+        // Update the current date to reflect the selection
+        // Month in Calendar is 0-based, so subtract 1
+        currentDate.set(Calendar.MONTH, month - 1);
+        currentDate.set(Calendar.YEAR, year);
+
+        // Reset to the first day of the month
+        currentDate.set(Calendar.DAY_OF_MONTH, 1);
+
+        // Update the month field display
+        updateMonthFieldDisplay();
+
+        // Reload data - preserve current search if any
+        if (!currentSearchTerm.isEmpty()) {
+            performSearchh(currentSearchTerm);
+        } else {
+            loadDataFromDatabase();
+        }
+    }
+
+    private void updateMonthFieldDisplay() {
+        if (monthField != null) {
+            SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", indonesianLocale);
+            monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
+        } else {
+            // If monthField isn't directly accessible, try to find it
+            JTextField monthField = (JTextField) ((JPanel) configButton.getParent()).getComponent(0);
+            if (monthField != null) {
+                SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", indonesianLocale);
+                monthField.setText(monthYearFormat.format(currentDate.getTime()).toUpperCase());
+            }
+        }
+    }
+
+    private void updateSelectedMonthYearFromCurrentDate() {
+        // Calendar months are 0-based, database months are 1-based
+        selectedMonth = currentDate.get(Calendar.MONTH) + 1;
+        selectedYear = currentDate.get(Calendar.YEAR);
+
+        updateMonthFieldDisplay();
+    }
+
+    private int getMonthIndexFromName(String monthName) {
+        // Map nama bulan dalam bahasa Indonesia ke indeks (1-12)
+        String[][] bulanMap = {
+            {"JANUARI", "1"}, {"FEBRUARI", "2"}, {"MARET", "3"},
+            {"APRIL", "4"}, {"MEI", "5"}, {"JUNI", "6"},
+            {"JULI", "7"}, {"AGUSTUS", "8"}, {"SEPTEMBER", "9"},
+            {"OKTOBER", "10"}, {"NOVEMBER", "11"}, {"DESEMBER", "12"}
+        };
+        
+        int index = 0;
+
+        String upperMonthName = monthName.toUpperCase();
+        System.out.println(upperMonthName + " tanggal");
+        for (String[] entry : bulanMap) {
+            if (upperMonthName.equals(entry[0])) {
+                index = Integer.parseInt(entry[1]);
+                System.out.println("ini entry index " + index);
+            }
+        }
+        return index;
+    }
 }

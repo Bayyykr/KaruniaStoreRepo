@@ -1,9 +1,12 @@
 package PopUp_all;
 
+import Form.AbsenKaryawan;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.geom.AffineTransform;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class PopUp_AturBulanDataAbsen extends JDialog {
 
@@ -28,10 +31,10 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
 
     // Konstruktor tanpa parameter
     public PopUp_AturBulanDataAbsen() {
-        this(null); // Memanggil konstruktor dengan parameter
+        this(null, 0, 0); // Memanggil konstruktor dengan parameter
     }
 
-    public PopUp_AturBulanDataAbsen(JFrame parent) {
+    public PopUp_AturBulanDataAbsen(JFrame parent, int bulanIndex, int tahun) {
         super(parent, "Atur Bulan Gaji", true);
         this.parentFrame = parent;
         setModal(true);
@@ -74,6 +77,7 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
 
         createComponents();
 
+        setInitialValuesByIndex(bulanIndex, tahun);
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
         addWindowListener(new WindowAdapter() {
             @Override
@@ -93,8 +97,7 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
         contentPanel.add(bulanLabel);
 
         // ComboBox Bulan dengan menggunakan ComboboxSlideCustom
-        String[] bulanItems = {"Pilih Bulan", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                              "Juli", "Agustus", "September", "Oktober", "November", "Desember"};
+        String[] bulanItems = generateMonthArray();
         comboBoxBulan = new ComboboxSlideCustom(bulanItems);
         comboBoxBulan.setBounds(25, 60, 300, 45); // Increased height to 45
         comboBoxBulan.setOpaque(false); // Make it transparent
@@ -110,7 +113,7 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
         contentPanel.add(tahunLabel);
 
         // ComboBox Tahun dengan menggunakan ComboboxSlideCustom
-        String[] tahunItems = {"Pilih Tahun", "2023", "2024", "2025", "2026"};
+        String[] tahunItems = generateYearArray();
         comboBoxTahun = new ComboboxSlideCustom(tahunItems);
         comboBoxTahun.setBounds(25, 150, 300, 45); // Increased height to 45
         comboBoxTahun.setOpaque(false); // Make it transparent
@@ -132,6 +135,33 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
         contentPanel.add(terapkanButton);
     }
 
+    private void setInitialValuesByIndex(int bulanIndex, int tahun) {
+        System.out.println("Setting bulan index: " + bulanIndex + ", tahun: " + tahun);
+
+        // Pastikan indeks bulan valid (1-12)
+        if (bulanIndex >= 1 && bulanIndex <= 12) {
+            // ComboBox indeks dimulai dari 0, indeks pertama adalah "Pilih Bulan"
+            comboBoxBulan.setSelectedIndex(bulanIndex);
+            System.out.println("Bulan dipilih dengan indeks: " + bulanIndex);
+        }
+
+        // Set tahun
+        String tahunStr = String.valueOf(tahun);
+
+        // Cari indeks tahun yang sesuai
+        for (int i = 0; i < generateYearArray().length; i++) {
+            if (generateYearArray()[i].equals(tahunStr)) {
+                comboBoxTahun.setSelectedIndex(i);
+                System.out.println("Tahun dipilih: " + tahunStr + " pada indeks " + i);
+                break;
+            }
+        }
+    }
+
+    public static void resetShowingPopupFlag() {
+        isShowingPopup = false;
+    }
+
     private JButton createButton(String text, Color background, Color foreground) {
         JButton button = new JButton(text) {
             @Override
@@ -140,13 +170,13 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(background);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                
+
                 // Jika ini adalah tombol BATAL, tambahkan border
                 if (text.equals("BATAL")) {
                     g2.setColor(new Color(200, 200, 200));
                     g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
                 }
-                
+
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -158,22 +188,6 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
-    }
-
-    private void terapkan() {
-        String bulan = comboBoxBulan.getSelectedItem();
-        String tahun = comboBoxTahun.getSelectedItem();
-
-        if (bulan == null || tahun == null || bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
-            JOptionPane.showMessageDialog(this, "Mohon pilih bulan dan tahun", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Di sini Anda bisa menambahkan logika untuk menyimpan bulan dan tahun yang dipilih
-        // Misalnya dengan mengirim ke database atau menyimpan ke variabel global
-
-        // Setelah berhasil, tutup dialog
-        startCloseAnimation();
     }
 
     private void startScaleAnimation() {
@@ -254,6 +268,88 @@ public class PopUp_AturBulanDataAbsen extends JDialog {
 
     private JLayeredPane parentLayeredPane() {
         return parentFrame.getLayeredPane();
+    }
+
+    private void terapkan() {
+        String bulan = comboBoxBulan.getSelectedItem();
+        String tahun = comboBoxTahun.getSelectedItem();
+
+        if (bulan == null || tahun == null || bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
+            JOptionPane.showMessageDialog(this, "Mohon pilih bulan dan tahun", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Convert month name to month number (1-12)
+        int bulanIndex = getBulanIndex(bulan);
+        int tahunInt = Integer.parseInt(tahun);
+
+        // Find the panel that contains the table
+        Container parentContainer = parentFrame.getContentPane();
+        findAndUpdateTablePanel(parentContainer, bulanIndex, tahunInt);
+
+        // Close the dialog
+        startCloseAnimation();
+    }
+
+// Helper method to find the panel containing the table
+    private void findAndUpdateTablePanel(Container container, int bulanIndex, int tahunInt) {
+        Component[] components = container.getComponents();
+
+        for (Component comp : components) {
+            if (comp instanceof AbsenKaryawan) {
+                // Found the panel that contains the table
+                ((AbsenKaryawan) comp).updateTableByMonth(bulanIndex, tahunInt);
+                return;
+            } else if (comp instanceof Container) {
+                // Search recursively in nested containers
+                findAndUpdateTablePanel((Container) comp, bulanIndex, tahunInt);
+            }
+        }
+    }
+
+    private int getBulanIndex(String bulanName) {
+        String[] months = generateMonthArray();
+
+        for (int i = 1; i < months.length; i++) {
+            if (months[i].equals(bulanName)) {
+                return i;
+            }
+        }
+        return 1; // Default to January if not found
+    }
+
+    private String[] generateMonthArray() {
+        String[] months = new String[13]; // 12 months + "Pilih Bulan"
+        months[0] = "Pilih Bulan";
+
+        // Get localized month names for Indonesian
+        Locale locale = new Locale("id", "ID");
+        Calendar calendar = Calendar.getInstance(locale);
+
+        for (int i = 0; i < 12; i++) {
+            calendar.set(Calendar.MONTH, i);
+            String monthName = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, locale);
+            // Capitalize first letter to match original style
+            monthName = monthName.substring(0, 1).toUpperCase() + monthName.substring(1);
+            months[i + 1] = monthName;
+        }
+
+        return months;
+    }
+
+// Method to generate year array dynamically
+    private String[] generateYearArray() {
+        String[] years = new String[51]; // "Pilih Tahun" + 10 years starting from 2025
+        years[0] = "Pilih Tahun";
+
+        int startYear = 2025;
+
+        // Generate 10 years starting from 2025
+        for (int i = 0; i < 50; i++) {
+            years[i + 1] = String.valueOf(startYear + i);
+        }
+
+        return years;
     }
 
     // RoundedPanel Inner Class

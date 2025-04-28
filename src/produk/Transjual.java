@@ -1525,7 +1525,7 @@ public class Transjual extends JPanel {
         double height = calculateDynamicHeight();
 
         // IMPROVED FIX: Consistent margins for proper alignment
-        double marginLeft = convertMmToPpi(3);
+        double marginLeft = convertMmToPpi(0);
         double marginRight = convertMmToPpi(3);
         double marginTop = convertMmToPpi(1);
         double marginBottom = convertMmToPpi(3);
