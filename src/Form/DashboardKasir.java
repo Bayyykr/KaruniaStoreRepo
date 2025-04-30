@@ -552,7 +552,6 @@ public class DashboardKasir extends JPanel {
     }
 
     private JPanel createProductRow(String productName, String quantity, String iconPath) {
-        // Panel baris utama dengan border melengkung
         JPanel rowPanel = new JPanel();
         rowPanel.setLayout(new BorderLayout());
         rowPanel.setBackground(Color.WHITE);
@@ -566,22 +565,13 @@ public class DashboardKasir extends JPanel {
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
         leftPanel.setBackground(Color.WHITE);
 
-        // Tambahkan ikon produk
         try {
             ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/" + iconPath));
-            // Skala ikon ke ukuran yang sesuai (24x24 piksel)
             Image scaledImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
             JLabel iconLabel = new JLabel(new ImageIcon(scaledImage));
             iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
             leftPanel.add(iconLabel);
         } catch (Exception e) {
-            // Fallback jika ikon tidak ditemukan - buat persegi kecil berwarna sebagai placeholder
-            JPanel iconPlaceholder = new JPanel();
-            iconPlaceholder.setBackground(new Color(230, 230, 230));
-            iconPlaceholder.setPreferredSize(new Dimension(24, 24));
-            iconPlaceholder.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-            leftPanel.add(iconPlaceholder);
-            System.err.println("Icon not found: " + iconPath);
         }
 
         // Label nama produk
@@ -645,170 +635,170 @@ public class DashboardKasir extends JPanel {
     }
 
     private JPanel createStokPanel() {
-        // Panel utama dengan padding dan border melengkung
-        JPanel stokPanel = new JPanel();
-        stokPanel.setLayout(new BorderLayout(0, 5));
-        stokPanel.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(50, new Color(220, 220, 220), 2),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        stokPanel.setBackground(Color.white);
+    // Panel utama dengan padding dan border melengkung
+    JPanel stokPanel = new JPanel();
+    stokPanel.setLayout(new BorderLayout(0, 5));
+    stokPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(50, new Color(220, 220, 220), 2),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+    ));
+    stokPanel.setBackground(Color.white);
 
-        // Panel header dengan judul dan ikon peringatan
-        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
-        headerPanel.setBackground(Color.WHITE);
+    // Panel header dengan judul dan ikon peringatan
+    JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+    headerPanel.setBackground(Color.WHITE);
 
-        // Label judul
-        JLabel titleLabel = new JLabel("Daftar Stok Menipis");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+    // Label judul
+    JLabel titleLabel = new JLabel("Daftar Stok Menipis");
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
-        // Ikon peringatan
-        JLabel warningIcon = new JLabel();
-        try {
-            // Muat gambar ikon peringatan (ganti dengan path yang sesuai)
-            ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/icon_seru_merah.png"));
-            // Ubah ukuran ikon
-            Image img = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
-            warningIcon.setIcon(new ImageIcon(img));
-        } catch (Exception e) {
+    // Ikon peringatan
+    JLabel warningIcon = new JLabel();
+    try {
+        // Muat gambar ikon peringatan (ganti dengan path yang sesuai)
+        ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/icon/warning_segitiga_merah.png"));
+        // Ubah ukuran ikon
+        Image img = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
+        warningIcon.setIcon(new ImageIcon(img));
+    } catch (Exception e) {
+    }
+
+    warningIcon.setBounds(210, 15, 20, 20);
+    headerPanel.add(titleLabel, BorderLayout.WEST);
+    headerPanel.add(warningIcon);
+
+    // Tambahkan header ke panel utama
+    stokPanel.add(headerPanel, BorderLayout.NORTH);
+
+    // Panel untuk item stok
+    JPanel itemsContainer = new JPanel();
+    itemsContainer.setLayout(new BoxLayout(itemsContainer, BoxLayout.Y_AXIS));
+    itemsContainer.setBackground(Color.WHITE);
+    itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+    // Data stok - nama barang dan jumlah
+    String[][] data = {
+        {"Sandal Kulit Hitam", "3"},
+        {"Sandal Kulit Hitam", "5"},
+        {"-", "-"},
+        {"-", "-"}
+    };
+
+    // Buat setiap baris stok
+    for (int i = 0; i < data.length; i++) {
+        JPanel itemPanel = createStokRow(data[i][0], data[i][1]);
+        itemsContainer.add(itemPanel);
+
+        if (i < data.length - 1) {
+            itemsContainer.add(Box.createVerticalStrut(9));
         }
+    }
+    
+    // Tambahkan space vertikal di akhir item container
+    itemsContainer.add(Box.createVerticalStrut(15));
+    
+    // Panel footer dengan posisi button di kanan
+    JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    footerPanel.setBackground(Color.WHITE);
+    // Tambahkan padding di atas footer untuk memberikan jarak dari item terakhir
+    footerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, -5, 0));
 
-        warningIcon.setBounds(210, 15, 20, 20);
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(warningIcon);
+    JButton moreButton = new JButton("Telusuri Lainnya");
+    moreButton.setFont(new Font("Arial", Font.BOLD, 12));
+    moreButton.setBorderPainted(false);
+    moreButton.setContentAreaFilled(false);
+    moreButton.setFocusPainted(false);
+    moreButton.setPreferredSize(new Dimension(150, 12)); // Memperbesar tombol agar text terlihat
+    
+    try {
+        ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/arrow-right.png"));
+        Image img = icon.getImage().getScaledInstance(12, 12, Image.SCALE_SMOOTH);
+        moreButton.setIcon(new ImageIcon(img));
+        moreButton.setIconTextGap(5);
+        moreButton.setHorizontalTextPosition(SwingConstants.LEFT);
+    } catch (Exception e) {
+        moreButton.setText("Telusuri Lainnya >");
+    }
 
-        // Tambahkan header ke panel utama
-        stokPanel.add(headerPanel, BorderLayout.NORTH);
-
-        // Panel untuk item stok
-        JPanel itemsContainer = new JPanel();
-        itemsContainer.setLayout(new BoxLayout(itemsContainer, BoxLayout.Y_AXIS));
-        itemsContainer.setBackground(Color.WHITE);
-        itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
-        // Data stok - nama barang dan jumlah
-        String[][] data = {
-            {"Sandal Kulit Hitam", "3"},
-            {"Sandal Kulit Hitam", "5"},
-            {"-", "-"},
-            {"-", "-"}
-        };
-
-        // Buat setiap baris stok
-        for (int i = 0; i < data.length; i++) {
-            JPanel itemPanel = createStokRow(data[i][0], data[i][1]);
-            itemsContainer.add(itemPanel);
-
-            // Tambahkan jarak antar baris
-            if (i < data.length - 1) {
-                itemsContainer.add(Box.createVerticalStrut(5));
-            }
-        }
-
-        // Panel untuk footer dengan tombol "Telusuri Lainnya"
-        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        footerPanel.setBackground(Color.WHITE);
-
-        JButton moreButton = new JButton("Telusuri Lainnya");
-        moreButton.setFont(new Font("Arial", Font.BOLD, 12));
-        moreButton.setBorderPainted(false);
-        moreButton.setContentAreaFilled(false);
-        moreButton.setFocusPainted(false);
-
-        // Tambahkan ikon panah kanan (opsional)
-        try {
-            // Muat gambar ikon
-            ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/arrow-right.png"));
-            // Ubah ukuran ikon
-            Image img = icon.getImage().getScaledInstance(12, 12, Image.SCALE_SMOOTH);
-            moreButton.setIcon(new ImageIcon(img));
-            moreButton.setIconTextGap(5);
-            moreButton.setHorizontalTextPosition(SwingConstants.LEFT);
-        } catch (Exception e) {
-            // Fallback jika gambar tidak ditemukan
-            moreButton.setText("Telusuri Lainnya >");
-        }
-
-        moreButton.addActionListener(new ActionListener() {
+    moreButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Tombol Telusuri Lainnya diklik!");
-             JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-             PopUp_DashboardKasirTelusuriLainnya dialog = new PopUp_DashboardKasirTelusuriLainnya(parentFrame);
-             dialog.setVisible(true);
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+            PopUp_DashboardKasirTelusuriLainnya dialog = new PopUp_DashboardKasirTelusuriLainnya(parentFrame);
+            dialog.setVisible(true);
         }
     });
-        
-        footerPanel.add(moreButton);
+    
+    footerPanel.add(moreButton);
 
-        // Tambahkan container item dan footer ke panel utama
-        stokPanel.add(itemsContainer, BorderLayout.CENTER);
-        stokPanel.add(footerPanel, BorderLayout.SOUTH);
+    // Tambahkan container item dan footer ke panel utama
+    stokPanel.add(itemsContainer, BorderLayout.CENTER);
+    stokPanel.add(footerPanel, BorderLayout.SOUTH);
 
-        return stokPanel;
-    }
+    return stokPanel;
+}
 
-    private JPanel createStokRow(String namaBarang, String jumlah) {
-        JPanel rowPanel = new JPanel();
-        rowPanel.setLayout(new BorderLayout());
-        rowPanel.setBackground(Color.WHITE);
-        rowPanel.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(10, new Color(0, 0, 0), 1),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
+private JPanel createStokRow(String namaBarang, String jumlah) {
+    JPanel rowPanel = new JPanel();
+    rowPanel.setLayout(new BorderLayout());
+    rowPanel.setBackground(Color.WHITE);
+    rowPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(10, new Color(0, 0, 0), 1),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+    ));
+    
+    // Panel untuk nama barang (bagian kiri)
+    JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+    leftPanel.setBackground(Color.WHITE);
 
-        // Panel untuk nama barang (bagian kiri)
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        leftPanel.setBackground(Color.WHITE);
-
-        // Ikon produk (disesuaikan dengan jenis barang)
-        JLabel iconLabel = new JLabel();
-        try {
-            String iconPath = "/SourceImage/";
-            // Tentukan ikon berdasarkan nama barang
-            if (namaBarang.toLowerCase().contains("sock") || namaBarang.toLowerCase().contains("kaos kaki")) {
-                iconPath += "sandal-icon.png";
-            } else if (namaBarang.toLowerCase().contains("sandal")) {
-                iconPath += "sandal-icon.png";
-            }
-
-            ImageIcon icon = new ImageIcon(getClass().getResource(iconPath));
-            Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
-            iconLabel.setIcon(new ImageIcon(img));
-        } catch (Exception e) {
+    // Ikon produk (disesuaikan dengan jenis barang)
+    JLabel iconLabel = new JLabel();
+    try {
+        String iconPath = "/SourceImage/";
+        // Tentukan ikon berdasarkan nama barang
+        if (namaBarang.toLowerCase().contains("sock") || namaBarang.toLowerCase().contains("kaos kaki")) {
+            iconPath += "sandal-icon.png";
+        } else if (namaBarang.toLowerCase().contains("sandal")) {
+            iconPath += "sandal-icon.png";
         }
 
-        // Label nama barang
-        JLabel nameLabel = new JLabel(namaBarang);
-        nameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        leftPanel.add(iconLabel);
-        leftPanel.add(nameLabel);
-
-        // Field jumlah dengan border (bagian kanan)
-        JTextField quantityField = new JTextField(jumlah);
-        quantityField.setFont(new Font("Arial", Font.PLAIN, 14));
-        quantityField.setEditable(false);
-        quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-        quantityField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                BorderFactory.createEmptyBorder(5, 15, 5, 15)
-        ));
-        quantityField.setBackground(Color.WHITE);
-        quantityField.setPreferredSize(new Dimension(80, 30));
-
-        // Tambahkan komponen ke panel baris
-        rowPanel.add(leftPanel, BorderLayout.WEST);
-        rowPanel.add(quantityField, BorderLayout.EAST);
-
-        // Tetapkan tinggi tetap untuk ukuran baris yang konsisten
-        rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-        rowPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 60));
-
-        return rowPanel;
+        ImageIcon icon = new ImageIcon(getClass().getResource(iconPath));
+        Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+        iconLabel.setIcon(new ImageIcon(img));
+    } catch (Exception e) {
     }
+
+    // Label nama barang
+    JLabel nameLabel = new JLabel(namaBarang);
+    nameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+    leftPanel.add(iconLabel);
+    leftPanel.add(nameLabel);
+
+    // Field jumlah dengan border (bagian kanan)
+    JTextField quantityField = new JTextField(jumlah);
+    quantityField.setFont(new Font("Arial", Font.PLAIN, 14));
+    quantityField.setEditable(false);
+    quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+    quantityField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
+            BorderFactory.createEmptyBorder(5, 15, 5, 15)
+    ));
+    quantityField.setBackground(Color.WHITE);
+    quantityField.setPreferredSize(new Dimension(80, 30));
+
+    // Tambahkan komponen ke panel baris
+    rowPanel.add(leftPanel, BorderLayout.WEST);
+    rowPanel.add(quantityField, BorderLayout.EAST);
+
+    // Tetapkan tinggi tetap untuk ukuran baris yang konsisten
+    rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+    rowPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 60));
+
+    return rowPanel;
+}
 
     private void setNamaUser() {
         String email = LoginForm.getNamaUser();

@@ -164,7 +164,7 @@ public class Productt extends JFrame {
         add(top);
 
         // Set Dashboard as initial panel
-        currentPanel = produkPanel;
+        currentPanel = dashboardPanelKasir;
         add(currentPanel);
 
         // Make all components visible
