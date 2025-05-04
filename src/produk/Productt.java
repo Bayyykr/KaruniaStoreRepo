@@ -10,12 +10,12 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import produk.ProductDisplayy;
-import produk.AddNewProductFormm;                          
+import produk.AddNewProductFormm;
 import produk.ProductDisplayyKasir;
 import laporan.Laporan;
 import produk.EditProductPanel;
 
-public class Productt extends JFrame { 
+public class Productt extends JFrame {
 
     // Define panel references as class members
     private Dashboard dashboardPanel;
@@ -39,12 +39,12 @@ public class Productt extends JFrame {
         return mainFrame;
     }
 
-    public Productt() { 
+    public Productt() {
         mainFrame = this; // Simpan instance utama
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        
+
         // Get screen size
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         getContentPane().setBackground(Color.WHITE);
@@ -68,7 +68,7 @@ public class Productt extends JFrame {
         transaksiBeli = new Transaksibeli();
         gajikaryawan = new GajiKaryawan();
         transaksiJual = new Transjual();
-        laporanPanel = new Laporan(); 
+        laporanPanel = new Laporan();
 
         // Set bounds for fixed components
         sidebar.setBounds(0, 0, 260, screenSize.height);
@@ -90,11 +90,10 @@ public class Productt extends JFrame {
         karyawanPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         absenpanel.setBounds(panelX, panelY, panelWidth, 640);
         transaksiBeli.setBounds(panelX, panelY, panelWidth, panelHeight);
-        transaksiJual.setBounds(panelX,panelY, panelWidth, panelHeight);
-        gajikaryawan.setBounds(panelX,panelY, panelWidth, panelHeight);
+        transaksiJual.setBounds(panelX, panelY, panelWidth, panelHeight);
+        gajikaryawan.setBounds(panelX, panelY, panelWidth, panelHeight);
         editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         laporanPanel.setBounds(panelX, panelY, panelWidth, panelHeight); // Set bounds untuk panel laporan
-
 
         // Tambahkan method untuk mengganti panel dari ProductDisplayy ke AddNewProductFormm
         produkPanel.setPlusButtonListener(() -> {
@@ -105,11 +104,11 @@ public class Productt extends JFrame {
         produkPanel.setTrashButtonListener(() -> {
             switchToDeleteProductPanel();
         });
-        
-          karyawanPanel.setAbsenKaryawan(() -> {
+
+        karyawanPanel.setAbsenKaryawan(() -> {
             switchToAbsenKaryawan();
         });
-        
+
         absenpanel.setBackToDataKaryawan(() -> {
             switchToDataKaryawan();
         });
@@ -129,14 +128,14 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
-                        currentPanel = editproductpanel;
+                        currentPanel = produkPanel;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan
                         currentPanel = karyawanPanel;
                         break;
                     case 3: // Laporan
-                      currentPanel = laporanPanel;
+                        currentPanel = laporanPanel;
                         break;
                     case 4: // Transaksi Beli
                         currentPanel = transaksiBeli;
@@ -157,7 +156,7 @@ public class Productt extends JFrame {
                 revalidate();
                 repaint();
             }
-        }); 
+        });
 
         // Add fixed components
         add(sidebar);
@@ -172,17 +171,17 @@ public class Productt extends JFrame {
         top.setVisible(true);
         currentPanel.setVisible(true);
     }
-    
+
     // Method untuk beralih ke panel AddNewProductFormm
     public void switchToAddProductPanel() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         currentPanel = addProductPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-        
+
         revalidate();
         repaint();
     }
@@ -192,79 +191,79 @@ public class Productt extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         currentPanel = deleteProductPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-        
+
         revalidate();
         repaint();
     }
-    
+
     public void switchToEditProductPanel() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         currentPanel = editproductpanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-        
+
         revalidate();
         repaint();
     }
-    
+
     // Tambahkan method untuk beralih ke panel Transjual
-public void switchToTransJualPanel() {
-    if (currentPanel != null) {
-        remove(currentPanel);
+    public void switchToTransJualPanel() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+
+        currentPanel = transaksiJual;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
     }
-    
-    currentPanel = transaksiJual;
-    add(currentPanel);
-    currentPanel.setVisible(true);
-    
-    revalidate();
-    repaint();
-}
 
     // Method untuk kembali ke panel produk
     public void switchBackToProductPanel() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-    
+
         currentPanel = produkPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-    
+
         revalidate();
         repaint();
     }
-    
-        // Method untuk kembali ke panel produk
+
+    // Method untuk kembali ke panel produk
     public void switchBackToProductPanelKasir() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-    
+
         currentPanel = produkPanelkasir;
         add(currentPanel);
         currentPanel.setVisible(true);
-    
+
         revalidate();
         repaint();
     }
-    
-     public void switchToAbsenKaryawan() {
+
+    public void switchToAbsenKaryawan() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         currentPanel = absenpanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-        
+
         revalidate();
         repaint();
     }
@@ -273,15 +272,15 @@ public void switchToTransJualPanel() {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-    
+
         currentPanel = karyawanPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
-    
+
         revalidate();
         repaint();
     }
-    
+
     public static void main(String args[]) {
         SwingUtilities.invokeLater(() -> {
             new Productt().setVisible(true);

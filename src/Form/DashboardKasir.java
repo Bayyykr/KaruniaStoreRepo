@@ -677,7 +677,6 @@ public class DashboardKasir extends JPanel {
     itemsContainer.setBackground(Color.WHITE);
     itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
-    // Data stok - nama barang dan jumlah
     String[][] data = {
         {"Sandal Kulit Hitam", "3"},
         {"Sandal Kulit Hitam", "5"},
@@ -786,8 +785,10 @@ private JPanel createStokRow(String namaBarang, String jumlah) {
             BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
     ));
+    quantityField.setFocusable(false);
+    quantityField.setEditable(false);
     quantityField.setBackground(Color.WHITE);
-    quantityField.setPreferredSize(new Dimension(80, 30));
+    quantityField.setPreferredSize(new Dimension(50, 30));
 
     // Tambahkan komponen ke panel baris
     rowPanel.add(leftPanel, BorderLayout.WEST);

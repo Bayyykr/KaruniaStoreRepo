@@ -644,10 +644,12 @@ public class LoginForm extends JFrame {
                             new FormKasir().setVisible(true);
                             LoginForm.this.setVisible(false);
                             System.out.println("ini kasir");
+                            PindahanAntarPopUp.showMasukSebagaiKasir(parentFrame);
                         } else if (jabatan.equals("owner")) {
                             new Main().setVisible(true);
                             LoginForm.this.setVisible(false);
                             System.out.println("ini owner");
+                            PindahanAntarPopUp.showMasukSebagaiOwner(parentFrame);
                         }
 
                         if (parentFrame != null) {
