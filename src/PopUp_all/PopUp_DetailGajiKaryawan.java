@@ -1,6 +1,5 @@
 package PopUp_all;
 
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -8,6 +7,14 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.util.Vector;
 import SourceCode.*;
+import db.conn;
+import java.sql.*;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Date;
 
 public class PopUp_DetailGajiKaryawan extends JDialog {
 
@@ -19,7 +26,7 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
     private final int RADIUS = 20;
     private final int FINAL_WIDTH = 450;
-    private final int FINAL_HEIGHT = 500;
+    private final int FINAL_HEIGHT = 550; // Menambah tinggi dialog dari 500 menjadi 550
     private final int ANIMATION_DURATION = 300;
     private final int ANIMATION_DELAY = 10;
     private float currentScale = 0.01f;
@@ -31,24 +38,30 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
     // Flag to avoid adding glassPane multiple times
     private static boolean isShowingPopup = false;
-    
-            // Tambahkan interface callback
+    private String norfid, starDate, endDate;
+    private Connection con;
+
+    // Tambahkan interface callback
     public interface PaymentCallback {
+
         void onPaymentSuccess(int rowIndex);
     }
+
     // Di PopUp_DetailGajiKaryawan.java
-public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
-    this.paymentCallback = callback;
-    this.rowIndex = rowIndex;
-}
-    // Constructor without parameters
-    public PopUp_DetailGajiKaryawan() {
-        this(null); // Call the constructor with parameters
+    public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
+        this.paymentCallback = callback;
+        this.rowIndex = rowIndex;
     }
 
-    public PopUp_DetailGajiKaryawan(JFrame parent) {
+    public PopUp_DetailGajiKaryawan(JFrame parent, String norfid, String startDate, String endDate) {
         super(parent, "Form Gaji", true);
         this.parentFrame = parent;
+        this.norfid = norfid;
+        this.starDate = startDate;
+        this.endDate = endDate;
+
+        con = conn.getConnection();
+
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
 
@@ -115,17 +128,7 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
         tableGaji = new JTableRounded(columnNames);
         tableGaji.setSize(FINAL_WIDTH - 50, 380);
 
-        // Add data rows to the table
-        tableGaji.addRow(new Object[]{"Nomor RFID", "29281272"});
-        tableGaji.addRow(new Object[]{"Nama", "Greyson"});
-        tableGaji.addRow(new Object[]{"Jabatan", "Karyawan"});
-        tableGaji.addRow(new Object[]{"Jumlah Perhari", "29"});
-        tableGaji.addRow(new Object[]{"Gaji Pokok", "Rp. 3.000.000,00"});
-        tableGaji.addRow(new Object[]{"Jumlah Lembur", "3 jam"});
-        tableGaji.addRow(new Object[]{"Gaji Lembur", "Rp. 15.000,00/jam"});
-        tableGaji.addRow(new Object[]{"Total", "Rp. 3.045.000,00"});
-        tableGaji.addRow(new Object[]{"Tanggal Pembayaran", "30 Januari 2025"});
-        tableGaji.addRow(new Object[]{"Dibayar Oleh", "Owner (Admin)"});
+        loadEmployeeData(norfid, starDate, endDate);
 
         // Configure table formatting
         JTable table = tableGaji.getTable();
@@ -137,7 +140,7 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
         table.setEnabled(false); // Make table non-editable
 
         // Set column widths
-        tableGaji.setColumnWidth(0, 150);
+        tableGaji.setColumnWidth(0, 170);
         tableGaji.setColumnWidth(1, 250);
 
         // Set custom cell renderer for alignment
@@ -168,9 +171,17 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
         tableGaji.lockTablePosition();
         tableGaji.setColumnsResizable(false);
 
-        // Place table in the content panel
-        tableGaji.setBounds(25, 60, FINAL_WIDTH - 50, 330);
-        contentPanel.add(tableGaji);
+        // Place table in a scrollable container to ensure all rows are visible
+        JScrollPane scrollPane = new JScrollPane(tableGaji.getTable());
+        scrollPane.setBounds(25, 60, FINAL_WIDTH - 50, 380); // Menambah tinggi table dari 330 menjadi 380
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+
+        // Memastikan scroll pane menampilkan semua data
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        contentPanel.add(scrollPane);
 
         // Cancel Button
         batalButton = createButton("BATAL", new Color(255, 77, 77), Color.WHITE);
@@ -179,7 +190,7 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
         contentPanel.add(batalButton);
 
         // Pay Button
-        bayarButton = createButton("BAYAR", new Color(38, 211, 103), Color.WHITE);
+        bayarButton = createButton("CETAK", new Color(38, 211, 103), Color.WHITE);
         bayarButton.setBounds(25 + (FINAL_WIDTH - 60) / 2 + 10, FINAL_HEIGHT - 70, (FINAL_WIDTH - 60) / 2, 45);
         bayarButton.addActionListener(e -> bayarGaji());
         contentPanel.add(bayarButton);
@@ -207,12 +218,6 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
     }
 
     private void bayarGaji() {
-        // Here you can add logic for processing salary payment
-        JOptionPane.showMessageDialog(this, "Pembayaran gaji berhasil!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-         // Panggil callback jika ada
-    if (paymentCallback != null) {
-        paymentCallback.onPaymentSuccess(rowIndex);
-    }
         startCloseAnimation();
     }
 
@@ -357,5 +362,123 @@ public void setPaymentCallback(PaymentCallback callback, int rowIndex) {
                 super.paintChildren(g);
             }
         }
+    }
+
+    public void loadEmployeeData(String norfid, String startDate, String endDate) {
+        try {
+            SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+            // Validasi format tanggal
+            Date parsedStartDate;
+            Date parsedEndDate;
+            try {
+                parsedStartDate = inputDateFormat.parse(startDate);
+                parsedEndDate = inputDateFormat.parse(endDate);
+            } catch (ParseException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Format tanggal tidak valid. Gunakan format YYYY-MM-DD",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Extract month and year from startDate for filtering
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(parsedStartDate);
+            int month = cal.get(Calendar.MONTH) + 1; // Month is 0-based in Calendar
+            int year = cal.get(Calendar.YEAR);
+
+            // SQL query untuk menghitung gaji karyawan dengan filter bulan ini
+            // Pelanggaran dihitung per hari (maksimal 1 pelanggaran per hari)
+            String sql = "SELECT "
+                    + "u.norfid, "
+                    + "u.nama_user, "
+                    + "u.jabatan, "
+                    + "COUNT(a.id_absen) AS jumlah_hadir, "
+                    + "COUNT(a.id_absen) * 60000 AS gaji_pokok, "
+                    + "COUNT(CASE WHEN TIME(a.waktu_masuk) > '08:30:00' OR "
+                    + "(TIME(a.waktu_keluar) < '16:00:00' AND TIME(a.waktu_keluar) != '00:00:00') THEN 1 ELSE NULL END) AS total_hari_pelanggaran, "
+                    + "COUNT(CASE WHEN TIME(a.waktu_masuk) > '08:30:00' OR "
+                    + "(TIME(a.waktu_keluar) < '16:00:00' AND TIME(a.waktu_keluar) != '00:00:00') THEN 1 ELSE NULL END) * 5000 AS total_potongan, "
+                    + "(COUNT(a.id_absen) * 60000) - (COUNT(CASE WHEN TIME(a.waktu_masuk) > '08:30:00' OR "
+                    + "(TIME(a.waktu_keluar) < '16:00:00' AND TIME(a.waktu_keluar) != '00:00:00') THEN 1 ELSE NULL END) * 5000) AS total_gaji "
+                    + "FROM user u "
+                    + "LEFT JOIN absensi a ON u.norfid = a.norfid "
+                    + "WHERE u.norfid = ? "
+                    + "AND MONTH(a.waktu_masuk) = ? "
+                    + "AND YEAR(a.waktu_masuk) = ? "
+                    + "GROUP BY u.norfid, u.nama_user, u.jabatan";
+
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, norfid);
+                st.setInt(2, month); // Set month as an integer
+                st.setInt(3, year);  // Set year as an integer
+
+                ResultSet rs = st.executeQuery();
+
+                if (rs.next()) {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+                    String paymentDate = dateFormat.format(new Date());
+
+                    // Format untuk periode laporan (hanya bulan dan tahun)
+                    SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", new Locale("id", "ID"));
+                    String periodeBulanTahun = monthYearFormat.format(parsedStartDate);
+
+                    // Menambahkan data ke tabel
+                    tableGaji.addRow(new Object[]{"Nomor RFID", rs.getString("norfid")});
+                    tableGaji.addRow(new Object[]{"Nama", rs.getString("nama_user")});
+                    tableGaji.addRow(new Object[]{"Jabatan", rs.getString("jabatan")});
+                    tableGaji.addRow(new Object[]{"Periode", periodeBulanTahun});
+                    tableGaji.addRow(new Object[]{"Jumlah Presensi", rs.getInt("jumlah_hadir") + " Hari"});
+
+                    // Format nilai mata uang
+                    String gajiPokok = "Rp. " + formatRupiah(rs.getInt("gaji_pokok")) + ",00";
+                    tableGaji.addRow(new Object[]{"Gaji Pokok", gajiPokok});
+
+                    int totalHariPelanggaran = rs.getInt("total_hari_pelanggaran");
+
+                    // Hanya menampilkan total hari dengan pelanggaran
+                    tableGaji.addRow(new Object[]{"Total Keterlambatan", totalHariPelanggaran + " Hari"});
+
+                    String potonganPerPelanggaran = "Rp. 5.000,00/hari";
+                    tableGaji.addRow(new Object[]{"Potongan Keterlambatan", potonganPerPelanggaran});
+
+                    String totalPotongan = "Rp. " + formatRupiah(rs.getInt("total_potongan")) + ",00";
+                    tableGaji.addRow(new Object[]{"Total Potongan", totalPotongan});
+
+                    String totalGaji = "Rp. " + formatRupiah(rs.getInt("total_gaji")) + ",00";
+                    tableGaji.addRow(new Object[]{"Total Gaji Bersih", totalGaji});
+                    tableGaji.addRow(new Object[]{"Tanggal Pembayaran", paymentDate});
+                    tableGaji.addRow(new Object[]{"Dibayar Oleh", "Owner (Admin)"});
+                    tableGaji.addRow(new Object[]{"Status", "Sudah Dibayar"});
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Tidak ada data untuk karyawan dengan RFID " + norfid + " pada periode yang dipilih",
+                            "Informasi",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Terjadi kesalahan: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+// Metode untuk memformat nilai rupiah
+    private String formatRupiah(int value) {
+        StringBuilder result = new StringBuilder();
+        String valueStr = String.valueOf(value);
+
+        for (int i = 0; i < valueStr.length(); i++) {
+            if (i > 0 && (valueStr.length() - i) % 3 == 0) {
+                result.append('.');
+            }
+            result.append(valueStr.charAt(i));
+        }
+
+        return result.toString();
     }
 }

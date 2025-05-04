@@ -548,13 +548,13 @@ public class TambahKaryawan extends javax.swing.JDialog {
                 if (no.equals("No. RFID") || nama.equals("Full Name") || email.equals("Email")
                         || pw.equals("Password") || notelp.equals("Nomor Telepon") || alamat.equals("Alamat")
                         || no.isEmpty() || nama.isEmpty() || email.isEmpty() || pw.isEmpty() || notelp.isEmpty() || alamat.isEmpty()) {
-                    System.out.println("iki memeks");
+                    System.out.println("data tidak boleh kosong");
                     return;
                 }
 
                 try {
-                    String query = "INSERT INTO user (norfid, nama_user, email, password, alamat, no_hp, jabatan)"
-                            + "VALUES (?, ?, ?, ?, ?, ?, 'kasir')";
+                    String query = "INSERT INTO user (norfid, nama_user, email, password, alamat, no_hp, jabatan, status)"
+                            + "VALUES (?, ?, ?, ?, ?, ?, 'kasir', 'aktif')";
                     try (PreparedStatement st = con.prepareStatement(query)) {
                         st.setString(1, no);
                         st.setString(2, nama);

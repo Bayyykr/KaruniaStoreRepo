@@ -24,7 +24,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
 
 public class AbsenKaryawan extends JPanel {
-
     private Runnable backToDataKaryawan;
     private JTextField searchField, monthField;
     private JButton configButton, backButton;
@@ -392,7 +391,7 @@ public class AbsenKaryawan extends JPanel {
         try {
             // Get all employees with their positions
             String employeeQuery = "SELECT norfid, nama_user, jabatan "
-                    + "FROM user "
+                    + "FROM user WHERE jabatan != 'owner' AND status != 'nonaktif' "
                     + "ORDER BY nama_user";
 
             try (PreparedStatement empStmt = con.prepareStatement(employeeQuery); ResultSet empRs = empStmt.executeQuery()) {
@@ -594,7 +593,7 @@ public class AbsenKaryawan extends JPanel {
         this.currentSearchTerm = searchTerm;
         try {
             String query = "SELECT norfid, nama_user, jabatan "
-                    + "FROM user WHERE nama_user LIKE ? "
+                    + "FROM user WHERE nama_user LIKE ? AND jabatan != 'owner' AND status != 'nonaktif' "
                     + "ORDER BY nama_user";
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 stmt.setString(1, "%" + searchTerm + "%");

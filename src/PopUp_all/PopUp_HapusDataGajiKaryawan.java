@@ -6,6 +6,8 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
+import db.conn;
+import java.sql.*;
 
 public class PopUp_HapusDataGajiKaryawan extends JDialog {
 
@@ -27,12 +29,18 @@ public class PopUp_HapusDataGajiKaryawan extends JDialog {
 
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+    public boolean wasDataDeleted = false;
+    private String norfid;
+    private Connection con;
 
-    public PopUp_HapusDataGajiKaryawan(JFrame parent) {
+    public PopUp_HapusDataGajiKaryawan(JFrame parent, String norfid) {
         this.parentFrame = parent;
+        this.norfid = norfid;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
+        
+        con = conn.getConnection();
 
         // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
@@ -100,6 +108,13 @@ public class PopUp_HapusDataGajiKaryawan extends JDialog {
 
         deleteButton = createRoundedButton("Delete", 250, 190, 130, 30, new Color(0xFF6347), Color.WHITE);
         deleteButton.setVisible(false);
+        deleteButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                deleteData();
+            }
+        });
+        contentPanel.add(cancelButton);
         contentPanel.add(deleteButton);
 
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
@@ -328,6 +343,22 @@ public class PopUp_HapusDataGajiKaryawan extends JDialog {
             } else {
                 super.paintChildren(g);
             }
+        }
+    }
+    
+    private void deleteData(){
+        try {
+            String sql = "UPDATE user SET status = 'nonaktif' WHERE norfid = ?";
+            try(PreparedStatement st = con.prepareStatement(sql)){
+                st.setString(1, norfid);
+                
+                int rowDeleted = st.executeUpdate();
+                if(rowDeleted > 0){
+                    wasDataDeleted= true;
+                    startCloseAnimation();
+                }
+            }
+        } catch (Exception e) {
         }
     }
 }

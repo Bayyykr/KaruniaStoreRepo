@@ -126,7 +126,7 @@ public class DataKaryawan extends JPanel {
         kelolaGajiButton.setContentAreaFilled(false);
         kelolaGajiButton.setOpaque(false);
         kelolaGajiButton.setFont(new Font("Arial", Font.BOLD, 12));
-        
+
         kelolaGajiButton.addActionListener(e -> {
             // Panggil callback untuk mengganti panel
             if (setGajiKaryawan != null) {
@@ -449,12 +449,16 @@ public class DataKaryawan extends JPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         stopCellEditing();
+                        String norfid = table.getValueAt(currentRow, 1).toString();
+                        Window parentWindow = SwingUtilities.getWindowAncestor(DataKaryawan.this);
+                        Frame parentFrame = parentWindow instanceof Frame ? (Frame) parentWindow : null;
+                        PopUp_EditKaryawan editdataKaryawanDialog = new PopUp_EditKaryawan(parentFrame, true, norfid);
+                        editdataKaryawanDialog.setVisible(true);
 
-                Window parentWindow = SwingUtilities.getWindowAncestor(DataKaryawan.this);
-                Frame parentFrame = parentWindow instanceof Frame ? (Frame) parentWindow : null;
-                PopUp_EditKaryawan editdataKaryawanDialog = new PopUp_EditKaryawan(parentFrame, true);
-                editdataKaryawanDialog.setVisible(true);
-                        System.out.println("ini button edit");
+                        if (editdataKaryawanDialog.wasDataUpdated) {
+                            getData();  // Refresh table data
+                        }
+
                     }
                 });
 
@@ -508,10 +512,14 @@ public class DataKaryawan extends JPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         stopCellEditing();
-                         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                 PopUp_HapusDataGajiKaryawan HapusData = new PopUp_HapusDataGajiKaryawan(parentFrame);
-                 HapusData.setVisible(true);
-                        System.out.println("ini button delete");
+                        String norfid = table.getValueAt(currentRow, 1).toString();
+                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                        PopUp_HapusDataGajiKaryawan HapusData = new PopUp_HapusDataGajiKaryawan(parentFrame, norfid);
+                        HapusData.setVisible(true);
+
+                        if (HapusData.wasDataDeleted) {
+                            getData();  // Refresh table data
+                        }
                     }
                 });
 
@@ -563,6 +571,7 @@ public class DataKaryawan extends JPanel {
     public void setAbsenKaryawan(Runnable listener) {
         this.setAbsenKaryawan = listener;
     }
+
     public void setGajiKaryawan(Runnable listener) {
         this.setGajiKaryawan = listener;
     }
@@ -574,7 +583,7 @@ public class DataKaryawan extends JPanel {
         }
 
         try {
-            String query = "SELECT * FROM user ORDER BY norfid";
+            String query = "SELECT * FROM user WHERE jabatan != 'owner' AND status != 'nonaktif' ORDER BY nama_user";
             try (PreparedStatement st = con.prepareStatement(query)) {
 
                 int rowNumber = 1; // For numbering the rows
@@ -657,7 +666,7 @@ public class DataKaryawan extends JPanel {
             // Create a query that searches across multiple columns
             String query = "SELECT * FROM user WHERE "
                     + "norfid LIKE ? OR "
-                    + "nama_user LIKE ?";
+                    + "nama_user LIKE ? AND jabatan != 'owner' AND status != 'nonaktif'";
 
             try (PreparedStatement st = con.prepareStatement(query)) {
                 // Set all parameters to the same search value

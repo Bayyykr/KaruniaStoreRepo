@@ -45,11 +45,13 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
     private JButton simpanButton;
     private JPanel buttonPanel;
     private Connection con;
-    public boolean wasDataAdded = false;
+    public boolean wasDataUpdated = false;
+    private String norfid;
 
-    public PopUp_EditKaryawan(java.awt.Frame parent, boolean modal) {
+    public PopUp_EditKaryawan(java.awt.Frame parent, boolean modal, String norfid) {
         super(parent, modal);
         this.parentFrame = (JFrame) parent;
+        this.norfid = norfid;
 
         con = conn.getConnection();
 
@@ -97,7 +99,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
             }
         });
 
-        TambahData();
+        showData();
     }
 
     // Metode untuk membersihkan glassPane yang mungkin sudah ada
@@ -259,7 +261,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 1;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(rfidLabel, gbc);
-        
+
         gbc.gridy = 2;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(rfidField, gbc);
@@ -268,7 +270,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 3;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(nameLabel, gbc);
-        
+
         gbc.gridy = 4;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(nameField, gbc);
@@ -277,7 +279,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 5;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(emailLabel, gbc);
-        
+
         gbc.gridy = 6;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(emailField, gbc);
@@ -286,7 +288,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 7;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(passwordLabel, gbc);
-        
+
         gbc.gridy = 8;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(passwordField, gbc);
@@ -295,7 +297,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 9;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(phoneLabel, gbc);
-        
+
         gbc.gridy = 10;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(phoneField, gbc);
@@ -304,7 +306,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         gbc.gridy = 11;
         gbc.insets = new Insets(4, 8, 0, 8);
         mainPanel.add(addressLabel, gbc);
-        
+
         gbc.gridy = 12;
         gbc.insets = new Insets(2, 8, 8, 8);
         mainPanel.add(addressField, gbc);
@@ -331,6 +333,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
+        simpanButton.addActionListener(e -> UpdateData());
         batalButton.addActionListener(e -> startCloseAnimation());
 
         this.addWindowListener(new WindowAdapter() {
@@ -538,7 +541,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         super.dispose();
     }
 
-    private void TambahData() {
+    private void UpdateData() {
         simpanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -550,8 +553,9 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
                 String alamat = addressField.getText();
 
                 try {
-                    String query = "INSERT INTO user (norfid, nama_user, email, password, alamat, no_hp, jabatan)"
-                            + "VALUES (?, ?, ?, ?, ?, ?, 'kasir')";
+                    String query = "UPDATE user SET norfid = ?, nama_user = ?, email = ?, "
+                            + "password = ?, alamat = ?, no_hp = ?, "
+                            + "jabatan = 'kasir', status = 'aktif' WHERE norfid = ?";
                     try (PreparedStatement st = con.prepareStatement(query)) {
                         st.setString(1, no);
                         st.setString(2, nama);
@@ -559,61 +563,78 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
                         st.setString(4, pw);
                         st.setString(5, alamat);
                         st.setString(6, notelp);
+                        st.setString(7, norfid);
 
-                        int rowInserted = st.executeUpdate();
-                        if (rowInserted > 0) {
-                            wasDataAdded = true;
+                        int rowUpdate = st.executeUpdate();
+                        if (rowUpdate > 0) {
+                            wasDataUpdated = true;
                             startCloseAnimation();
                         }
                     }
                 } catch (Exception ee) {
                     System.err.println("Error retrieving employee data: " + ee.getMessage());
                 }
-
-                System.out.println(no);
-                System.out.println(nama);
-                System.out.println(email);
-                System.out.println(pw);
-                System.out.println(notelp);
-                System.out.println(alamat);
             }
         });
     }
-    
+
+    private void showData() {
+        try {
+            String query = "SELECT * FROM user WHERE norfid = ?";
+            try (PreparedStatement st = con.prepareStatement(query)) {
+                st.setString(1, norfid);
+                ResultSet rs = st.executeQuery();
+
+                if (rs.next()) {
+                    rfidField.setText(rs.getString("norfid"));
+                    nameField.setText(rs.getString("nama_user"));
+                    emailField.setText(rs.getString("email"));
+                    passwordField.setText(rs.getString("password"));
+                    phoneField.setText(rs.getString("no_hp"));
+                    addressField.setText(rs.getString("alamat"));
+                }
+            }
+        } catch (Exception ee) {
+            System.err.println("error show data" + ee.getMessage());
+        }
+    }
+
     // Untuk kelas RoundedButton dan RoundedBorder, kita perlu juga sertakan di sini
     class RoundedButton extends javax.swing.plaf.basic.BasicButtonUI {
-    @Override
-    public void installUI(JComponent c) {
-        super.installUI(c);
-        AbstractButton button = (AbstractButton) c;
-        button.setOpaque(false);
-        button.setBorderPainted(false);
+
+        @Override
+        public void installUI(JComponent c) {
+            super.installUI(c);
+            AbstractButton button = (AbstractButton) c;
+            button.setOpaque(false);
+            button.setBorderPainted(false);
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            AbstractButton b = (AbstractButton) c;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int width = b.getWidth();
+            int height = b.getHeight();
+
+            // Paint background
+            g2.setColor(b.getBackground());
+            g2.fillRoundRect(0, 0, width, height, 15, 15);
+
+            // Tambahkan border hitam di sini
+            g2.setColor(Color.BLACK);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRoundRect(0, 0, width - 1, height - 1, 15, 15);
+
+            super.paint(g, c);
+            g2.dispose();
+        }
     }
-
-    @Override
-    public void paint(Graphics g, JComponent c) {
-        AbstractButton b = (AbstractButton) c;
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        int width = b.getWidth();
-        int height = b.getHeight();
-
-        // Paint background
-        g2.setColor(b.getBackground());
-        g2.fillRoundRect(0, 0, width, height, 15, 15);
-        
-        // Tambahkan border hitam di sini
-        g2.setColor(Color.BLACK);
-        g2.setStroke(new BasicStroke(1));
-        g2.drawRoundRect(0, 0, width - 1, height - 1, 15, 15);
-
-        super.paint(g, c);
-        g2.dispose();
-    }
-}
 
     class RoundedBorder extends AbstractBorder {
+
         private int radius;
         private Color color;
         private int thickness;

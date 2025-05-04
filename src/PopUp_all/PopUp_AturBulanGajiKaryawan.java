@@ -1,9 +1,12 @@
 package PopUp_all;
 
+import Form.AbsenKaryawan;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.geom.AffineTransform;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class PopUp_AturBulanGajiKaryawan extends JDialog {
 
@@ -12,6 +15,7 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
     private JPanel contentPanel;
     private ComboboxSlideCustom comboBoxBulan, comboBoxTahun;
     private JButton terapkanButton, batalButton;
+    private JLabel periodeLabel; // Reference to the periodeLabel that needs to be updated
 
     private final int RADIUS = 20;
     private final int FINAL_WIDTH = 350;
@@ -28,12 +32,18 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
 
     // Konstruktor tanpa parameter
     public PopUp_AturBulanGajiKaryawan() {
-        this(null); // Memanggil konstruktor dengan parameter
+        this(null, 0, 0, null); // Memanggil konstruktor dengan parameter
     }
 
-    public PopUp_AturBulanGajiKaryawan(JFrame parent) {
+    public PopUp_AturBulanGajiKaryawan(JFrame parent, int bulanIndex, int tahun) {
+        this(parent, bulanIndex, tahun, null);
+    }
+
+    // Konstruktor baru yang menerima periodeLabel
+    public PopUp_AturBulanGajiKaryawan(JFrame parent, int bulanIndex, int tahun, JLabel periodeLabel) {
         super(parent, "Atur Bulan Gaji", true);
         this.parentFrame = parent;
+        this.periodeLabel = periodeLabel; // Store reference to periodeLabel
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
 
@@ -74,6 +84,7 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
 
         createComponents();
 
+        setInitialValuesByIndex(bulanIndex, tahun);
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
         addWindowListener(new WindowAdapter() {
             @Override
@@ -85,6 +96,11 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         startScaleAnimation();
     }
 
+    // Method to find and store the periodeLabel
+    public void setPeriodeLabel(JLabel periodeLabel) {
+        this.periodeLabel = periodeLabel;
+    }
+
     private void createComponents() {
         // Label Atur Bulan/Month
         JLabel bulanLabel = new JLabel("Atur Bulan/Month");
@@ -93,8 +109,7 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         contentPanel.add(bulanLabel);
 
         // ComboBox Bulan dengan menggunakan ComboboxSlideCustom
-        String[] bulanItems = {"Pilih Bulan", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                              "Juli", "Agustus", "September", "Oktober", "November", "Desember"};
+        String[] bulanItems = generateMonthArray();
         comboBoxBulan = new ComboboxSlideCustom(bulanItems);
         comboBoxBulan.setBounds(25, 60, 300, 45); // Increased height to 45
         comboBoxBulan.setOpaque(false); // Make it transparent
@@ -110,7 +125,7 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         contentPanel.add(tahunLabel);
 
         // ComboBox Tahun dengan menggunakan ComboboxSlideCustom
-        String[] tahunItems = {"Pilih Tahun", "2023", "2024", "2025", "2026"};
+        String[] tahunItems = generateYearArray();
         comboBoxTahun = new ComboboxSlideCustom(tahunItems);
         comboBoxTahun.setBounds(25, 150, 300, 45); // Increased height to 45
         comboBoxTahun.setOpaque(false); // Make it transparent
@@ -132,6 +147,33 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         contentPanel.add(terapkanButton);
     }
 
+    private void setInitialValuesByIndex(int bulanIndex, int tahun) {
+        System.out.println("Setting bulan index: " + bulanIndex + ", tahun: " + tahun);
+
+        // Pastikan indeks bulan valid (1-12)
+        if (bulanIndex >= 1 && bulanIndex <= 12) {
+            // ComboBox indeks dimulai dari 0, indeks pertama adalah "Pilih Bulan"
+            comboBoxBulan.setSelectedIndex(bulanIndex);
+            System.out.println("Bulan dipilih dengan indeks: " + bulanIndex);
+        }
+
+        // Set tahun
+        String tahunStr = String.valueOf(tahun);
+
+        // Cari indeks tahun yang sesuai
+        for (int i = 0; i < generateYearArray().length; i++) {
+            if (generateYearArray()[i].equals(tahunStr)) {
+                comboBoxTahun.setSelectedIndex(i);
+                System.out.println("Tahun dipilih: " + tahunStr + " pada indeks " + i);
+                break;
+            }
+        }
+    }
+
+    public static void resetShowingPopupFlag() {
+        isShowingPopup = false;
+    }
+
     private JButton createButton(String text, Color background, Color foreground) {
         JButton button = new JButton(text) {
             @Override
@@ -140,13 +182,13 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(background);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                
+
                 // Jika ini adalah tombol BATAL, tambahkan border
                 if (text.equals("BATAL")) {
                     g2.setColor(new Color(200, 200, 200));
                     g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
                 }
-                
+
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -158,22 +200,6 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return button;
-    }
-
-    private void terapkan() {
-        String bulan = comboBoxBulan.getSelectedItem();
-        String tahun = comboBoxTahun.getSelectedItem();
-
-        if (bulan == null || tahun == null || bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
-            JOptionPane.showMessageDialog(this, "Mohon pilih bulan dan tahun", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Di sini Anda bisa menambahkan logika untuk menyimpan bulan dan tahun yang dipilih
-        // Misalnya dengan mengirim ke database atau menyimpan ke variabel global
-
-        // Setelah berhasil, tutup dialog
-        startCloseAnimation();
     }
 
     private void startScaleAnimation() {
@@ -256,9 +282,127 @@ public class PopUp_AturBulanGajiKaryawan extends JDialog {
         return parentFrame.getLayeredPane();
     }
 
+    private void terapkan() {
+        String bulan = comboBoxBulan.getSelectedItem();
+        String tahun = comboBoxTahun.getSelectedItem();
+
+        if (bulan == null || tahun == null || bulan.equals("Pilih Bulan") || tahun.equals("Pilih Tahun")) {
+            JOptionPane.showMessageDialog(this, "Mohon pilih bulan dan tahun", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Convert month name to month number (1-12)
+        int bulanIndex = getBulanIndex(bulan);
+        int tahunInt = Integer.parseInt(tahun);
+
+        // Update periodeLabel if it exists
+        updatePeriodeLabel(bulan, tahun);
+
+        // Find the panel that contains the table
+        Container parentContainer = parentFrame.getContentPane();
+        findAndUpdateTablePanel(parentContainer, bulanIndex, tahunInt);
+
+        // Close the dialog
+        startCloseAnimation();
+    }
+
+    // New method to update periodeLabel
+    private void updatePeriodeLabel(String bulan, String tahun) {
+        if (periodeLabel != null) {
+            // Uppercase the month name to match the desired format
+            String bulanUpper = bulan.toUpperCase();
+            periodeLabel.setText(bulanUpper + " " + tahun);
+            System.out.println("Periode label updated to: " + bulanUpper + " " + tahun);
+        } else {
+            System.out.println("periodeLabel is null, cannot update");
+            
+            Container parentContainer = parentFrame.getContentPane();
+            findAndUpdatePeriodeLabel(parentContainer, bulan.toUpperCase(), tahun);
+        }
+    }
+    
+    // Helper method to find periodeLabel in the parent container
+    private void findAndUpdatePeriodeLabel(Container container, String bulan, String tahun) {
+        Component[] components = container.getComponents();
+        
+        for (Component comp : components) {
+            if (comp instanceof JLabel && ((JLabel) comp).getText() != null && 
+                ((JLabel) comp).getText().matches(".*\\d{4}")) {
+                // This might be the periodeLabel (contains a year)
+                JLabel label = (JLabel) comp;
+                label.setText(bulan + " " + tahun);
+                System.out.println("Found and updated periodeLabel to: " + bulan + " " + tahun);
+                return;
+            } else if (comp instanceof Container) {
+                // Search recursively in nested containers
+                findAndUpdatePeriodeLabel((Container) comp, bulan, tahun);
+            }
+        }
+    }
+
+    // Helper method to find the panel containing the table
+    private void findAndUpdateTablePanel(Container container, int bulanIndex, int tahunInt) {
+        Component[] components = container.getComponents();
+
+        for (Component comp : components) {
+            if (comp instanceof AbsenKaryawan) {
+                // Found the panel that contains the table
+                ((AbsenKaryawan) comp).updateTableByMonth(bulanIndex, tahunInt);
+                return;
+            } else if (comp instanceof Container) {
+                // Search recursively in nested containers
+                findAndUpdateTablePanel((Container) comp, bulanIndex, tahunInt);
+            }
+        }
+    }
+
+    private int getBulanIndex(String bulanName) {
+        String[] months = generateMonthArray();
+
+        for (int i = 1; i < months.length; i++) {
+            if (months[i].equals(bulanName)) {
+                return i;
+            }
+        }
+        return 1; // Default to January if not found
+    }
+
+    private String[] generateMonthArray() {
+        String[] months = new String[13]; // 12 months + "Pilih Bulan"
+        months[0] = "Pilih Bulan";
+
+        // Get localized month names for Indonesian
+        Locale locale = new Locale("id", "ID");
+        Calendar calendar = Calendar.getInstance(locale);
+
+        for (int i = 0; i < 12; i++) {
+            calendar.set(Calendar.MONTH, i);
+            String monthName = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, locale);
+            // Capitalize first letter to match original style
+            monthName = monthName.substring(0, 1).toUpperCase() + monthName.substring(1);
+            months[i + 1] = monthName;
+        }
+
+        return months;
+    }
+
+    // Method to generate year array dynamically
+    private String[] generateYearArray() {
+        String[] years = new String[51]; // "Pilih Tahun" + 50 years starting from 2025
+        years[0] = "Pilih Tahun";
+
+        int startYear = 2025;
+
+        // Generate 50 years starting from 2025
+        for (int i = 0; i < 50; i++) {
+            years[i + 1] = String.valueOf(startYear + i);
+        }
+
+        return years;
+    }
+
     // RoundedPanel Inner Class
     class RoundedPanel extends JPanel {
-
         private int radius;
 
         public RoundedPanel(int radius) {
