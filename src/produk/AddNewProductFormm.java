@@ -1,6 +1,5 @@
 package produk;
 
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -39,15 +38,22 @@ import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.Date;
+import db.conn;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.sql.*;
+import java.text.SimpleDateFormat;
 
 public class AddNewProductFormm extends JPanel {
-    
+
     private JTextField txtInput;
     private JButton btnGenerate;
     private JButton btnSave;
     private JPanel barcodePanel;
     private Barcode barcode;
-    // Komponen form
+
     private RoundedTextField txtNamaProduct, txtHargaJual, txtHargaBeli, txtMerk, txtUkuran, txtStok;
     private JRadioButton rbMale, rbFemale, rbUnisex;
     private ButtonGroup genderGroup;
@@ -56,7 +62,7 @@ public class AddNewProductFormm extends JPanel {
     private JButton btnAddProduct, btnCancel, btnBrowseFile;
     private JButton btnGenerateBarcode, btnPrint;
     private JButton btnPrevStyle, btnNextStyle;
-    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory,barcodeArea;
+    private RoundedPanelProduk panelGeneral, panelImages, panelBarcode, panelCategory, barcodeArea;
     private JPanel dragDropPanel;
     private JLabel lblPhotoCount;
     private JFrame parentFrame; // Reference to parent frame for closing
@@ -67,14 +73,13 @@ public class AddNewProductFormm extends JPanel {
     private JButton btnRemoveImage;
     private JPanel uploadInstructionsPanel;
 
-    // Current style options and index
     private String[] currentStyleOptions = {""};
     private int currentStyleIndex = 0;
 
-    // Definisi ukuran ikon yang lebih kecil
-    private static final int ICON_SIZE = 16; // ukuran ikon yang lebih kecil
+    private static final int ICON_SIZE = 16;
     private int cornerRadius = 15;
-  
+    private Connection con;
+
     public AddNewProductFormm() {
         this(null);
     }
@@ -87,6 +92,8 @@ public class AddNewProductFormm extends JPanel {
         this.parentFrame = parentFrame;
         setLayout(null);
         setBackground(new Color(255, 255, 255));
+
+        con = conn.getConnection();
 
         // Judul Form
         JLabel lblTitle = new JLabel("Add New Product");
@@ -118,6 +125,10 @@ public class AddNewProductFormm extends JPanel {
         btnAddProduct.setIcon(scaledAddIcon);
         btnAddProduct.setIconTextGap(15);  // Jarak antara ikon dan teks
         add(btnAddProduct);
+
+        btnAddProduct.addActionListener(e -> {
+            addProduct();
+        });
 
         // Memuat dan mengubah ukuran ikon
         ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/close.png"));
@@ -459,179 +470,182 @@ public class AddNewProductFormm extends JPanel {
         add(txtStok);
     }
 
-private void createBarcodePanel() {
-    panelBarcode = new RoundedPanelProduk();
-    panelBarcode.setBackground(new Color(240, 240, 240));
-    panelBarcode.setBounds(20, 450, 730, 180);
-    add(panelBarcode);
-    panelBarcode.setLayout(null);
-    JLabel lblBarcode = new JLabel("Generate Barcode");
-    lblBarcode.setFont(new Font("Arial", Font.BOLD, 14));
-    lblBarcode.setBounds(20, 15, 200, 20);
-    panelBarcode.add(lblBarcode);
-    // Area barcode menggunakan RoundedPanelProduk dengan RoundedBorder
-    barcodeArea = new RoundedPanelProduk(); // Gunakan variabel kelas
-    barcodeArea.setBounds(20, 45, 450, 120);
-    barcodeArea.setBackground(Color.WHITE);
-    // Tambahkan RoundedBorder dengan radius 15, warna abu-abu muda, ketebalan 1
-    barcodeArea.setBorder(new RoundedBorder(15, Color.BLACK));
-    panelBarcode.add(barcodeArea);
-    // Button Generate Barcode (dengan RoundedButton)
-    btnGenerateBarcode = createStyledButton("GENERATE BARCODE", new Color(52, 58, 64), Color.WHITE, 15);
-    btnGenerateBarcode.setBounds(500, 45, 210, 40);
-    panelBarcode.add(btnGenerateBarcode);
-    btnGenerateBarcode.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            generateBarcode();
-        }
-    });
-    
-    btnPrint = createStyledButton("PRINT", new Color(52, 58, 64), Color.WHITE, 15);
-    btnPrint.setBounds(500, 100, 210, 40);
-    ImageIcon origPrintIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_print.png"));
-    Image scaledPrintImage = origPrintIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-    ImageIcon scaledPrintIcon = new ImageIcon(scaledPrintImage);
-        btnPrint.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            printBarcode();
-        }
-    });
-    btnPrint.setIcon(scaledPrintIcon);
-    btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
-    btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
-    btnPrint.setIconTextGap(10);
-    btnPrint.setMargin(new Insets(0, 0, 0, 0));
-    panelBarcode.add(btnPrint);
-}
-private void generateBarcode() {
-    try {
-        barcodeArea.removeAll();
-
-        String barcodeValue = generateRandom16DigitNumber();
-        Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
-
-        barcode.setBarWidth(2); 
-
-        barcodeArea.setLayout(new BorderLayout());
-
-        JPanel barcodeImagePanel = new JPanel();
-        barcodeImagePanel.setOpaque(false); 
-
-        barcodeImagePanel.setLayout(new BoxLayout(barcodeImagePanel, BoxLayout.Y_AXIS));
-
-        barcodeImagePanel.add(Box.createVerticalStrut(25)); 
-
-        JPanel barcodeContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        barcodeContainer.setOpaque(false);
-        
-        Component barcodeComp = barcode;
-        int newHeight = 80; 
-
-        JPanel heightPanel = new JPanel(new BorderLayout()) {
+    private void createBarcodePanel() {
+        panelBarcode = new RoundedPanelProduk();
+        panelBarcode.setBackground(new Color(240, 240, 240));
+        panelBarcode.setBounds(20, 450, 730, 180);
+        add(panelBarcode);
+        panelBarcode.setLayout(null);
+        JLabel lblBarcode = new JLabel("Generate Barcode");
+        lblBarcode.setFont(new Font("Arial", Font.BOLD, 14));
+        lblBarcode.setBounds(20, 15, 200, 20);
+        panelBarcode.add(lblBarcode);
+        // Area barcode menggunakan RoundedPanelProduk dengan RoundedBorder
+        barcodeArea = new RoundedPanelProduk(); // Gunakan variabel kelas
+        barcodeArea.setBounds(20, 45, 450, 120);
+        barcodeArea.setBackground(Color.WHITE);
+        // Tambahkan RoundedBorder dengan radius 15, warna abu-abu muda, ketebalan 1
+        barcodeArea.setBorder(new RoundedBorder(15, Color.BLACK));
+        panelBarcode.add(barcodeArea);
+        // Button Generate Barcode (dengan RoundedButton)
+        btnGenerateBarcode = createStyledButton("GENERATE BARCODE", new Color(52, 58, 64), Color.WHITE, 15);
+        btnGenerateBarcode.setBounds(500, 45, 210, 40);
+        panelBarcode.add(btnGenerateBarcode);
+        btnGenerateBarcode.addActionListener(new ActionListener() {
             @Override
-            public Dimension getPreferredSize() {
-                Dimension dim = super.getPreferredSize();
-                return new Dimension(dim.width, newHeight);
-            }
-        };
-        heightPanel.setOpaque(false);
-        heightPanel.add(barcodeComp, BorderLayout.CENTER);
-        
-        barcodeContainer.add(heightPanel);
-
-        barcodeImagePanel.add(barcodeContainer);
-       
-        barcodeArea.add(barcodeImagePanel, BorderLayout.CENTER);
-        
-        // Perbarui tampilan
-        barcodeArea.revalidate();
-        barcodeArea.repaint();
-        
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, 
-            "Error saat membuat barcode: " + e.getMessage(), 
-            "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-private String generateRandom16DigitNumber() {
-    StringBuilder sb = new StringBuilder(26);
-    Random random = new Random();
-    
-    sb.append(random.nextInt(9) + 1);
-    
-    for (int i = 0; i < 15; i++) {
-        sb.append(random.nextInt(10));
-    }
-    
-    return sb.toString();
-}
-private void printBarcode() {
-    try { 
-        if (barcodeArea.getComponentCount() == 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Silakan generate barcode terlebih dahulu sebelum mencetak.", 
-                "Peringatan", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        PrinterJob job = PrinterJob.getPrinterJob();
-        job.setJobName("Cetak Barcode");
-         
-        barcodeArea.setBorder(new RoundedBorder(15, Color.WHITE));
-        
-        // Set Printable
-        job.setPrintable(new Printable() {
-            @Override
-            public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-                if (pageIndex > 0) {
-                    return Printable.NO_SUCH_PAGE;
-                }
-                
-                Graphics2D g2d = (Graphics2D) graphics;
-                
-                // Translate ke area yang bisa dicetak
-                g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-                
-                // Skala untuk mencetak barcode dengan ukuran yang tepat
-                double scaleX = pageFormat.getImageableWidth() / barcodeArea.getWidth() * 0.8;
-                double scaleY = pageFormat.getImageableHeight() / barcodeArea.getHeight() * 0.3;
-                double scale = Math.min(scaleX, scaleY);
-                
-                g2d.scale(scale, scale);
-                
-                // Tengahkan di halaman
-                double xPos = (pageFormat.getImageableWidth() / scale - barcodeArea.getWidth()) / 2;
-                g2d.translate(xPos, 0);
-                
-                // Render barcode
-                barcodeArea.paint(g2d);
-                
-                return Printable.PAGE_EXISTS;
+            public void actionPerformed(ActionEvent e) {
+                generateBarcode();
             }
         });
-        
-        // Tampilkan dialog print
-        if (job.printDialog()) {
-            // Informasi kepada user
-            JOptionPane.showMessageDialog(this, 
-                "Barcode sedang dikirim ke printer.", 
-                "Informasi", JOptionPane.INFORMATION_MESSAGE);
-            
-            // Jalankan pencetakan
-            job.print();
-        }
-    } catch (PrinterException pe) {
-        JOptionPane.showMessageDialog(this, 
-            "Error saat mencetak barcode: " + pe.getMessage(), 
-            "Error", JOptionPane.ERROR_MESSAGE);
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, 
-            "Error: " + e.getMessage(), 
-            "Error", JOptionPane.ERROR_MESSAGE);
+
+        btnPrint = createStyledButton("PRINT", new Color(52, 58, 64), Color.WHITE, 15);
+        btnPrint.setBounds(500, 100, 210, 40);
+        ImageIcon origPrintIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/Icon_print.png"));
+        Image scaledPrintImage = origPrintIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        ImageIcon scaledPrintIcon = new ImageIcon(scaledPrintImage);
+        btnPrint.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                printBarcode();
+            }
+        });
+        btnPrint.setIcon(scaledPrintIcon);
+        btnPrint.setHorizontalAlignment(SwingConstants.CENTER);
+        btnPrint.setHorizontalTextPosition(SwingConstants.LEFT);
+        btnPrint.setIconTextGap(10);
+        btnPrint.setMargin(new Insets(0, 0, 0, 0));
+        panelBarcode.add(btnPrint);
     }
-}
+
+    private void generateBarcode() {
+        try {
+            barcodeArea.removeAll();
+
+            String barcodeValue = generateRandom16DigitNumber();
+            Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
+
+            barcode.setBarWidth(2);
+
+            barcodeArea.setLayout(new BorderLayout());
+
+            JPanel barcodeImagePanel = new JPanel();
+            barcodeImagePanel.setOpaque(false);
+
+            barcodeImagePanel.setLayout(new BoxLayout(barcodeImagePanel, BoxLayout.Y_AXIS));
+
+            barcodeImagePanel.add(Box.createVerticalStrut(25));
+
+            JPanel barcodeContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            barcodeContainer.setOpaque(false);
+
+            Component barcodeComp = barcode;
+            int newHeight = 80;
+
+            JPanel heightPanel = new JPanel(new BorderLayout()) {
+                @Override
+                public Dimension getPreferredSize() {
+                    Dimension dim = super.getPreferredSize();
+                    return new Dimension(dim.width, newHeight);
+                }
+            };
+            heightPanel.setOpaque(false);
+            heightPanel.add(barcodeComp, BorderLayout.CENTER);
+
+            barcodeContainer.add(heightPanel);
+
+            barcodeImagePanel.add(barcodeContainer);
+
+            barcodeArea.add(barcodeImagePanel, BorderLayout.CENTER);
+
+            // Perbarui tampilan
+            barcodeArea.revalidate();
+            barcodeArea.repaint();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error saat membuat barcode: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String generateRandom16DigitNumber() {
+        StringBuilder sb = new StringBuilder(26);
+        Random random = new Random();
+
+        sb.append(random.nextInt(9) + 1);
+
+        for (int i = 0; i < 15; i++) {
+            sb.append(random.nextInt(10));
+        }
+
+        return sb.toString();
+    }
+
+    private void printBarcode() {
+        try {
+            if (barcodeArea.getComponentCount() == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Silakan generate barcode terlebih dahulu sebelum mencetak.",
+                        "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            PrinterJob job = PrinterJob.getPrinterJob();
+            job.setJobName("Cetak Barcode");
+
+            barcodeArea.setBorder(new RoundedBorder(15, Color.WHITE));
+
+            // Set Printable
+            job.setPrintable(new Printable() {
+                @Override
+                public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+                    if (pageIndex > 0) {
+                        return Printable.NO_SUCH_PAGE;
+                    }
+
+                    Graphics2D g2d = (Graphics2D) graphics;
+
+                    // Translate ke area yang bisa dicetak
+                    g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+
+                    // Skala untuk mencetak barcode dengan ukuran yang tepat
+                    double scaleX = pageFormat.getImageableWidth() / barcodeArea.getWidth() * 0.8;
+                    double scaleY = pageFormat.getImageableHeight() / barcodeArea.getHeight() * 0.3;
+                    double scale = Math.min(scaleX, scaleY);
+
+                    g2d.scale(scale, scale);
+
+                    // Tengahkan di halaman
+                    double xPos = (pageFormat.getImageableWidth() / scale - barcodeArea.getWidth()) / 2;
+                    g2d.translate(xPos, 0);
+
+                    // Render barcode
+                    barcodeArea.paint(g2d);
+
+                    return Printable.PAGE_EXISTS;
+                }
+            });
+
+            // Tampilkan dialog print
+            if (job.printDialog()) {
+                // Informasi kepada user
+                JOptionPane.showMessageDialog(this,
+                        "Barcode sedang dikirim ke printer.",
+                        "Informasi", JOptionPane.INFORMATION_MESSAGE);
+
+                // Jalankan pencetakan
+                job.print();
+            }
+        } catch (PrinterException pe) {
+            JOptionPane.showMessageDialog(this,
+                    "Error saat mencetak barcode: " + pe.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private void createCategoryPanel() {
         panelCategory = new RoundedPanelProduk();
@@ -1033,7 +1047,6 @@ private void printBarcode() {
         btnNextStyle.setForeground(btnNextStyle.isEnabled() ? Color.BLACK : Color.GRAY);
     }
 
-// Method to simulate button click effect
     private void playButtonClickEffect(JButton button) {
         // Temporary size reduction to simulate press
         Dimension originalSize = button.getSize();
@@ -1087,5 +1100,200 @@ private void printBarcode() {
         button.setOpaque(false);
 
         return button;
+    }
+
+    private void addProduct() {
+        if (!validateForm()) {
+            return;
+        }
+
+        try {
+            String sql = "INSERT INTO produk (merk, jenis_produk, size, gender, gambar, nama_produk, "
+                    + "harga_jual, harga_beli, id_style, status) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, txtMerk.getText().trim());
+                String category = (String) cbCategory.getSelectedItem();
+                st.setString(2, category);
+                st.setString(3, txtUkuran.getText().trim());
+
+                String gender = "Male";
+                if (rbFemale.isSelected()) {
+                    gender = "Female";
+                } else if (rbUnisex.isSelected()) {
+                    gender = "Unisex";
+                }
+
+                st.setString(4, gender);
+                if (selectedImageFile != null) {
+                    String imagePath = saveImageToServer(selectedImageFile);
+                    st.setString(5, imagePath);
+                } else {
+                    st.setString(5, "default.jpg");
+                }
+
+                st.setString(6, txtNamaProduct.getText().trim());
+                try {
+                    double hargaJual = Double.parseDouble(txtHargaJual.getText().trim().replace(",", ""));
+                    double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replace(",", ""));
+
+                    st.setDouble(7, hargaJual);
+                    st.setDouble(8, hargaBeli);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this,
+                            "Harga harus berupa angka yang valid.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String styleId = getStyleIdFromName(currentStyleOptions[currentStyleIndex]);
+                st.setString(9, styleId);
+                st.setString(10, "dijual");
+
+                int rowsAffected = st.executeUpdate();
+                if (rowsAffected > 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Produk berhasil ditambahkan!",
+                            "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    clearForm();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Gagal menambahkan produk.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Database error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private boolean validateForm() {
+        if (txtNamaProduct.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            txtNamaProduct.requestFocus();
+            return false;
+        }
+
+        if (txtHargaJual.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Harga jual tidak boleh kosong.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            txtHargaJual.requestFocus();
+            return false;
+        }
+
+        if (txtHargaBeli.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Harga beli tidak boleh kosong.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            txtHargaBeli.requestFocus();
+            return false;
+        }
+
+        if (txtUkuran.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ukuran tidak boleh kosong.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            txtUkuran.requestFocus();
+            return false;
+        }
+
+        if (txtStok.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Stok tidak boleh kosong.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            txtStok.requestFocus();
+            return false;
+        }
+
+        // Validate category selection
+        if (cbCategory.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(this, "Silakan pilih kategori produk.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            cbCategory.requestFocus();
+            return false;
+        }
+
+        try {
+            double hargaJual = Double.parseDouble(txtHargaJual.getText().trim().replace(",", ""));
+            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replace(",", ""));
+            int stok = Integer.parseInt(txtStok.getText().trim());
+
+            if (hargaJual <= 0) {
+                JOptionPane.showMessageDialog(this, "Harga jual harus lebih dari 0.",
+                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+
+            if (hargaBeli <= 0) {
+                JOptionPane.showMessageDialog(this, "Harga beli harus lebih dari 0.",
+                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+
+            if (stok < 0) {
+                JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif.",
+                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Harga dan stok harus berupa angka yang valid.",
+                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
+    private String saveImageToServer(File imageFile) {
+        try {
+            // Create a unique filename using timestamp
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String fileName = "product_" + timestamp + "_" + imageFile.getName();
+
+            // Define the upload directory (adjust as needed)
+            String uploadDir = "SourceCode/products/";
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Copy the file to the upload directory
+            Path sourcePath = imageFile.toPath();
+            Path targetPath = new File(uploadDir + fileName).toPath();
+            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            return uploadDir + fileName;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan gambar: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+    }
+
+// Helper method to get style ID from the style name and category
+// You'll need to implement this based on your database structure
+    private String getStyleIdFromName(String styleName) {
+        String styleId = "00001";
+
+        try {
+            String sql = "SELECT id_style FROM styles WHERE style_name = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, styleName);
+                ResultSet rs = st.executeQuery();
+
+                if (rs.next()) {
+                    styleId = rs.getString("id_style");
+                } else {
+                    System.out.println("Style not found: " + styleName);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return styleId;
     }
 }

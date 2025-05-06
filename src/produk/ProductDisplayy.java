@@ -510,12 +510,12 @@ public class ProductDisplayy extends javax.swing.JPanel {
         List<String> styleList = new ArrayList<>();
 
         try {
-            String query = "SELECT DISTINCT jenis_produk FROM produk ORDER BY jenis_produk";
+            String query = "SELECT nama_style FROM style ORDER BY id_style";
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 ResultSet rs = stmt.executeQuery();
 
                 while (rs.next()) {
-                    String style = rs.getString("jenis_produk");
+                    String style = rs.getString("nama_style");
                     if (style != null && !style.trim().isEmpty()) {
                         styleList.add(style);
                     }
@@ -570,90 +570,6 @@ public class ProductDisplayy extends javax.swing.JPanel {
         loadFilteredProducts(selectedMerk, selectedUkuran, selectedHarga, selectedStyle, selectedGender);
     }
 
-// Metode untuk memuat semua produk (tanpa filter)
-    private void loadAllProducts() {
-        // Hapus semua produk yang ada di container
-        panel.removeAll();
-
-        try {
-            // Buat list untuk menyimpan produk beserta informasi stoknya
-            List<Map<String, Object>> productsWithStock = new ArrayList<>();
-
-            // Query untuk mendapatkan semua produk
-            String productSql = "SELECT id_produk, nama_produk, harga_jual, size, gambar, merk, jenis_produk, gender "
-                    + "FROM produk";
-
-            try (PreparedStatement st = con.prepareStatement(productSql)) {
-                ResultSet rs = st.executeQuery();
-                while (rs.next()) {
-                    String productId = rs.getString("id_produk");
-                    int stock = 0;
-
-                    // Dapatkan stok terbaru untuk setiap produk
-                    String stokSql = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
-                    try (PreparedStatement stockStmt = con.prepareStatement(stokSql)) {
-                        stockStmt.setString(1, productId);
-                        ResultSet stockRs = stockStmt.executeQuery();
-                        if (stockRs.next()) {
-                            stock = stockRs.getInt("produk_sisa");
-                        }
-                    }
-
-                    // Simpan data produk dan stok dalam Map
-                    Map<String, Object> productData = new HashMap<>();
-                    productData.put("id_produk", productId);
-                    productData.put("nama_produk", rs.getString("nama_produk"));
-                    productData.put("harga_jual", rs.getDouble("harga_jual"));
-                    productData.put("size", rs.getInt("size"));
-                    productData.put("stock", stock);
-
-                    // Menangani data gambar BLOB
-                    byte[] imageData = null;
-                    Blob blob = rs.getBlob("gambar");
-                    if (blob != null) {
-                        imageData = blob.getBytes(1, (int) blob.length());
-                    }
-
-                    productData.put("gambar", imageData);
-                    productData.put("merk", rs.getString("merk"));
-                    productData.put("jenis_produk", rs.getString("jenis_produk"));
-                    productData.put("gender", rs.getString("gender"));
-
-                    productsWithStock.add(productData);
-                }
-            }
-
-            // Urutkan produk berdasarkan stok (ascending)
-            productsWithStock.sort((p1, p2)
-                    -> Integer.compare((Integer) p1.get("stock"), (Integer) p2.get("stock")));
-
-            // Tambahkan produk yang sudah diurutkan ke panel
-            for (Map<String, Object> product : productsWithStock) {
-                JPanel productCard = createProductCard(
-                        (String) product.get("id_produk"),
-                        (String) product.get("nama_produk"),
-                        (Double) product.get("harga_jual"),
-                        (Integer) product.get("size"),
-                        (Integer) product.get("stock"),
-                        (byte[]) product.get("gambar"),
-                        (String) product.get("merk"),
-                        (String) product.get("jenis_produk"),
-                        (String) product.get("gender")
-                );
-                panel.add(productCard);
-            }
-
-            // Update UI
-            panel.revalidate();
-            panel.repaint();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saat memuat produk: " + e.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
 // Metode untuk memuat produk dengan filter yang dipilih
     private void loadFilteredProducts(String merk, String ukuran, String harga, String style, String gender) {
         // Hapus semua produk yang ada di container
@@ -706,9 +622,22 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     productSqlBuilder.append(" AND harga_jual > 450000");
                 }
             }
+            
+            try {
+                String idStyle = "SELECT id_style FROM style WHERE nama_style = ?";
+                try(PreparedStatement st = con.prepareStatement(idStyle)){
+                    st.setString(1, style);
+                    ResultSet rs = st.executeQuery();
+                    if(rs.next()){
+                        style = rs.getString("id_style");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             if (style != null) {
-                productSqlBuilder.append(" AND jenis_produk = ?");
+                productSqlBuilder.append(" AND id_style = ?");
                 parameters.add(style);
             }
 
