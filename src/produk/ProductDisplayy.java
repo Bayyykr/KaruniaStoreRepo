@@ -30,13 +30,12 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class ProductDisplayy extends javax.swing.JPanel {
-// Deklarasikan plusButton sebagai field class
-
+    // Deklarasikan plusButton sebagai field class
     Component parentComponent = this;
     private JButton plusButton;
     private Runnable trashButtonListener;
     private JButton trashButton; // Add this as a field to match the plusButton approach
-    private JPanel activeTab, panel;
+    private JPanel activeTab;
     private JWindow tooltipWindow;
     private Timer fadeInTimer;
     private Timer fadeOutTimer;
@@ -45,16 +44,21 @@ public class ProductDisplayy extends javax.swing.JPanel {
     private JButton pressedButton = null;
     private Map<JButton, ImageIcon> normalIcons = new HashMap<>();
     private Map<JButton, ImageIcon> pressedIcons = new HashMap<>();
-// Map untuk menyimpan teks tooltip untuk setiap tombol
+    // Map untuk menyimpan teks tooltip untuk setiap tombol
     private Map<JButton, String> buttonTooltips = new HashMap<>();
-// Deklarasi label tooltip
+    // Deklarasi label tooltip
     private JLabel tooltipLabel = new JLabel();
-    private JPanel productsPanel;
-
+    
+    // Panel untuk masing-masing kategori produk
+    private JPanel sepatuPanel, sandalPanel, kaosKakiPanel, lainnyaPanel;
+    // Panel scroll untuk setiap kategori
+    private ScrollPane sepatuScrollPane, sandalScrollPane, kaosKakiScrollPane, lainnyaScrollPane;
+    // Panel utama untuk konten
+    private JPanel mainContentPanel;
+    
     private Connection con;
 
     public ProductDisplayy() {
-
         // Tetapkan ukuran preferensi yang tetap
         setPreferredSize(new Dimension(1065, 640));
         setLayout(new BorderLayout(0, 15));
@@ -62,19 +66,79 @@ public class ProductDisplayy extends javax.swing.JPanel {
         setBorder(new EmptyBorder(20, 20, 20, 20));
         con = conn.getConnection();
 
+        // Inisialisasi panel untuk setiap kategori
+        sepatuPanel = new JPanel(new BorderLayout());
+        sandalPanel = new JPanel(new BorderLayout());
+        kaosKakiPanel = new JPanel(new BorderLayout());
+        lainnyaPanel = new JPanel(new BorderLayout());
+        
+        // Inisialisasi panel utama untuk konten
+        mainContentPanel = new JPanel(new CardLayout());
+        mainContentPanel.setBackground(Color.WHITE);
+        
         // Add product category panel
         add(createCategoryPanel(), BorderLayout.NORTH);
 
-        // Add main panel with filters and fixed-height product grid
-        add(initializeMainPanel(), BorderLayout.CENTER);
+        // Inisialisasi semua panel kategori
+        initializeCategoryPanels();
+        
+        // Tambahkan panel konten utama ke frame
+        add(mainContentPanel, BorderLayout.CENTER);
 
         // Add button panel on the right
         add(createActionButtons(), BorderLayout.EAST);
     }
 
-    private JPanel createProductsGrid() {
+    private void initializeCategoryPanels() {
+        // Inisialisasi panel untuk Sepatu (termasuk filter)
+        sepatuPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        JPanel sepatuProductsGrid = createProductsGrid("Sepatu");
+        sepatuScrollPane = createScrollPaneForProducts(sepatuProductsGrid);
+        sepatuPanel.add(sepatuScrollPane, BorderLayout.CENTER);
+        
+        // Inisialisasi panel untuk Sandal (termasuk filter)
+        sandalPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        JPanel sandalProductsGrid = createProductsGrid("Sandal");
+        sandalScrollPane = createScrollPaneForProducts(sandalProductsGrid);
+        sandalPanel.add(sandalScrollPane, BorderLayout.CENTER);
+        
+        // Inisialisasi panel untuk Kaos Kaki (termasuk filter)
+        kaosKakiPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        JPanel kaosKakiProductsGrid = createProductsGrid("Kaos Kaki");
+        kaosKakiScrollPane = createScrollPaneForProducts(kaosKakiProductsGrid);
+        kaosKakiPanel.add(kaosKakiScrollPane, BorderLayout.CENTER);
+        
+        // Inisialisasi panel untuk Lainnya (tanpa filter)
+        JPanel lainnyaProductsGrid = createProductsGrid("Lainnya");
+        lainnyaScrollPane = createScrollPaneForProducts(lainnyaProductsGrid);
+        lainnyaPanel.add(lainnyaScrollPane, BorderLayout.CENTER);
+        
+        // Tambahkan semua panel kategori ke panel konten utama dengan CardLayout
+        mainContentPanel.add(sepatuPanel, "Sepatu");
+        mainContentPanel.add(sandalPanel, "Sandal");
+        mainContentPanel.add(kaosKakiPanel, "Kaos Kaki");
+        mainContentPanel.add(lainnyaPanel, "Lainnya");
+        
+        // Tampilkan panel Sepatu sebagai default
+        CardLayout cl = (CardLayout) mainContentPanel.getLayout();
+        cl.show(mainContentPanel, "Sepatu");
+    }
+    
+    private ScrollPane createScrollPaneForProducts(JPanel productsPanel) {
+        // Create a custom scroll pane with fixed height
+        ScrollPane scrollPane = new ScrollPane(productsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        
+        // Set preferred size to show only 2 rows of products
+        int preferredHeight = 250 * 2 + 40; // Adjust this value according to your card height
+        scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
+        
+        return scrollPane;
+    }
+
+    private JPanel createProductsGrid(String category) {
         // Gunakan JPanel dengan FlowLayout sebagai wadah utama
-        panel = new JPanel();
+        JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 20, 25)); // Left aligned with spacing
         panel.setBackground(Color.white);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -82,9 +146,21 @@ public class ProductDisplayy extends javax.swing.JPanel {
         try {
             // Create a list to store products with their stock info
             List<Map<String, Object>> productsWithStock = new ArrayList<>();
-            // First query to get all products
+            // First query to get all products of the specified category
             String productSql = "SELECT id_produk, nama_produk, harga_jual, size, gambar, merk, jenis_produk, gender "
                     + "FROM produk WHERE status = 'dijual'";
+            
+            // Filter by category
+            if (category.equals("Sepatu")) {
+                productSql += " AND jenis_produk = 'Sepatu'";
+            } else if (category.equals("Sandal")) {
+                productSql += " AND jenis_produk = 'Sandal'";
+            } else if (category.equals("Kaos Kaki")) {
+                productSql += " AND jenis_produk = 'Kaos Kaki'";
+            } else if (category.equals("Lainnya")) {
+                productSql += " AND jenis_produk NOT IN ('Sepatu', 'Sandal', 'Kaos Kaki')";
+            }
+            
             try (PreparedStatement st = con.prepareStatement(productSql)) {
                 ResultSet rs = st.executeQuery();
                 while (rs.next()) {
@@ -172,7 +248,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
             int gridHeight = (rowCount * 350) + ((rowCount - 1) * 25) + 5;
             gridPanel.setPreferredSize(new Dimension(950, gridHeight));
 
-            // Tambahkan grid panel ke panel utama (dengan ScrollPane jika diperlukan)
+            // Tambahkan grid panel ke panel utama
             panel.add(gridPanel);
 
         } catch (Exception e) {
@@ -183,28 +259,44 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return panel;
     }
 
-    // Modified method to initialize main panel with scroll pane that activates only when products exceed 2 rows
-    private JPanel initializeMainPanel() {
-        JPanel mainPanel = new JPanel(new BorderLayout(0, 10));
-        mainPanel.setBackground(Color.WHITE);
+    private JComboBox<String> createCustomComboBox(String[] items) {
+        JComboBox<String> comboBox = new JComboBox<>(items);
+        comboBox.setFont(new Font("Arial", Font.PLAIN, 14));
+        comboBox.setBackground(Color.WHITE);
+        comboBox.setForeground(Color.BLACK);
+        comboBox.setPreferredSize(new Dimension(150, 40));
+        comboBox.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        // Set custom renderer untuk mengatur penampilan item
+        comboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, 
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setBorder(new EmptyBorder(5, 10, 5, 10));
+                return this;
+            }
+        });
+        
+        // Tambahkan popup listener untuk mengatur styling dropdown
+        comboBox.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                // Custom logic if needed when popup becomes visible
+            }
 
-        // Add filter panel
-        mainPanel.add(createFilterPanel(), BorderLayout.NORTH);
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                // Custom logic if needed when popup becomes invisible
+            }
 
-        // Create products panel
-        productsPanel = createProductsGrid();
-
-        // Create a custom scroll pane with fixed height to show only 2 rows of products
-        ScrollPane scrollPane = new ScrollPane(productsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
-
-        // Set preferred size to show only 2 rows of products
-        int preferredHeight = 250 * 2 + 40; // Adjust this value according to your card height
-        scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
-
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
-
-        return mainPanel;
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                // Custom logic if needed when popup is canceled
+            }
+        });
+        
+        return comboBox;
     }
 
     private JPanel createCategoryPanel() {
@@ -224,11 +316,11 @@ public class ProductDisplayy extends javax.swing.JPanel {
         JPanel sandalTab = createClickableTab("Sandal", false);
         tabPanel.add(sandalTab);
 
-        // Membuat tab Sabuk
-        JPanel sabukTab = createClickableTab("Kaos Kaki", false);
-        tabPanel.add(sabukTab);
+        // Membuat tab Kaos Kaki
+        JPanel kaosKakiTab = createClickableTab("Kaos Kaki", false);
+        tabPanel.add(kaosKakiTab);
 
-        // Membuat tab Sabuk
+        // Membuat tab Lainnya
         JPanel lainnyaTab = createClickableTab("Lainnya", false);
         tabPanel.add(lainnyaTab);
 
@@ -285,7 +377,10 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     // Update tab yang aktif
                     activeTab = currentTab;
 
-                    // Di sini bisa ditambahkan kode untuk mengubah konten yang ditampilkan
+                    // Tampilkan panel yang sesuai dengan tab yang dipilih
+                    CardLayout cl = (CardLayout)(mainContentPanel.getLayout());
+                    cl.show(mainContentPanel, tabName);
+                    
                     System.out.println("Tab " + tabName + " dipilih");
                 }
             }
@@ -573,7 +668,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
 // Metode untuk memuat produk dengan filter yang dipilih
     private void loadFilteredProducts(String merk, String ukuran, String harga, String style, String gender) {
         // Hapus semua produk yang ada di container
-        panel.removeAll();
+        mainContentPanel.removeAll();
 
         try {
             // Buat list untuk menyimpan produk hasil filter beserta stoknya
@@ -774,11 +869,11 @@ public class ProductDisplayy extends javax.swing.JPanel {
             }
 
             // Tambahkan grid panel ke panel utama
-            panel.add(gridPanel);
+            mainContentPanel.add(gridPanel);
 
             // Update UI
-            panel.revalidate();
-            panel.repaint();
+            mainContentPanel.revalidate();
+            mainContentPanel.repaint();
 
         } catch (SQLException e) {
             e.printStackTrace();
