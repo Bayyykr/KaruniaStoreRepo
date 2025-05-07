@@ -111,6 +111,7 @@ public class PopUp_HapusDataGajiKaryawan extends JDialog {
         deleteButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
                 deleteData();
             }
         });

@@ -30,7 +30,7 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
 
     private final int RADIUS = 20;
     private final int FINAL_WIDTH = 450;
-    private final int FINAL_HEIGHT = 500;
+    private final int FINAL_HEIGHT = 580;
     private final int ANIMATION_DURATION = 300;
     private final int ANIMATION_DELAY = 10;
     private float currentScale = 0.01f;
@@ -132,7 +132,7 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
 
         // Create JTableRounded using the proper implementation
         tableGaji = new JTableRounded(columnNames);
-        tableGaji.setSize(FINAL_WIDTH - 50, 380);
+        tableGaji.setSize(FINAL_WIDTH - 50, 460);
 
         if (norfid != null) {
             loadEmployeeData(norfid, starDate, endDate);
@@ -151,7 +151,7 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
 
         // Set column widths
         tableGaji.setColumnWidth(0, 170);
-        tableGaji.setColumnWidth(1, 250);
+        tableGaji.setColumnWidth(1, 200);
 
         // Set custom cell renderer for alignment
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
@@ -182,7 +182,7 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
         tableGaji.setColumnsResizable(false);
 
         // Place table in the content panel
-        tableGaji.setBounds(25, 60, FINAL_WIDTH - 50, 330);
+        tableGaji.setBounds(25, 60, FINAL_WIDTH - 50, 400);
         contentPanel.add(tableGaji);
 
         // Cancel Button
@@ -337,10 +337,11 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
                     && insertToBiayaOperasional(owner, namaKaryawan, jumlahGaji, periodeBulanTahun);
 
             if (success) {
-                JOptionPane.showMessageDialog(this,
-                        "Pembayaran gaji untuk " + namaKaryawan + " berhasil!",
-                        "Sukses",
-                        JOptionPane.INFORMATION_MESSAGE);
+//                JOptionPane.showMessageDialog(this,
+//                        "Pembayaran gaji untuk " + namaKaryawan + " berhasil!",
+//                        "Sukses",
+//                        JOptionPane.INFORMATION_MESSAGE); 
+                PindahanAntarPopUp.showGajiKaryawanSuksesBayarGaji(parentFrame);
                 // Close the form after successful payment
                 startCloseAnimation();
             } else {
@@ -348,7 +349,7 @@ public class PopUp_KonfrimasiCetakGajiKaryawan extends JDialog {
                         "Gagal melakukan pembayaran!",
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
-            }
+            }   
         } catch (Exception e) {
             e.printStackTrace();
         }

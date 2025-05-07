@@ -22,11 +22,11 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
     private JFrame parentFrame;
     private JPanel contentPanel;
     private JTableRounded tableGaji; // Using the proper JTableRounded class
-    private JButton batalButton, bayarButton;
+    private JButton batalButton;
 
     private final int RADIUS = 20;
     private final int FINAL_WIDTH = 450;
-    private final int FINAL_HEIGHT = 550; // Menambah tinggi dialog dari 500 menjadi 550
+    private final int FINAL_HEIGHT = 580; // Menambah tinggi dialog dari 500 menjadi 550
     private final int ANIMATION_DURATION = 300;
     private final int ANIMATION_DELAY = 10;
     private float currentScale = 0.01f;
@@ -126,7 +126,7 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
         // Create JTableRounded using the proper implementation
         tableGaji = new JTableRounded(columnNames);
-        tableGaji.setSize(FINAL_WIDTH - 50, 380);
+        tableGaji.setSize(FINAL_WIDTH - 50, 430);
 
         loadEmployeeData(norfid, starDate, endDate);
 
@@ -141,7 +141,7 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
         // Set column widths
         tableGaji.setColumnWidth(0, 170);
-        tableGaji.setColumnWidth(1, 250);
+        tableGaji.setColumnWidth(1, 200);
 
         // Set custom cell renderer for alignment
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
@@ -173,7 +173,7 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
         // Place table in a scrollable container to ensure all rows are visible
         JScrollPane scrollPane = new JScrollPane(tableGaji.getTable());
-        scrollPane.setBounds(25, 60, FINAL_WIDTH - 50, 380); // Menambah tinggi table dari 330 menjadi 380
+        scrollPane.setBounds(25, 60, FINAL_WIDTH - 50, 430); // Menambah tinggi table dari 330 menjadi 380
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setBackground(Color.WHITE);
         scrollPane.getViewport().setBackground(Color.WHITE);
@@ -185,15 +185,9 @@ public class PopUp_DetailGajiKaryawan extends JDialog {
 
         // Cancel Button
         batalButton = createButton("BATAL", new Color(255, 77, 77), Color.WHITE);
-        batalButton.setBounds(25, FINAL_HEIGHT - 70, (FINAL_WIDTH - 60) / 2, 45);
+        batalButton.setBounds(130, FINAL_HEIGHT - 70, (FINAL_WIDTH - 60) / 2, 45);
         batalButton.addActionListener(e -> startCloseAnimation());
         contentPanel.add(batalButton);
-
-        // Pay Button
-        bayarButton = createButton("CETAK", new Color(38, 211, 103), Color.WHITE);
-        bayarButton.setBounds(25 + (FINAL_WIDTH - 60) / 2 + 10, FINAL_HEIGHT - 70, (FINAL_WIDTH - 60) / 2, 45);
-        bayarButton.addActionListener(e -> bayarGaji());
-        contentPanel.add(bayarButton);
     }
 
     private JButton createButton(String text, Color background, Color foreground) {

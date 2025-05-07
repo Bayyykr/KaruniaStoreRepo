@@ -1,5 +1,6 @@
 package SourceCode;
 
+import PopUp_all.PindahanAntarPopUp;
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
@@ -17,6 +18,8 @@ import java.awt.event.ActionListener;
 
 import java.sql.*;
 import db.conn;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class PopUp_EditKaryawan extends javax.swing.JDialog {
 
@@ -333,7 +336,103 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
-        simpanButton.addActionListener(e -> UpdateData());
+        simpanButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String no = rfidField.getText();
+                String nama = nameField.getText();
+                String email = emailField.getText().trim();
+                String pw = passwordField.getText();
+                String notelp = phoneField.getText();
+                String alamat = addressField.getText();
+                
+                if ( nama.equals("Full Name") || email.equals("Email")
+                        || pw.equals("Password") || notelp.equals("Nomor Telepon") || alamat.equals("Alamat")
+                        || no.isEmpty() || nama.isEmpty() || email.isEmpty() || pw.isEmpty() || notelp.isEmpty() || alamat.isEmpty()) {
+                    PindahanAntarPopUp.showTambahKaryawanTIdakBolehKosong(parentFrame);
+                    System.out.println("data tidak boleh kosong");
+                    return;
+                }
+
+                if (nama.length() > 30) {
+                    PindahanAntarPopUp.showEditDataKaryawanNamaTidakLebihDari30karakter(parentFrame);
+                    nameField.requestFocus();
+                    return;
+                }
+
+                if (email.length() > 30) {
+                    PindahanAntarPopUp.showEditDataKaryawanEmailTidakLebihDari30karakter(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+
+                if (pw.length() > 20) {
+                    PindahanAntarPopUp.showEditDataKaryawanPassswordTidakLebihDari20karakter(parentFrame);
+                    passwordField.requestFocus();
+                    return;
+                }
+                
+                if (!notelp.matches("\\d{12,13}")) {
+                    PindahanAntarPopUp.showTambahKaryawanNomorTeleponTidakValid(parentFrame);
+                    phoneField.requestFocus();
+                    return;
+                }
+
+//                if (!notelp.matches("\\d+")) {
+//                    PindahanAntarPopUp.showEditDataKaryawanNoTlpHarusBerupaAngka(parentFrame);
+//                    phoneField.requestFocus();
+//                    return;
+//                }
+
+//                if (notelp.length() > 13) {
+//                    PindahanAntarPopUp.showEditDataKaryawanPassswordTidakLebihDari20karakter(parentFrame);
+//                    phoneField.requestFocus();
+//                    return;
+//                }
+
+                if (!email.contains("@")) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+                String[] emailParts = email.split("@");
+                if (emailParts.length != 2) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+                String domain = emailParts[1];
+                if (!domain.equals("gmail.com")) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+
+                try {
+                    String query = "UPDATE user SET norfid = ?, nama_user = ?, email = ?, "
+                            + "password = ?, alamat = ?, no_hp = ?, "
+                            + "jabatan = 'kasir', status = 'aktif' WHERE norfid = ?";
+                    try (PreparedStatement st = con.prepareStatement(query)) {
+                        st.setString(1, no);
+                        st.setString(2, nama);
+                        st.setString(3, email);
+                        st.setString(4, pw);
+                        st.setString(5, alamat);
+                        st.setString(6, notelp);
+                        st.setString(7, norfid);
+
+                        int rowUpdate = st.executeUpdate();
+                        if (rowUpdate > 0) {
+                            wasDataUpdated = true;
+                            PindahanAntarPopUp.showEditKaryawanSuksesDiEdit(parentFrame);
+                            startCloseAnimation();
+                        }
+                    }
+                } catch (Exception ee) {
+                    System.err.println("Error retrieving employee data: " + ee.getMessage());
+                }
+            }
+        });
         batalButton.addActionListener(e -> startCloseAnimation());
 
         this.addWindowListener(new WindowAdapter() {
@@ -443,7 +542,7 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
                 super.paintComponent(g);
             }
         };
-
+        
         // Custom border with extra left padding
         Border roundBorder = new RoundedBorder(10, new Color(220, 220, 220), 1);
         Border paddingBorder = BorderFactory.createEmptyBorder(0, 10, 0, 0);
@@ -472,15 +571,55 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
             }
         };
 
-        // Custom border with extra left padding
         Border roundBorder = new RoundedBorder(10, new Color(220, 220, 220), 1);
-        Border paddingBorder = BorderFactory.createEmptyBorder(0, 10, 0, 0);
+        Border paddingBorder = BorderFactory.createEmptyBorder(0, 10, 0, 15);
         passwordField.setBorder(BorderFactory.createCompoundBorder(roundBorder, paddingBorder));
 
         passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
         passwordField.setForeground(Color.BLACK);
         passwordField.setOpaque(false);
         passwordField.setEchoChar('•');
+
+        JButton toggleButton = new JButton();
+        toggleButton.setOpaque(false);
+        toggleButton.setContentAreaFilled(false);
+        toggleButton.setBorderPainted(false);
+        toggleButton.setFocusPainted(false);
+        toggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        toggleButton.setMargin(new Insets(0, 0, 0, 0));
+        toggleButton.setPreferredSize(new Dimension(30, 30));
+        toggleButton.setBounds(passwordField.getWidth() - 35, 5, 30, 30);
+
+        try {
+            ImageIcon lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
+            ImageIcon unlockIcon = new ImageIcon(getClass().getResource("/SourceImage/unlock.png"));
+
+            Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            Image unlockImg = unlockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+
+            toggleButton.setIcon(new ImageIcon(lockImg));
+
+            toggleButton.addActionListener(e -> {
+                if (passwordField.getEchoChar() == '•') {
+                    passwordField.setEchoChar((char) 0);
+                    toggleButton.setIcon(new ImageIcon(unlockImg));
+                } else {
+                    passwordField.setEchoChar('•');
+                    toggleButton.setIcon(new ImageIcon(lockImg));
+                }
+            });
+        } catch (Exception e) {
+        }
+        passwordField.setLayout(new BorderLayout());
+        passwordField.add(toggleButton, BorderLayout.EAST);
+        passwordField.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                toggleButton.setBounds(passwordField.getWidth() - 35,
+                        (passwordField.getHeight() - 30) / 2,
+                        30, 30);
+            }
+        });
 
         return passwordField;
     }
@@ -539,43 +678,6 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
         }
 
         super.dispose();
-    }
-
-    private void UpdateData() {
-        simpanButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String no = rfidField.getText();
-                String nama = nameField.getText();
-                String email = emailField.getText();
-                String pw = passwordField.getText();
-                String notelp = phoneField.getText();
-                String alamat = addressField.getText();
-
-                try {
-                    String query = "UPDATE user SET norfid = ?, nama_user = ?, email = ?, "
-                            + "password = ?, alamat = ?, no_hp = ?, "
-                            + "jabatan = 'kasir', status = 'aktif' WHERE norfid = ?";
-                    try (PreparedStatement st = con.prepareStatement(query)) {
-                        st.setString(1, no);
-                        st.setString(2, nama);
-                        st.setString(3, email);
-                        st.setString(4, pw);
-                        st.setString(5, alamat);
-                        st.setString(6, notelp);
-                        st.setString(7, norfid);
-
-                        int rowUpdate = st.executeUpdate();
-                        if (rowUpdate > 0) {
-                            wasDataUpdated = true;
-                            startCloseAnimation();
-                        }
-                    }
-                } catch (Exception ee) {
-                    System.err.println("Error retrieving employee data: " + ee.getMessage());
-                }
-            }
-        });
     }
 
     private void showData() {

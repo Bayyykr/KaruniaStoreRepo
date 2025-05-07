@@ -10,14 +10,10 @@ public class PindahanAntarPopUp {
     // Daftar semua popup aktif dari berbagai jenis
     private static ArrayList<JDialog> activePopups = new ArrayList<>();
 
-    // Konstanta untuk dimensi dan jarak antar popup
-    private static final int POPUP_WIDTH = 250;
-    private static final int POPUP_HEIGHT = 50;
-    private static final int POPUP_VERTICAL_GAP = -20;
-
     public static void registerPopup(JDialog popup) {
         // Tambahkan popup baru ke daftar (di awal/index 0 agar berada di paling atas)
         activePopups.add(0, popup);
+        repositionAllPopups();
     }
 
     public static void unregisterPopup(JDialog popup) {
@@ -28,68 +24,46 @@ public class PindahanAntarPopUp {
     }
 
     public static void repositionAllPopups() {
-        JFrame parentFrame = null;
+        if (activePopups.isEmpty()) return;
 
-        // Cari parent frame dari popup pertama (jika ada)
-        if (!activePopups.isEmpty()) {
-            // Dapatkan parent frame dari popup pertama
-            if (activePopups.get(0) instanceof JDialog) {
-                JDialog dialog = (JDialog) activePopups.get(0);
-                Window owner = dialog.getOwner();
-                if (owner instanceof JFrame) {
-                    parentFrame = (JFrame) owner;
-                }
-            }
-        }
-
-        // Hitung posisi base Y
-        int baseY = 55; // Ubah dari 5 menjadi 20 untuk konsistensi dengan PopUp_SmallEmailTidakBolehKosong
-        if (parentFrame != null) {
-            baseY = parentFrame.getY() - 55;
-        }
-
-        // Hitung posisi base X
-        int baseX;
-        if (parentFrame != null) {
-            baseX = parentFrame.getX() + parentFrame.getWidth() - POPUP_WIDTH - 10;
-        } else {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            baseX = screenSize.width - POPUP_WIDTH - 10;
-        }
-
-        // Atur posisi semua popup dari atas ke bawah
+        // Cari popup dengan class yang sama
         for (int i = 0; i < activePopups.size(); i++) {
-            JDialog popup = activePopups.get(i);
-            int newY = baseY + (i * (POPUP_HEIGHT + POPUP_VERTICAL_GAP));
-
-            // Set lokasi popup
-            popup.setLocation(baseX, newY);
-
-            // Untuk popup yang memiliki metode setLocationOnClose, gunakan itu
-            try {
-                Method setLocationMethod = popup.getClass().getDeclaredMethod("setLocationOnClose", int.class, int.class);
-                if (setLocationMethod != null) {
-                    setLocationMethod.setAccessible(true);
-                    setLocationMethod.invoke(popup, baseX, newY);
+            JDialog currentPopup = activePopups.get(i);
+            
+            // Skip jika popup pertama (indeks 0)
+            if (i == 0) continue;
+            
+            // Cek apakah popup sebelumnya berbeda class
+            JDialog previousPopup = activePopups.get(i-1);
+            if (!currentPopup.getClass().equals(previousPopup.getClass())) {
+                try {
+                    // Dapatkan posisi Y popup sebelumnya
+                    int prevY = previousPopup.getY();
+                    int prevHeight = previousPopup.getHeight();
+                    
+                    // Geser popup saat ini ke bawah popup sebelumnya
+                    int newY = prevY + prevHeight + 10; 
+                    
+                    // Set posisi baru
+                    currentPopup.setLocation(currentPopup.getX(), newY);
+                    
+                    // Jika popup memiliki method setLocationOnClose, update juga
+                    try {
+                        Method setLocationMethod = currentPopup.getClass().getDeclaredMethod(
+                            "setLocationOnClose", int.class, int.class);
+                        if (setLocationMethod != null) {
+                            setLocationMethod.invoke(currentPopup, currentPopup.getX(), newY);
+                        }
+                    } catch (Exception e) {
+                        // Ignore jika tidak ada method
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                // Jika tidak memiliki metode tersebut, abaikan
             }
-
-            // Coba set opacity ke 1.0 jika popup memiliki metode setOpacity
-            try {
-                Method setOpacityMethod = popup.getClass().getDeclaredMethod("setOpacity", float.class);
-                if (setOpacityMethod != null) {
-                    setOpacityMethod.setAccessible(true);
-                    setOpacityMethod.invoke(popup, 1.0f);
-                }
-            } catch (Exception e) {
-                // Jika tidak memiliki metode tersebut, abaikan
-            }
-            // Pastikan popup berada di depan
-            popup.toFront();
         }
-    }  
+    }
+
     public static void showSuksesTambahBarang(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -314,6 +288,266 @@ public class PindahanAntarPopUp {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallLoginSebagaiKasirBerhasil popup = new PopUp_SmallLoginSebagaiKasirBerhasil(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showTambahKaryawanTIdakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUpSmall_TambahKaryawanTidakBolehKosong popup = new PopUpSmall_TambahKaryawanTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showTambahKaryawanEmailHarusBenarPenulisannya(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_TambahKaryawanEmailHarusSesuai popup = new PopUp_TambahKaryawanEmailHarusSesuai(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditKaryawanSuksesDiEdit(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditKaryawanSuksesDiEdit popup = new PopUp_SmallEditKaryawanSuksesDiEdit(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showHapuskaryawanSuksesDiHapus(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallHapusKaryawanSuksesDihapus popup = new PopUp_SmallHapusKaryawanSuksesDihapus(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showTambahKaryawanBerhasilDiTambah(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahKaryawanBerhasilDiTambah popup = new PopUp_SmallTambahKaryawanBerhasilDiTambah(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showTambahKaryawanNomorTeleponTidakValid(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahKaryawanNomorTeleponTidakVAlid popup = new PopUp_SmallTambahKaryawanNomorTeleponTidakVAlid(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditDataKaryawanNamaTidakLebihDari30karakter(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditDataKaryawanNamaTidakBolehLebihDari30Karakter popup = new PopUp_SmallEditDataKaryawanNamaTidakBolehLebihDari30Karakter(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditDataKaryawanEmailTidakLebihDari30karakter(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditDataKaryawanEmailTidakBolehLebihDari30Karakter popup = new PopUp_SmallEditDataKaryawanEmailTidakBolehLebihDari30Karakter(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditDataKaryawanPassswordTidakLebihDari20karakter(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari20Karakter popup = new PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari20Karakter(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditDataKaryawanNoTlpHarusBerupaAngka(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditDataKaryawanNoTlpHarusBerupaAngka popup = new PopUp_SmallEditDataKaryawanNoTlpHarusBerupaAngka(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showEditDataKaryawanPassswordTidakLebihDari13karakter(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari13Karakter popup = new PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari13Karakter(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showGajiKaryawanSuksesBayarGaji(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_GajiKAryawanSuksesBayarGaji popup = new PopUp_GajiKAryawanSuksesBayarGaji(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+        public static void showDataKaryawanNoRFIDTIdakBolehLebihDari16(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallDataKaryawanNoRFIDTIdakBolehLebihDari16 popup = new PopUp_SmallDataKaryawanNoRFIDTIdakBolehLebihDari16(parent) {
                 @Override
                 public void setVisible(boolean visible) {
                     if (visible) {

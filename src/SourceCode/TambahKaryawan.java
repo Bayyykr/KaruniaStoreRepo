@@ -1,5 +1,6 @@
 package SourceCode;
 
+import PopUp_all.PindahanAntarPopUp;
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
@@ -17,6 +18,10 @@ import java.awt.event.ActionListener;
 
 import java.sql.*;
 import db.conn;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class TambahKaryawan extends javax.swing.JDialog {
 
@@ -31,6 +36,7 @@ public class TambahKaryawan extends javax.swing.JDialog {
     // Tambahkan variabel untuk overlay
     private JComponent glassPane;
     private JFrame parentFrame;
+    Component parentComponent = this;
 
     // Tambahkan variabel untuk menyimpan komponen
     private JLabel titleLabel;
@@ -191,9 +197,9 @@ public class TambahKaryawan extends javax.swing.JDialog {
         // Inisialisasi setiap text field secara individual
         rfidField = createRoundedTextField("No. RFID");
         nameField = createRoundedTextField("Full Name");
-        phoneField = createRoundedTextField("Email");
+        phoneField = createRoundedTextField("Nomor Telepon");
         passwordField = createRoundedPasswordField("Password");
-        emailField = createRoundedTextField("Nomor Telepon");
+        emailField = createRoundedTextField("Email");
         addressField = createRoundedTextField("Alamat");
 
         // Customize field width
@@ -246,13 +252,13 @@ public class TambahKaryawan extends javax.swing.JDialog {
         mainPanel.add(nameField, gbc);
 
         gbc.gridy = 4;
-        mainPanel.add(phoneField, gbc);
+        mainPanel.add(emailField, gbc);
 
         gbc.gridy = 5;
         mainPanel.add(passwordField, gbc);
 
         gbc.gridy = 6;
-        mainPanel.add(emailField, gbc);
+        mainPanel.add(phoneField, gbc);
 
         gbc.gridy = 7;
         mainPanel.add(addressField, gbc);
@@ -279,11 +285,10 @@ public class TambahKaryawan extends javax.swing.JDialog {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
-        addDragListeners(mainPanel);
-
+//        addDragListeners(mainPanel);
         batalButton.addActionListener(e -> startCloseAnimation());
 //        simpanButton.addActionListener(e -> {
-//            JOptionPane.showMessageDialog(this, "Data Tersimpan", "Konfirmasi", JOptionPane.INFORMATION_MESSAGE);
+//            PindahanAntarPopUp.showTambahKaryawanBerhasilDiTambah(parentFrame);
 //            startCloseAnimation();
 //        });
 
@@ -405,6 +410,18 @@ public class TambahKaryawan extends javax.swing.JDialog {
         textField.setForeground(Color.GRAY);
         textField.setOpaque(false);
 
+        if (placeholder.equals("Nomor Telepon")) {
+            textField.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    char c = e.getKeyChar();
+                    if (!Character.isDigit(c)
+                            || (textField.getText().length() >= 13 && textField.getSelectedText() == null)) {
+                        e.consume();
+                    }
+                }
+            });
+        }
         // Add focus listeners to handle placeholder behavior
         textField.addFocusListener(new FocusAdapter() {
             @Override
@@ -445,7 +462,7 @@ public class TambahKaryawan extends javax.swing.JDialog {
 
         // Custom border with extra left padding
         Border roundBorder = new RoundedBorder(10, new Color(220, 220, 220), 1);
-        Border paddingBorder = BorderFactory.createEmptyBorder(0, 10, 0, 0);
+        Border paddingBorder = BorderFactory.createEmptyBorder(0, 10, 0, 15); // Added right padding for button
         passwordField.setBorder(BorderFactory.createCompoundBorder(roundBorder, paddingBorder));
 
         passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -453,7 +470,49 @@ public class TambahKaryawan extends javax.swing.JDialog {
         passwordField.setOpaque(false);
         passwordField.setEchoChar((char) 0);
 
-        // Add focus listeners to handle placeholder behavior
+        // Create toggle button
+        JButton toggleButton = new JButton();
+        toggleButton.setOpaque(false);
+        toggleButton.setContentAreaFilled(false);
+        toggleButton.setBorderPainted(false);
+        toggleButton.setFocusPainted(false);
+        toggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        toggleButton.setMargin(new Insets(0, 0, 0, 0));
+        toggleButton.setPreferredSize(new Dimension(30, 30));
+        toggleButton.setBounds(passwordField.getWidth() - 46, 5, 30, 30);
+
+        try {
+            ImageIcon lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
+            ImageIcon unlockIcon = new ImageIcon(getClass().getResource("/SourceImage/unlock.png"));
+
+            Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            Image unlockImg = unlockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+
+            toggleButton.setIcon(new ImageIcon(lockImg));
+
+            toggleButton.addActionListener(e -> {
+                if (passwordField.getEchoChar() == '•') {
+                    passwordField.setEchoChar((char) 0);
+                    toggleButton.setIcon(new ImageIcon(unlockImg));
+                } else {
+                    passwordField.setEchoChar('•');
+                    toggleButton.setIcon(new ImageIcon(lockImg));
+                }
+            });
+        } catch (Exception e) {
+        }
+
+        passwordField.setLayout(new BorderLayout());
+        passwordField.add(toggleButton, BorderLayout.EAST);
+        passwordField.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                toggleButton.setBounds(passwordField.getWidth() - 46,
+                        (passwordField.getHeight() - 30) / 2,
+                        30, 30);
+            }
+        });
+
         passwordField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -461,6 +520,12 @@ public class TambahKaryawan extends javax.swing.JDialog {
                     passwordField.setText("");
                     passwordField.setForeground(Color.BLACK);
                     passwordField.setEchoChar('•');
+                    try {
+                        ImageIcon lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
+                        Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                        toggleButton.setIcon(new ImageIcon(lockImg));
+                    } catch (Exception ex) {
+                    }
                 }
             }
 
@@ -470,6 +535,12 @@ public class TambahKaryawan extends javax.swing.JDialog {
                     passwordField.setText(placeholder);
                     passwordField.setForeground(Color.GRAY);
                     passwordField.setEchoChar((char) 0);
+                    try {
+                        ImageIcon lockIcon = new ImageIcon(getClass().getResource("/SourceImage/lock.png"));
+                        Image lockImg = lockIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                        toggleButton.setIcon(new ImageIcon(lockImg));
+                    } catch (Exception ex) {
+                    }
                 }
             }
         });
@@ -540,7 +611,7 @@ public class TambahKaryawan extends javax.swing.JDialog {
             public void actionPerformed(ActionEvent e) {
                 String no = rfidField.getText();
                 String nama = nameField.getText();
-                String email = emailField.getText();
+                String email = emailField.getText().trim();
                 String pw = passwordField.getText();
                 String notelp = phoneField.getText();
                 String alamat = addressField.getText();
@@ -548,10 +619,57 @@ public class TambahKaryawan extends javax.swing.JDialog {
                 if (no.equals("No. RFID") || nama.equals("Full Name") || email.equals("Email")
                         || pw.equals("Password") || notelp.equals("Nomor Telepon") || alamat.equals("Alamat")
                         || no.isEmpty() || nama.isEmpty() || email.isEmpty() || pw.isEmpty() || notelp.isEmpty() || alamat.isEmpty()) {
+                    PindahanAntarPopUp.showTambahKaryawanTIdakBolehKosong(parentFrame);
                     System.out.println("data tidak boleh kosong");
                     return;
                 }
 
+                if (nama.length() > 30) {
+                    PindahanAntarPopUp.showEditDataKaryawanNamaTidakLebihDari30karakter(parentFrame);
+                    nameField.requestFocus();
+                    return;
+                }
+
+                if (email.length() > 30) {
+                    PindahanAntarPopUp.showEditDataKaryawanEmailTidakLebihDari30karakter(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+                
+                 if (pw.length() > 20) {
+                    PindahanAntarPopUp.showEditDataKaryawanPassswordTidakLebihDari20karakter(parentFrame);
+                    passwordField.requestFocus();
+                    return;
+                }
+                 if (no.length() > 16) {
+                    PindahanAntarPopUp.showDataKaryawanNoRFIDTIdakBolehLebihDari16(parentFrame);
+                    passwordField.requestFocus();
+                    return;
+                }
+
+                if (!notelp.matches("\\d{12,13}")) {
+                    PindahanAntarPopUp.showTambahKaryawanNomorTeleponTidakValid(parentFrame);
+                    phoneField.requestFocus();
+                    return;
+                }
+
+                if (!email.contains("@")) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+                String[] emailParts = email.split("@");
+                if (emailParts.length != 2) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
+                String domain = emailParts[1];
+                if (!domain.equals("gmail.com")) {
+                    PindahanAntarPopUp.showTambahKaryawanEmailHarusBenarPenulisannya(parentFrame);
+                    emailField.requestFocus();
+                    return;
+                }
                 try {
                     String query = "INSERT INTO user (norfid, nama_user, email, password, alamat, no_hp, jabatan, status)"
                             + "VALUES (?, ?, ?, ?, ?, ?, 'kasir', 'aktif')";
@@ -566,6 +684,7 @@ public class TambahKaryawan extends javax.swing.JDialog {
                         int rowInserted = st.executeUpdate();
                         if (rowInserted > 0) {
                             wasDataAdded = true;
+                            PindahanAntarPopUp.showTambahKaryawanBerhasilDiTambah(parentFrame);
                             startCloseAnimation();
                         }
                     }

@@ -235,6 +235,12 @@ public class DataKaryawan extends JPanel {
 
         // Get the JTable from JTableRounded
         JTable table = employeeTable.getTable();
+        
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i <= 6; i++) { // Kolom 2-6 (nama, email, password, no hp, alamat)
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
 
         // Set table to fill the viewport height
         table.setFillsViewportHeight(true);
@@ -655,8 +661,9 @@ public class DataKaryawan extends JPanel {
 
     private void performSearch() {
         String searchText = searchField.getText();
-        if (searchText.equals("search")) {
-            return; // Don't search for the placeholder text
+        if (searchText.equals("search") || searchText.isEmpty()) {
+            getData();
+            return; 
         }
 
         // Clear existing table data
@@ -665,8 +672,8 @@ public class DataKaryawan extends JPanel {
         try {
             // Create a query that searches across multiple columns
             String query = "SELECT * FROM user WHERE "
-                    + "norfid LIKE ? OR "
-                    + "nama_user LIKE ? AND jabatan != 'owner' AND status != 'nonaktif'";
+                    + "(norfid LIKE ? OR "
+                    + "nama_user LIKE ?) AND jabatan != 'owner' AND status != 'nonaktif'";
 
             try (PreparedStatement st = con.prepareStatement(query)) {
                 // Set all parameters to the same search value
@@ -716,6 +723,12 @@ public class DataKaryawan extends JPanel {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    private DefaultTableCellRenderer createCenterRenderer() {
+    DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+    centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+    return centerRenderer;
+}
 
     public void refreshTable() {
         searchField.setText("Search");

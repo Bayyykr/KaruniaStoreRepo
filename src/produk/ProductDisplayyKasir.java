@@ -24,11 +24,11 @@ import javax.swing.plaf.basic.ComboPopup;
 import Form.Productt;
 
 public class ProductDisplayyKasir extends javax.swing.JPanel {
-// Deklarasikan plusButton sebagai field class
-  Component parentComponent = this; 
+    // Deklarasikan plusButton sebagai field class
+    Component parentComponent = this; 
     private JButton sellButton;
     private Runnable trashButtonListener;
-    private JButton trashButton; // Add this as a field to match the plusButton approach
+    private JButton trashButton;
     private JPanel activeTab;
     private JWindow tooltipWindow;
     private Timer fadeInTimer;
@@ -38,43 +38,49 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
     private JButton pressedButton = null;
     private Map<JButton, ImageIcon> normalIcons = new HashMap<>();
     private Map<JButton, ImageIcon> pressedIcons = new HashMap<>();
-// Map untuk menyimpan teks tooltip untuk setiap tombol
     private Map<JButton, String> buttonTooltips = new HashMap<>();
-// Deklarasi label tooltip
     private JLabel tooltipLabel = new JLabel();
+    
+    // Panel untuk masing-masing kategori
+    private JPanel sepatuPanel;
+    private JPanel sandalPanel;
+    private JPanel kaosKakiPanel;
+    private JPanel lainnyaPanel;
+    
+    // Current displayed panel
+    private JPanel currentContentPanel;
 
-    private JPanel createProductsGrid() {
-        
+    private JPanel createProductsGrid(String category) {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 4, 20, 25)); // 0 baris, 4 kolom dengan spacing lebih besar
+        panel.setLayout(new GridLayout(0, 4, 20, 25));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Buat 13 produk (akan ditampilkan 4 per baris)
-        for (int i = 0; i < 80; i++) {
-            panel.add(createProductCard());
+        // Buat produk sesuai kategori
+        for (int i = 0; i < 20; i++) {
+            panel.add(createProductCard(category));
         }
 
         return panel;
     }
 
-    // Modified method to initialize main panel with scroll pane that activates only when products exceed 2 rows
-    private JPanel initializeMainPanel() {
+    private JPanel initializeMainPanel(String category) {
         JPanel mainPanel = new JPanel(new BorderLayout(0, 10));
         mainPanel.setBackground(Color.WHITE);
 
-        // Add filter panel
-        mainPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        // Tambahkan filter panel hanya jika bukan kategori "Lainnya"
+        if (!"Lainnya".equals(category)) {
+            mainPanel.add(createFilterPanel(category), BorderLayout.NORTH);
+        }
 
         // Create products panel
-        final JPanel productsPanel = createProductsGrid();
+        final JPanel productsPanel = createProductsGrid(category);
 
-        // Create a custom scroll pane with fixed height to show only 2 rows of products
+        // Create scroll pane
         ScrollPane scrollPane = new ScrollPane(productsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
 
-        // Set preferred size to show only 2 rows of products
-        int preferredHeight = 250 * 2 + 40; // Adjust this value according to your card height
+        int preferredHeight = 250 * 2 + 40;
         scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
 
         mainPanel.add(scrollPane, BorderLayout.CENTER);
@@ -85,7 +91,13 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
     public ProductDisplayyKasir() {
         initComponents();
 
-        // Tetapkan ukuran preferensi yang tetap
+        // Initialize category panels
+        sepatuPanel = initializeMainPanel("Sepatu");
+        sandalPanel = initializeMainPanel("Sandal");
+        kaosKakiPanel = initializeMainPanel("Kaos Kaki");
+        lainnyaPanel = initializeMainPanel("Lainnya");
+
+        // Set preferred size
         setPreferredSize(new Dimension(1065, 640));
         setLayout(new BorderLayout(0, 15));
         setBackground(Color.WHITE);
@@ -94,8 +106,9 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         // Add product category panel
         add(createCategoryPanel(), BorderLayout.NORTH);
 
-        // Add main panel with filters and fixed-height product grid
-        add(initializeMainPanel(), BorderLayout.CENTER);
+        // Add initial content (Sepatu panel by default)
+        currentContentPanel = sepatuPanel;
+        add(currentContentPanel, BorderLayout.CENTER);
 
         // Add button panel on the right
         add(createActionButtons(), BorderLayout.EAST);
@@ -118,11 +131,11 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         JPanel sandalTab = createClickableTab("Sandal", false);
         tabPanel.add(sandalTab);
 
-        // Membuat tab Sabuk
-        JPanel sabukTab = createClickableTab("Kaos Kaki", false);
-        tabPanel.add(sabukTab);
+        // Membuat tab Kaos Kaki
+        JPanel kaosKakiTab = createClickableTab("Kaos Kaki", false);
+        tabPanel.add(kaosKakiTab);
 
-        // Membuat tab Sabuk
+        // Membuat tab Lainnya
         JPanel lainnyaTab = createClickableTab("Lainnya", false);
         tabPanel.add(lainnyaTab);
 
@@ -163,7 +176,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
                 if (activeTab != currentTab) {
                     // Hapus underline dari tab aktif sebelumnya
                     if (activeTab != null) {
-                        activeTab.remove(activeTab.getComponent(1)); // Hapus garis
+                        activeTab.remove(activeTab.getComponent(1));
                         activeTab.revalidate();
                         activeTab.repaint();
                     }
@@ -179,8 +192,25 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
                     // Update tab yang aktif
                     activeTab = currentTab;
 
-                    // Di sini bisa ditambahkan kode untuk mengubah konten yang ditampilkan
-                    System.out.println("Tab " + tabName + " dipilih");
+                    // Ganti panel konten berdasarkan tab yang dipilih
+                    remove(currentContentPanel);
+                    switch (tabName) {
+                        case "Sepatu":
+                            currentContentPanel = sepatuPanel;
+                            break;
+                        case "Sandal":
+                            currentContentPanel = sandalPanel;
+                            break;
+                        case "Kaos Kaki":
+                            currentContentPanel = kaosKakiPanel;
+                            break;
+                        case "Lainnya":
+                            currentContentPanel = lainnyaPanel;
+                            break;
+                    }
+                    add(currentContentPanel, BorderLayout.CENTER);
+                    revalidate();
+                    repaint();
                 }
             }
         });
@@ -188,7 +218,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         return tabContainer;
     }
 
- private JPanel createFilterPanel() {
+    private JPanel createFilterPanel(String category) {
         JPanel panel = new JPanel(new BorderLayout(0, 0));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
@@ -197,14 +227,12 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         JPanel filterLabelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         filterLabelPanel.setBackground(Color.WHITE);
         
-        // Cara lebih simpel untuk memuat gambar
         ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/filter.png"));
         Image resizedImg = originalIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         JLabel filterIcon = new JLabel(new ImageIcon(resizedImg));
         JLabel filterText = new JLabel("Filter");
         filterText.setFont(new Font("Arial", Font.BOLD, 14));
         
-        // Box layout yang lebih simpel
         Box verticalBox = Box.createVerticalBox();
         verticalBox.add(Box.createVerticalStrut(5));
         verticalBox.add(filterIcon);
@@ -219,14 +247,13 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         dropdownsPanel.setLayout(new BoxLayout(dropdownsPanel, BoxLayout.X_AXIS));
         dropdownsPanel.setBackground(Color.WHITE);
         
-        // Definisi opsi untuk dropdown
-        String[] merkOptions = {"Merk", "Adidas", "Nike", "Puma", "Reebok"};
-        String[] ukuranOptions = {"Ukuran", "< 25", "25 - 30", "30 - 35", "35 - 40", "> 40"};
-        String[] hargaOptions = {"Harga", "< 50.000", "50.000 - 150.000", "151.000 - 300.000", "301.000 - 450.000"};
-        String[] styleOptions = {"Style", "Olahraga", "Formal", "Kasual", "Boots"};
-        String[] genderOptions = {"Gender", "Male", "Female", "Unisex"};
+        // Buat dropdown berdasarkan kategori
+        String[] merkOptions = getMerkOptions(category);
+        String[] ukuranOptions = getUkuranOptions(category);
+        String[] hargaOptions = getHargaOptions(category);
+        String[] styleOptions = getStyleOptions(category);
+        String[] genderOptions = getGenderOptions(category);
         
-        // Buat ComboboxCustomKhususProduk untuk setiap dropdown
         ComboboxCustomKhususProduk merkDropdown = new ComboboxCustomKhususProduk(merkOptions);
         merkDropdown.setPreferredSize(new Dimension(180, 35));
         merkDropdown.setMaximumSize(new Dimension(180, 35));
@@ -247,7 +274,6 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         genderDropdown.setPreferredSize(new Dimension(180, 35));
         genderDropdown.setMaximumSize(new Dimension(180, 35));
         
-        // Tambahkan dengan rigid area di antara komponen
         dropdownsPanel.add(merkDropdown);
         dropdownsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         dropdownsPanel.add(ukuranDropdown);
@@ -258,59 +284,108 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         dropdownsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         dropdownsPanel.add(genderDropdown);
         
-        // Tambahkan panel label dan dropdown ke panel utama
         panel.add(filterLabelPanel, BorderLayout.WEST);
         panel.add(dropdownsPanel, BorderLayout.CENTER);
         
         return panel;
     }
 
-    private JPanel createProductCard() {
+    // Helper methods untuk mendapatkan opsi dropdown berdasarkan kategori
+    private String[] getMerkOptions(String category) {
+        switch (category) {
+            case "Sepatu":
+                return new String[]{"Merk", "Adidas", "Nike", "Puma", "Reebok"};
+            case "Sandal":
+                return new String[]{"Merk", "Swallow", "Bata", "Nevada", "Eiger"};
+            case "Kaos Kaki":
+                return new String[]{"Merk", "Peds", "Nike", "Adidas", "Uniqlo"};
+            default:
+                return new String[]{"Merk"};
+        }
+    }
+
+    private String[] getUkuranOptions(String category) {
+        switch (category) {
+            case "Sepatu":
+                return new String[]{"Ukuran", "< 25", "25 - 30", "30 - 35", "35 - 40", "> 40"};
+            case "Sandal":
+                return new String[]{"Ukuran", "S", "M", "L", "XL"};
+            case "Kaos Kaki":
+                return new String[]{"Ukuran", "S (36-38)", "M (39-41)", "L (42-44)", "XL (45-47)"};
+            default:
+                return new String[]{"Ukuran"};
+        }
+    }
+
+    private String[] getHargaOptions(String category) {
+        switch (category) {
+            case "Sepatu":
+                return new String[]{"Harga", "< 50.000", "50.000 - 150.000", "151.000 - 300.000", "301.000 - 450.000"};
+            case "Sandal":
+                return new String[]{"Harga", "< 30.000", "30.000 - 100.000", "101.000 - 200.000", "> 200.000"};
+            case "Kaos Kaki":
+                return new String[]{"Harga", "< 20.000", "20.000 - 50.000", "51.000 - 100.000", "> 100.000"};
+            default:
+                return new String[]{"Harga"};
+        }
+    }
+
+    private String[] getStyleOptions(String category) {
+        switch (category) {
+            case "Sepatu":
+                return new String[]{"Style", "Olahraga", "Formal", "Kasual", "Boots"};
+            case "Sandal":
+                return new String[]{"Style", "Pantai", "Gunung", "Santai", "Olahraga"};
+            case "Kaos Kaki":
+                return new String[]{"Style", "Pendek", "Panjang", "Olahraga", "Fashion"};
+            default:
+                return new String[]{"Style"};
+        }
+    }
+
+    private String[] getGenderOptions(String category) {
+        switch (category) {
+            case "Sepatu":
+            case "Sandal":
+                return new String[]{"Gender", "Male", "Female", "Unisex"};
+            case "Kaos Kaki":
+                return new String[]{"Gender", "Male", "Female", "Kids"};
+            default:
+                return new String[]{"Gender"};
+        }
+    }
+
+    private JPanel createProductCard(String category) {
         JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
-        // Panel gambar produk dengan background abu-abu muda rounded
+        // Panel gambar produk
         JPanel imageContainer = new JPanel(new BorderLayout());
         imageContainer.setBackground(Color.WHITE);
-
-        // Tetapkan ukuran tetap untuk imageContainer
         imageContainer.setPreferredSize(new Dimension(230, 230));
         imageContainer.setMinimumSize(new Dimension(230, 230));
         imageContainer.setMaximumSize(new Dimension(230, 230));
 
-        // Membuat custom panel dengan sudut melengkung menggunakan paintComponent
         JPanel imagePanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
-
-                // Gunakan anti-aliasing untuk membuat sudut yang halus
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Buat warna background abu-abu muda
                 g2d.setColor(new Color(245, 245, 245));
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
-
-                // Tambahkan border 2px dengan warna abu-abu lebih gelap
                 g2d.setColor(new Color(115, 115, 115));
                 g2d.setStroke(new BasicStroke(1));
                 g2d.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 30, 30);
-
                 g2d.dispose();
             }
         };
         imagePanel.setOpaque(false);
         imagePanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        // Tetapkan ukuran tetap untuk imagePanel
         imagePanel.setPreferredSize(new Dimension(220, 220));
-        imagePanel.setMinimumSize(new Dimension(220, 220));
-        imagePanel.setMaximumSize(new Dimension(220, 220));
         addPanelClickListener(imagePanel);
 
-        // Menggunakan GridBagLayout untuk lebih presisi dalam pengaturan posisi
         JPanel imageLabelContainer = new JPanel(new GridBagLayout());
         imageLabelContainer.setOpaque(false);
 
@@ -322,10 +397,13 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
 
         JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(JLabel.CENTER);
+        
+        // Set different images based on category
+        String imagePath = getImagePathForCategory(category);
         try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/SourceImage/gambar_sepatu.png"));
+            ImageIcon icon = new ImageIcon(getClass().getResource(imagePath));
             if (icon.getIconWidth() == -1) {
-                JLabel placeholderLabel = new JLabel("SEPATU");
+                JLabel placeholderLabel = new JLabel(category.toUpperCase());
                 placeholderLabel.setFont(new Font("Arial", Font.BOLD, 14));
                 placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
                 placeholderLabel.setForeground(Color.DARK_GRAY);
@@ -335,7 +413,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
                 imageLabel.setIcon(new ImageIcon(img));
             }
         } catch (Exception e) {
-            JLabel placeholderLabel = new JLabel("SEPATU");
+            JLabel placeholderLabel = new JLabel(category.toUpperCase());
             placeholderLabel.setFont(new Font("Arial", Font.BOLD, 14));
             placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
             placeholderLabel.setForeground(Color.DARK_GRAY);
@@ -357,36 +435,39 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBackground(Color.WHITE);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
-
         infoPanel.setPreferredSize(new Dimension(230, 100));
-        infoPanel.setMinimumSize(new Dimension(230, 100));
-        infoPanel.setMaximumSize(new Dimension(230, 100));
 
-        JLabel nameLabel = new JLabel("Adidas Simanjutak");
+        // Set different product info based on category
+        String productName = getProductNameForCategory(category);
+        String price = getPriceForCategory(category);
+        String size = getSizeForCategory(category);
+        String stock = getStockForCategory(category);
+
+        JLabel nameLabel = new JLabel(productName);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-         addLabelClickListener(nameLabel); // <- di sini
+        addLabelClickListener(nameLabel);
 
-        JLabel priceLabel = new JLabel("Rp. 250.000,00");
+        JLabel priceLabel = new JLabel(price);
         priceLabel.setFont(new Font("Arial", Font.BOLD, 14));
         priceLabel.setForeground(new Color(0, 102, 204));
         priceLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addLabelClickListener(priceLabel); // <- di sini
+        addLabelClickListener(priceLabel);
 
-        JLabel sizeLabel = new JLabel("Uk : 37");
+        JLabel sizeLabel = new JLabel(size);
         sizeLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         sizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        addLabelClickListener(sizeLabel); // <- di sini
+        addLabelClickListener(sizeLabel);
 
         JPanel stockAddPanel = new JPanel(new BorderLayout(5, 0));
         stockAddPanel.setBackground(Color.WHITE);
         stockAddPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         stockAddPanel.setMaximumSize(new Dimension(230, 30));
         
-        JLabel stockLabel = new JLabel("Stok : 10");
+        JLabel stockLabel = new JLabel(stock);
         stockLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         stockAddPanel.add(stockLabel, BorderLayout.WEST);
-         addLabelClickListener(stockLabel); // <- di sini
+        addLabelClickListener(stockLabel);
 
         infoPanel.add(nameLabel);
         infoPanel.add(Box.createVerticalStrut(5));
@@ -397,12 +478,74 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         infoPanel.add(stockAddPanel);
 
         card.setPreferredSize(new Dimension(230, 350));
-        card.setMinimumSize(new Dimension(230, 350));
-        card.setMaximumSize(new Dimension(230, 350));
-
         card.add(infoPanel, BorderLayout.SOUTH);
 
         return card;
+    }
+    
+    private String getImagePathForCategory(String category) {
+        switch (category) {
+            case "Sepatu":
+                return "/SourceImage/gambar_sepatu.png";
+            case "Sandal":
+                return "/SourceImage/gambar_sandal.png";
+            case "Kaos Kaki":
+                return "/SourceImage/gambar_kaoskaki.png";
+            default:
+                return "/SourceImage/gambar_default.png";
+        }
+    }
+    
+    private String getProductNameForCategory(String category) {
+        switch (category) {
+            case "Sepatu":
+                return "Adidas Simanjutak";
+            case "Sandal":
+                return "Swallow Sandal";
+            case "Kaos Kaki":
+                return "Peds Kaos Kaki";
+            default:
+                return "Produk Lainnya";
+        }
+    }
+    
+    private String getPriceForCategory(String category) {
+        switch (category) {
+            case "Sepatu":
+                return "Rp. 250.000,00";
+            case "Sandal":
+                return "Rp. 120.000,00";
+            case "Kaos Kaki":
+                return "Rp. 45.000,00";
+            default:
+                return "Rp. 100.000,00";
+        }
+    }
+    
+    private String getSizeForCategory(String category) {
+        switch (category) {
+            case "Sepatu":
+                return "Uk : 37";
+            case "Sandal":
+                return "Uk : M";
+            case "Kaos Kaki":
+                return "Uk : L (42-44)";
+            default:
+                return "Uk : -";
+        }
+    }
+    
+    private String getStockForCategory(String category) {
+        switch (category) {
+            case "Sepatu":
+                return "Stok : 10";
+            case "Sandal":
+                return "Stok : 15";
+            case "Kaos Kaki":
+                return "Stok : 20";
+            default:
+                return "Stok : 5";
+        }
     }
     
         // Buat method untuk menambahkan MouseListener ke label

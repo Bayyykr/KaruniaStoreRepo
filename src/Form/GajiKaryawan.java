@@ -24,6 +24,7 @@ public class GajiKaryawan extends JPanel {
 
     private Runnable backToDataKaryawan;
     Component parentComponent = this;
+    private JFrame parentFrame;
     private JTextField searchField;
     private JTableRounded salaryTable;
     private JButton aturBulan, kembaliButton;
@@ -248,33 +249,86 @@ public class GajiKaryawan extends JPanel {
         tableModel = (DefaultTableModel) table.getModel();
         tableModel.setRowCount(0); // Clear any existing rows
         table.setRowHeight(50);
+        // Renderer untuk alignment tengah yang mempertahankan warna seleksi dan zebra stripping
+DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value,
+            boolean isSelected, boolean hasFocus, int row, int column) {
+        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        
+        // Pertahankan warna seleksi dan zebra stripping dari renderer default
+        if (isSelected) {
+            c.setBackground(table.getSelectionBackground());
+            c.setForeground(table.getSelectionForeground());
+        } else {
+            c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+            c.setForeground(table.getForeground());
+        }
+        
+        // Set alignment tengah
+        ((JLabel)c).setHorizontalAlignment(JLabel.CENTER);
+        return c;
+    }
+};
 
-        // Konfigurasi warna baris tabel
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+// Renderer khusus untuk Status Gaji dengan warna teks
+DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value,
+            boolean isSelected, boolean hasFocus, int row, int column) {
+        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        
+        // Pertahankan warna background
+        if (isSelected) {
+            c.setBackground(table.getSelectionBackground());
+            c.setForeground(table.getSelectionForeground());
+        } else {
+            c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+            c.setForeground(table.getForeground());
+        }
+        
+        // Style khusus untuk status gaji
+//        c.setFont(c.getFont().deriveFont(Font.BOLD));
+//        if (value != null && value.toString().equals("Sudah Dibayar")) {
+//            c.setForeground(new Color(40, 167, 69)); // Hijau
+//        } else {
+//            c.setForeground(new Color(220, 53, 69)); // Merah
+//        }
+        
+        ((JLabel)c).setHorizontalAlignment(JLabel.CENTER);
+        return c;
+    }
+};
 
-                // Kolom aksi dihandle oleh ButtonRenderer sendiri, jadi kita skip
-                if (column == 5) {
-                    return comp;
-                }
+// Terapkan renderer ke kolom yang ingin ditengahkan
+table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); 
+table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer); 
+table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); 
+table.getColumnModel().getColumn(4).setCellRenderer(statusRenderer);  
 
-                // Jika seleksi, gunakan warna seleksi
-                if (isSelected) {
-                    comp.setBackground(table.getSelectionBackground());
-                    comp.setForeground(table.getSelectionForeground());
-                } else {
-                    // Jika tidak diseleksi, gunakan warna zebra-striping
-                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
-                    comp.setForeground(table.getForeground());
-                }
+table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
 
-                return comp;
-            }
-        });
+table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value,
+            boolean isSelected, boolean hasFocus, int row, int column) {
+        Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        if (column == 5) {
+            return comp;
+        }
+        // Jika seleksi, gunakan warna seleksi
+        if (isSelected) {
+            comp.setBackground(table.getSelectionBackground());
+            comp.setForeground(table.getSelectionForeground());
+        } else {
+            // Jika tidak diseleksi, gunakan warna zebra-striping
+            comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+            comp.setForeground(table.getForeground());
+        }
 
+        return comp;
+    }
+});
         loadDataKaryawan();
 
         // Customize table columns
@@ -345,29 +399,7 @@ public class GajiKaryawan extends JPanel {
                 bayarButton.setText("Bayar");
             }
 
-            // Buat tombol hapus
-            hapusButton = new JButton();
-            hapusButton.setPreferredSize(new Dimension(40, 30));
-            hapusButton.setBackground(new Color(255, 59, 59));
-            hapusButton.setForeground(Color.WHITE);
-            hapusButton.setBorderPainted(false);
-            hapusButton.setFocusPainted(false);
-            hapusButton.setContentAreaFilled(true);
-            hapusButton.setFont(new Font("Arial", Font.PLAIN, 12));
-            hapusButton.setUI(new RoundedButton());
-            hapusButton.setOpaque(false);
-            hapusButton.setContentAreaFilled(true);
-
-            try {
-                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/icon_sampah_putih.png"));
-                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                hapusButton.setIcon(new ImageIcon(scaledImage));
-            } catch (Exception e) {
-                hapusButton.setText("Hapus");
-            }
-
             add(bayarButton);
-            add(hapusButton);
         }
 
         // Pada class ButtonRenderer, ubah metode getTableCellRendererComponent
@@ -421,7 +453,6 @@ public class GajiKaryawan extends JPanel {
             } else {
                 // Jika belum dibayar, tampilkan tombol bayar dan hapus
                 add(bayarButton);
-                add(hapusButton);
             }
 
             return this;
@@ -431,7 +462,7 @@ public class GajiKaryawan extends JPanel {
     class ButtonEditor extends DefaultCellEditor {
 
         private JPanel panel;
-        private JButton bayarButton, hapusButton;
+        private JButton bayarButton;
         private String action = "";
         private boolean isPushed;
         private int clickedRow;
@@ -475,39 +506,7 @@ public class GajiKaryawan extends JPanel {
                     fireEditingStopped();
                 }
             });
-
-            // Buat tombol hapus
-            hapusButton = new JButton();
-            hapusButton.setPreferredSize(new Dimension(40, 30));
-            hapusButton.setBackground(new Color(255, 59, 59));
-            hapusButton.setForeground(Color.WHITE);
-            hapusButton.setBorderPainted(false);
-            hapusButton.setFocusPainted(false);
-            hapusButton.setContentAreaFilled(true);
-            hapusButton.setFont(new Font("Arial", Font.PLAIN, 12));
-            hapusButton.setUI(new RoundedButton());
-            hapusButton.setOpaque(false);
-            hapusButton.setContentAreaFilled(true);
-
-            try {
-                ImageIcon icon = new ImageIcon(getClass().getResource("../SourceImage/icon/icon_sampah_putih.png"));
-                Image scaledImage = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                hapusButton.setIcon(new ImageIcon(scaledImage));
-            } catch (Exception e) {
-                hapusButton.setText("Hapus");
-            }
-
-            hapusButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    action = "HAPUS";
-                    isPushed = true;
-                    fireEditingStopped();
-                }
-            });
-
             panel.add(bayarButton);
-            panel.add(hapusButton);
         }
 
         @Override
@@ -560,7 +559,6 @@ public class GajiKaryawan extends JPanel {
             } else {
                 // Jika belum dibayar, tampilkan tombol bayar dan hapus seperti biasa
                 panel.add(bayarButton);
-                panel.add(hapusButton);
             }
 
             // Set warna latar belakang
@@ -842,6 +840,9 @@ public class GajiKaryawan extends JPanel {
                 hasAttendance = (count > 0);
 
                 if (count == 0) {
+                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    PopUp_GajiKaryawanBelumMelakukanAbsensiPdaBulanIni Absensi = new PopUp_GajiKaryawanBelumMelakukanAbsensiPdaBulanIni(parentFrame);
+                    Absensi.setVisible(true);
                     System.out.println("Karyawan dengan NORFID " + norfid + " tidak memiliki data absensi pada bulan ini.");
                 }
             }
@@ -939,5 +940,4 @@ public class GajiKaryawan extends JPanel {
             }
         }
     }
-
 }
