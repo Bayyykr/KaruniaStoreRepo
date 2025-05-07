@@ -57,7 +57,7 @@ public class AddNewProductFormm extends JPanel {
     private RoundedTextField txtNamaProduct, txtHargaJual, txtHargaBeli, txtMerk, txtUkuran, txtStok;
     private JRadioButton rbMale, rbFemale, rbUnisex;
     private ButtonGroup genderGroup;
-    private ComboboxCustom cbDiscount, cbCategory;
+    private ComboboxCustom cbCategory;
     private JLabel lblStyle;
     private JButton btnAddProduct, btnCancel, btnBrowseFile;
     private JButton btnGenerateBarcode, btnPrint;
@@ -194,15 +194,15 @@ public class AddNewProductFormm extends JPanel {
         txtHargaBeli.setBounds(100, 215, 250, 35);
         panelGeneral.add(txtHargaBeli);
 
-        // Set Discount
-        JLabel lblDiscount = new JLabel("Set Diskon");
-        lblDiscount.setBounds(405, 220, 100, 20);
-        panelGeneral.add(lblDiscount);
+//        // Set Discount
+//        JLabel lblDiscount = new JLabel("Set Diskon");
+//        lblDiscount.setBounds(405, 220, 100, 20);
+//        panelGeneral.add(lblDiscount);
 
-        String[] discountOptions = {"0 %", "5 %", "10 %", "15 %", "20 %", "25 %", "30 %"};
-        cbDiscount = new ComboboxCustom(discountOptions);
-        cbDiscount.setBounds(480, 215, 230, 35);
-        panelGeneral.add(cbDiscount);
+//        String[] discountOptions = {"0 %", "5 %", "10 %", "15 %", "20 %", "25 %", "30 %"};
+//        cbDiscount = new ComboboxCustom(discountOptions);
+//        cbDiscount.setBounds(480, 215, 230, 35);
+//        panelGeneral.add(cbDiscount);
     }
 
     private void createUploadImagesPanel() {
@@ -837,7 +837,7 @@ public class AddNewProductFormm extends JPanel {
         txtStok.setText("");
 
         // Reset combo boxes
-        cbDiscount.setSelectedIndex(0);
+//        cbDiscount.setSelectedIndex(0);
         cbCategory.setSelectedIndex(0);
 
         // Hide style panel
