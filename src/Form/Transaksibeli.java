@@ -23,12 +23,10 @@ import java.math.BigInteger;
 public class Transaksibeli extends JPanel {
 
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
-    private JTextField hargaBeliField;
-    private JTextField qtyField;
-    private JTextField totalField;
+    private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, totalField;
     private JPanel thisPanel;
-    private JTextField scanKodeField;
     private JTableRounded roundedTable;
+    private JButton btnClear, btnTambahBarang, btnCheckout;
 
     public Transaksibeli() {
         thisPanel = this;
@@ -60,7 +58,6 @@ public class Transaksibeli extends JPanel {
         transaksiLabel.setBounds(30, 30, 200, 30);
         mainPanel.add(transaksiLabel);
 
-        // Field Tanggal otomatis - disesuaikan sedikit ke kanan
         JTextField dateField = createRoundedTextField(850, 30, 180, 30);
         dateField.setText(getCurrentDate());
         dateField.setEditable(false);
@@ -119,32 +116,8 @@ public class Transaksibeli extends JPanel {
 
         // Mengatur model tabel untuk menyesuaikan dengan JTableRounded
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-        tableModel.setRowCount(0); // Hapus semua baris yang mungkin sudah ada
+        tableModel.setRowCount(0);
 
-        // Menambahkan data otomatis ke dalam tabel
-        Object[][] data = {
-            {1, "2345678", "Adidas Simanjutak Original", "37", "Rp. 200.000,00", 1, "Rp. 200.000,00", "Aksi"},
-            {2, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {3, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {4, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {5, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {6, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {7, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {8, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {9, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {10, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {11, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {12, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {13, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {14, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"},
-            {15, "2345678", "Adidas Simanjutak Original", "41", "Rp. 250.000,00", 1, "Rp. 250.000,00", "Aksi"}
-        };
-
-        for (Object[] row : data) {
-            tableModel.addRow(row);
-        }
-
-        // Penyesuaian posisi dan ukuran ScrollPane untuk area table
         ScrollPane scrollPane = new ScrollPane(table);
         scrollPane.setBounds(30, 120, 750, 480); // Diperlebar dan diperpanjang
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -162,12 +135,7 @@ public class Transaksibeli extends JPanel {
         table.getColumnModel().getColumn(7).setCellRenderer(new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                if (row >= data.length) {
-                    return new JLabel("");
-                }
 
-                // Create a completely transparent panel
-                // Mengubah padding vertikal dari 5 menjadi 2 agar button posisinya lebih ke atas
                 JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 3));
                 panel.setPreferredSize(new Dimension(80, 30)); // Lebih lebar untuk tombol
                 panel.setOpaque(false);
@@ -252,10 +220,6 @@ public class Transaksibeli extends JPanel {
 
             @Override
             public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-                if (row >= data.length) {
-                    return new JLabel("");
-                }
-
                 currentRow = row;
                 isPushed = true;
 
@@ -469,7 +433,8 @@ public class Transaksibeli extends JPanel {
         formPanel.add(scanKodeField);
 
         formPanel.add(createLabel("Nama Produk", 15, 95));
-        formPanel.add(createRoundedTextField(15, 120, 205, 35));
+        namaProduk = createRoundedTextField(15, 120, 205, 35);
+        formPanel.add(namaProduk);
 
         formPanel.add(createLabel("Harga Beli", 15, 165));
         hargaBeliField = createRoundedTextField(15, 190, 205, 35);
@@ -526,9 +491,14 @@ public class Transaksibeli extends JPanel {
         formPanel.add(totalField);
 
         // Membuat tombol dengan border 1px tanpa mengubah createRoundedButton
-        JButton btnClear = createRoundedButtonWithThickBorder("Clear", 15, 385, 95, 35, new Color(255, 59, 48)); // Merah gelap
-        JButton btnTambahBarang = createRoundedButtonWithThickBorder("Tambah Barang", 120, 385, 100, 35, new Color(0, 107, 214)); // Biru gelap
-        JButton btnCheckout = createRoundedButtonWithThickBorder("Checkout", 15, 430, 205, 35, new Color(52, 199, 89)); // Hijau gelap
+        btnClear = createRoundedButtonWithThickBorder("Clear", 15, 385, 95, 35, new Color(255, 59, 48));
+
+        btnTambahBarang = createRoundedButtonWithThickBorder("Tambah Barang", 120, 385, 100, 35, new Color(0, 107, 214));
+        btnTambahBarang.addActionListener(e -> {
+            addItemToTable();
+        });
+
+        btnCheckout = createRoundedButtonWithThickBorder("Checkout", 15, 430, 205, 35, new Color(52, 199, 89));
 
         // Menambahkan tombol ke formPanel
         formPanel.add(btnClear);
@@ -536,7 +506,6 @@ public class Transaksibeli extends JPanel {
         formPanel.add(btnCheckout);
     }
 
-    // Method untuk memformat angka ribuan
     private void formatQty() {
         try {
             String text = qtyField.getText().replace(".", "").trim();
@@ -589,13 +558,11 @@ public class Transaksibeli extends JPanel {
         }
     }
 
-    // Method untuk mendapatkan tanggal saat ini dengan format tertentu
     private String getCurrentDate() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         return dateFormat.format(new Date());
     }
 
-    // Method untuk membuat text field melengkung
     private JTextField createRoundedTextField(int x, int y, int width, int height) {
         return new JTextField() {
             private final int cornerRadius = 15;
@@ -732,6 +699,16 @@ public class Transaksibeli extends JPanel {
         JLabel label = new JLabel(text);
         label.setBounds(x, y, 150, 20);
         return label;
+    }
+
+    private void addItemToTable() {
+        String kodeProduk = scanKodeField.getText();
+        String produkName = namaProduk.getText();
+        String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+        int harga = Integer.parseInt(hargaText);
+        int qty = Integer.parseInt(qtyField.getText());
+        
+        
     }
 
 }
