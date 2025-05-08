@@ -66,34 +66,23 @@ public class EditProductPanel extends JPanel {
     private static final int ICON_SIZE = 16;
     private int cornerRadius = 15;
     private Connection con;
+    private String kode;
 
     public EditProductPanel() {
-        this(null);
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                generateBarcode();
-            }
-        });
-        // Panggil loadDefaultImage menggunakan SwingUtilities.invokeLater
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                loadDefaultImage();
-            }
-        });
     }
 
     public void setMainFrame(Productt frame) {
         this.mainFrame = frame;
     }
 
-    public EditProductPanel(JFrame parentFrame) {
+    public EditProductPanel(JFrame parentFrame, String kode) {
         this.parentFrame = parentFrame;
         setLayout(null);
         setBackground(new Color(255, 255, 255));
         
         con = conn.getConnection();
+        this.kode = kode;
+        System.out.println("ini kode diii edit produk" + kode);
 
         // Judul Form
         JLabel lblTitle = new JLabel("Edit Product");

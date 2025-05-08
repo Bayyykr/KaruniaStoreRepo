@@ -41,6 +41,9 @@ public class ProductDisplayy extends javax.swing.JPanel {
     private Timer fadeInTimer;
     private Timer fadeOutTimer;
     private Runnable plusButtonListener;
+    private Runnable addLabelClickListener;
+    private Runnable addPanelClickListener;
+    private String selectedProductId;
     private boolean isPressed = false;
     private JButton pressedButton = null;
     private Map<JButton, ImageIcon> normalIcons = new HashMap<>();
@@ -1083,14 +1086,12 @@ public class ProductDisplayy extends javax.swing.JPanel {
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) label.getClientProperty("productId");
                 if (productId != null) {
-                    System.out.println(productId);
-
-                    Productt mainFrame = Productt.getMainFrame();
-                    if (mainFrame != null) {
-                        mainFrame.switchToEditProductPanel();
-                    } else {
-                        System.err.println("Main frame reference is null");
-                    }
+                selectedProductId = productId; // Store the selected product ID
+                System.out.println("Product ID clicked: " + selectedProductId);
+                if (addLabelClickListener != null) {
+                    // Now run the listener which will call switchToEditProductPanel
+                    addLabelClickListener.run();
+                }
                 }
             }
 
@@ -1111,14 +1112,13 @@ public class ProductDisplayy extends javax.swing.JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) panel.getClientProperty("productId");
-                if (productId != null) {
-                    System.out.println(productId);
-                    Productt mainFrame = Productt.getMainFrame();
-                    if (mainFrame != null) {
-                        mainFrame.switchToEditProductPanel();
-                    } else {
-                        System.err.println("Main frame reference is null");
-                    }
+                 if (productId != null) {
+                selectedProductId = productId; // Store the selected product ID
+                System.out.println("Product ID clicked: " + selectedProductId);
+                if (addPanelClickListener != null) {
+                    // Now run the listener which will call switchToEditProductPanel
+                    addPanelClickListener.run();
+                }
                 }
             }
 
@@ -1209,7 +1209,15 @@ public class ProductDisplayy extends javax.swing.JPanel {
     public void setPlusButtonListener(Runnable listener) {
         this.plusButtonListener = listener;
     }
-// Animator untuk menghilangkan tooltip dengan efek fade-out
+
+    public void setPindahTransJual(Runnable listener) {
+        this.addLabelClickListener = listener;
+        this.addPanelClickListener = listener;
+    }
+    
+    public String getSelectedProductId() {
+    return selectedProductId;
+}
 
     private void animateHideTooltip() {
         if (tooltipWindow != null && tooltipWindow.isVisible()) {

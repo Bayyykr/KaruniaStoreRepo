@@ -99,6 +99,10 @@ public class Productt extends JFrame {
         produkPanel.setPlusButtonListener(() -> {
             switchToAddProductPanel();
         });
+        
+        produkPanel.setPindahTransJual(() -> {
+            switchToEditProductPanel();
+        });
 
         // Add method to switch to DeleteProductPanel
         produkPanel.setTrashButtonListener(() -> {
@@ -201,22 +205,37 @@ public class Productt extends JFrame {
     }
 
     public void switchToEditProductPanel() {
-        if (currentPanel != null) {
-            remove(currentPanel);
-        }
-
-        currentPanel = editproductpanel;
-        add(currentPanel);
-        currentPanel.setVisible(true);
-
-        revalidate();
-        repaint();
+    if (currentPanel != null) {
+        remove(currentPanel);
     }
     
-    //INI GANTI PANEL EDIT    
-    public EditProductPanel getEditProductPanel() {
-        return this.editproductpanel;
-    }
+    // Get the selected product ID from ProductDisplayy
+    String selectedId = produkPanel.getSelectedProductId();
+    System.out.println("Switching to edit panel with ID: " + selectedId);
+    
+    // Create a new EditProductPanel with the correct parameters
+    editproductpanel = new EditProductPanel(this, selectedId);
+    
+    // Set bounds for the new panel (use the same bounds as before)
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    int panelX = 280;
+    int panelY = 80;
+    int panelWidth = screenSize.width - 300;
+    int panelHeight = screenSize.height - 110;
+    editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+    
+    currentPanel = editproductpanel;
+    add(currentPanel);
+    currentPanel.setVisible(true);
+
+    revalidate();
+    repaint();
+}
+    
+//    //INI GANTI PANEL EDIT    
+//    public EditProductPanel getEditProductPanel() {
+//        return this.editproductpanel;
+//    }
 
     // Tambahkan method untuk beralih ke panel Transjual
     public void switchToTransJualPanel() {
