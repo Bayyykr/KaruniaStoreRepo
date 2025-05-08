@@ -79,6 +79,7 @@ public class AddNewProductFormm extends JPanel {
     private static final int ICON_SIZE = 16;
     private int cornerRadius = 15;
     private Connection con;
+    private String currentBarcodeValue = "";
 
     public AddNewProductFormm() {
         this(null);
@@ -198,7 +199,6 @@ public class AddNewProductFormm extends JPanel {
 //        JLabel lblDiscount = new JLabel("Set Diskon");
 //        lblDiscount.setBounds(405, 220, 100, 20);
 //        panelGeneral.add(lblDiscount);
-
 //        String[] discountOptions = {"0 %", "5 %", "10 %", "15 %", "20 %", "25 %", "30 %"};
 //        cbDiscount = new ComboboxCustom(discountOptions);
 //        cbDiscount.setBounds(480, 215, 230, 35);
@@ -421,7 +421,7 @@ public class AddNewProductFormm extends JPanel {
         // Radio buttons
         genderGroup = new ButtonGroup();
 
-        rbMale = new JRadioButton("Male");
+        rbMale = new JRadioButton("Cowok");
         rbMale.setBounds(20, 390, 70, 30);
         rbMale.setSelected(true);
         rbMale.setBackground(Color.WHITE);
@@ -431,7 +431,7 @@ public class AddNewProductFormm extends JPanel {
         add(rbMale);
         genderGroup.add(rbMale);
 
-        rbFemale = new JRadioButton("Female");
+        rbFemale = new JRadioButton("Cewek");
         rbFemale.setBounds(90, 390, 80, 30);
         rbFemale.setBackground(Color.WHITE);
         rbFemale.setFocusPainted(false);
@@ -521,8 +521,9 @@ public class AddNewProductFormm extends JPanel {
         try {
             barcodeArea.removeAll();
 
-            String barcodeValue = generateRandom16DigitNumber();
-            Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
+            // Generate and store the barcode value
+            currentBarcodeValue = generateRandom16DigitNumber();
+            Barcode barcode = BarcodeFactory.createCode128(currentBarcodeValue);
 
             barcode.setBarWidth(2);
 
@@ -847,10 +848,11 @@ public class AddNewProductFormm extends JPanel {
                 c.setVisible(false);
             }
         }
-
+        
         // Reset radio buttons
         rbMale.setSelected(true);
-
+        
+        removeSelectedImage();
         // Reset photo count label
         lblPhotoCount.setText("foto maks (0/1)");
 
@@ -859,6 +861,11 @@ public class AddNewProductFormm extends JPanel {
         currentStyleIndex = 0;
         updateStyleLabel();
         updateStyleNavigationButtons();
+
+        currentBarcodeValue = ""; // Reset barcode value
+        barcodeArea.removeAll();
+        barcodeArea.revalidate();
+        barcodeArea.repaint();
     }
 
 // Method to reset form when panel is changed or closed
@@ -1107,67 +1114,122 @@ public class AddNewProductFormm extends JPanel {
             return;
         }
 
+        if (currentBarcodeValue == null || currentBarcodeValue.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Silakan generate barcode terlebih dahulu.",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int stockAmount = 0;
         try {
-            String sql = "INSERT INTO produk (merk, jenis_produk, size, gender, gambar, nama_produk, "
+            stockAmount = Integer.parseInt(txtStok.getText().trim());
+            if (stockAmount < 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Jumlah stok harus lebih dari atau sama dengan 0.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Jumlah stok harus berupa angka yang valid.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            String productId = currentBarcodeValue; // Use barcode value as product ID
+            String sql = "INSERT INTO produk (id_produk, merk, jenis_produk, size, gender, gambar, nama_produk, "
                     + "harga_jual, harga_beli, id_style, status) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement st = con.prepareStatement(sql)) {
-                st.setString(1, txtMerk.getText().trim());
+                st.setString(1, productId);
+                st.setString(2, txtMerk.getText().trim());
                 String category = (String) cbCategory.getSelectedItem();
-                st.setString(2, category);
-                st.setString(3, txtUkuran.getText().trim());
 
-                String gender = "Male";
+                switch (category) {
+                    case "Sandal":
+                        category = "sandal";
+                        break;
+                    case "Sepatu":
+                        category = "sepatu";
+                        break;
+                    case "Kaos Kaki":
+                        category = "kaoskaki";
+                        break;
+                    case "Lainnya":
+                        category = "aksesoris tambahan";
+                        break;
+                    default:
+                        category = "";
+                        break;
+                }
+
+                st.setString(3, category);
+                st.setString(4, txtUkuran.getText().trim());
+                String gender = "Cowok";
                 if (rbFemale.isSelected()) {
-                    gender = "Female";
+                    gender = "Cewek";
                 } else if (rbUnisex.isSelected()) {
                     gender = "Unisex";
                 }
-
-                st.setString(4, gender);
+                st.setString(5, gender);
                 if (selectedImageFile != null) {
                     String imagePath = saveImageToServer(selectedImageFile);
-                    st.setString(5, imagePath);
+                    st.setString(6, imagePath);
                 } else {
-                    st.setString(5, "default.jpg");
+                    st.setString(6, "default.jpg");
                 }
+                st.setString(7, txtNamaProduct.getText().trim());
 
-                st.setString(6, txtNamaProduct.getText().trim());
                 try {
                     double hargaJual = Double.parseDouble(txtHargaJual.getText().trim().replace(",", ""));
                     double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replace(",", ""));
-
-                    st.setDouble(7, hargaJual);
-                    st.setDouble(8, hargaBeli);
+                    st.setDouble(8, hargaJual);
+                    st.setDouble(9, hargaBeli);
                 } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this,
-                            "Harga harus berupa angka yang valid.",
-                            "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    throw new Exception("Harga harus berupa angka yang valid.");
                 }
 
                 String styleId = getStyleIdFromName(currentStyleOptions[currentStyleIndex]);
-                st.setString(9, styleId);
-                st.setString(10, "dijual");
+                st.setString(10, styleId);
+                st.setString(11, "dijual");
 
                 int rowsAffected = st.executeUpdate();
-                if (rowsAffected > 0) {
-                    JOptionPane.showMessageDialog(this,
-                            "Produk berhasil ditambahkan!",
-                            "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                    clearForm();
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                            "Gagal menambahkan produk.",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                if (rowsAffected <= 0) {
+                    throw new Exception("Gagal menambahkan produk.");
                 }
             }
-        } catch (SQLException e) {
+
+            String stockSql = "INSERT INTO kartu_stok (produk_masuk, produk_keluar, tanggal_transaksi, produk_sisa, id_produk) "
+                    + "VALUES (?, ?, ?, ?, ?)";
+
+            try (PreparedStatement stockSt = con.prepareStatement(stockSql)) {
+                stockSt.setInt(1, stockAmount);
+                stockSt.setInt(2, 0);
+
+                Date now = new Date();
+                Timestamp timestamp = new Timestamp(now.getTime());
+                stockSt.setTimestamp(3, timestamp);
+
+                stockSt.setInt(4, stockAmount);
+                stockSt.setString(5, productId);
+
+                int stockRowsAffected = stockSt.executeUpdate();
+                if (stockRowsAffected <= 0) {
+                    throw new Exception("Gagal menambahkan informasi stok.");
+                }
+            }
+
             JOptionPane.showMessageDialog(this,
-                    "Database error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                    "Produk berhasil ditambahkan dengan stok awal " + stockAmount + "!",
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            clearForm();
+
+        } catch (Exception e) {
             e.printStackTrace();
+
         }
     }
 
@@ -1231,6 +1293,12 @@ public class AddNewProductFormm extends JPanel {
                         "Validasi Error", JOptionPane.WARNING_MESSAGE);
                 return false;
             }
+            
+            if (hargaJual <= hargaBeli) {
+                JOptionPane.showMessageDialog(this, "Harga jual harus lebih dari besar dari harga beli.",
+                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
 
             if (stok < 0) {
                 JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif.",
@@ -1274,13 +1342,11 @@ public class AddNewProductFormm extends JPanel {
         }
     }
 
-// Helper method to get style ID from the style name and category
-// You'll need to implement this based on your database structure
     private String getStyleIdFromName(String styleName) {
         String styleId = "00001";
 
         try {
-            String sql = "SELECT id_style FROM styles WHERE style_name = ?";
+            String sql = "SELECT id_style FROM style WHERE nama_style = ?";
             try (PreparedStatement st = con.prepareStatement(sql)) {
                 st.setString(1, styleName);
                 ResultSet rs = st.executeQuery();
