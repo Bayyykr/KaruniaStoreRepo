@@ -128,7 +128,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
-                        currentPanel = produkPanelkasir;
+                        currentPanel = produkPanel;
                         System.out.println("ini produk");
                         break;
                     case 2: // Karyawan
@@ -211,6 +211,11 @@ public class Productt extends JFrame {
 
         revalidate();
         repaint();
+    }
+    
+    //INI GANTI PANEL EDIT    
+    public EditProductPanel getEditProductPanel() {
+        return this.editproductpanel;
     }
 
     // Tambahkan method untuk beralih ke panel Transjual
