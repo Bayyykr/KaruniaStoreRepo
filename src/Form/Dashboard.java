@@ -1,6 +1,7 @@
 package Form;
 
 //import SourceCode.RoundedBorder;
+import PopUp_all.*;
 import SourceCode.RoundedBorder;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -28,7 +29,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import db.conn;
 
 public class Dashboard extends JPanel {
-
     private CardLayout headerCardLayout;
     private JPanel headerCardsPanel;
     private int currentCardIndex = 0;
@@ -429,7 +429,11 @@ public class Dashboard extends JPanel {
         // Fix button position and size
         JButton barangTelarisCekButton = createRegularButton("Atur Biaya Operasional", new Dimension(370, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         barangTelarisCekButton.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTelarisCekButton);
+            PopUp_DashboardIOwnerInputBiayaOperasional popUpLupaPassword = new PopUp_DashboardIOwnerInputBiayaOperasional(parentFrame);
+            popUpLupaPassword.setVisible(true);
             System.out.println("Atur Biaya Operasional");
+            
         });
 
         // Fix right button position

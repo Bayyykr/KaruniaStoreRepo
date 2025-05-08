@@ -354,6 +354,9 @@ public class DashboardKasir extends JPanel {
         // Fix button position and size
         JButton promoButton = createRegularButton("CEK PROMO DAN DISKON", new Dimension(400, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         promoButton.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(promoButton);
+            PopUp_DashboardKasirCekPromoDanDiskon popUpLupaPassword = new PopUp_DashboardKasirCekPromoDanDiskon(parentFrame);
+            popUpLupaPassword.setVisible(true);
             System.out.println("Promo dan diskon");
         });
 
