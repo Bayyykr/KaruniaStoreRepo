@@ -28,7 +28,6 @@ import db.conn;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-
 public class ProductDisplayy extends javax.swing.JPanel {
     // Deklarasikan plusButton sebagai field class
     Component parentComponent = this;
@@ -57,7 +56,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
     private JPanel mainContentPanel;
     
     private Connection con;
-
+    
     public ProductDisplayy() {
         // Tetapkan ukuran preferensi yang tetap
         setPreferredSize(new Dimension(1065, 640));
@@ -1082,8 +1081,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) label.getClientProperty("productId");
                 if (productId != null) {
-//                    showProductDetail(productId);
-                    System.out.println("transbel");
+                    System.out.println(productId);
                 }
             }
 
@@ -1105,8 +1103,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) panel.getClientProperty("productId");
                 if (productId != null) {
-                    // Open product detail or perform other action with the specific product
-                    System.out.println("transbel");
+                    System.out.println(productId);
                 }
             }
 
