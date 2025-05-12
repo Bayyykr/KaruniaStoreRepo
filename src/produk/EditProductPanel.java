@@ -20,6 +20,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -32,6 +33,8 @@ import javax.imageio.ImageIO;
 import net.sourceforge.barbecue.Barcode;
 import net.sourceforge.barbecue.BarcodeFactory;
 import db.conn;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.sql.*;
 
 public class EditProductPanel extends JPanel {
@@ -67,6 +70,7 @@ public class EditProductPanel extends JPanel {
     private int cornerRadius = 15;
     private Connection con;
     private String kode;
+    private String[] currentStyleIds;
 
     public EditProductPanel() {
     }
@@ -79,10 +83,9 @@ public class EditProductPanel extends JPanel {
         this.parentFrame = parentFrame;
         setLayout(null);
         setBackground(new Color(255, 255, 255));
-        
+
         con = conn.getConnection();
         this.kode = kode;
-        System.out.println("ini kode diii edit produk" + kode);
 
         // Judul Form
         JLabel lblTitle = new JLabel("Edit Product");
@@ -105,6 +108,9 @@ public class EditProductPanel extends JPanel {
         // Tombol Add Product
         btnAddProduct = createStyledButton("Save Edit", new Color(52, 58, 64), Color.WHITE, 40);
         btnAddProduct.setBounds(856, 18, 150, 35);
+        btnAddProduct.addActionListener(e->{
+            updateProduct();
+        });
 
         // Ikon Add Product diperkecil
         ImageIcon origAddIcon = new ImageIcon(getClass().getResource("/SourceImage/icon/document.png"));
@@ -129,6 +135,8 @@ public class EditProductPanel extends JPanel {
         add(btnCancel);
 
         initEventListeners();
+        getData();
+
     }
 
     private void createGeneralInfoPanel() {
@@ -187,38 +195,6 @@ public class EditProductPanel extends JPanel {
 //        cbDiscount = new ComboboxCustom(discountOptions);
 //        cbDiscount.setBounds(480, 215, 230, 35);
 //        panelGeneral.add(cbDiscount);
-    }
-
-    private void loadDefaultImage() {
-        try {
-            // Coba memuat gambar dari resource
-            URL resourceURL = getClass().getResource(defaultImagePath);
-            if (resourceURL != null) {
-                // Baca gambar dari resource
-                BufferedImage originalImage = ImageIO.read(resourceURL);
-                if (originalImage != null) {
-                    // Resize gambar agar pas dengan area preview
-                    Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                    displayedImage = new ImageIcon(resizedImage);
-
-                    // Tampilkan gambar
-                    imagePreview.setIcon(displayedImage);
-
-                    // Update tampilan
-                    uploadInstructionsPanel.setVisible(false);
-                    imagePreview.setVisible(true);
-                    btnRemoveImage.setVisible(true);
-
-                    // Update label foto maks
-                    lblPhotoCount.setText("foto maks (1/1)");
-
-                }
-            } else {
-                System.out.println("File gambar default tidak ditemukan: " + defaultImagePath);
-            }
-        } catch (IOException ex) {
-            System.err.println("Gagal memuat gambar default: " + ex.getMessage());
-        }
     }
 
     private void createUploadImagesPanel() {
@@ -507,7 +483,7 @@ public class EditProductPanel extends JPanel {
         btnGenerateBarcode.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                generateBarcode();
+                //popup
             }
         });
 
@@ -683,6 +659,8 @@ public class EditProductPanel extends JPanel {
         cbCategory.setBounds(20, 55, 240, 35);
         panelCategory.add(cbCategory);
 
+        setupCategoryListener();
+
         // Panel untuk Style dengan Label dan Button
         JPanel stylePanel = new RoundedPanelProduk(5);
         stylePanel.setLayout(null);
@@ -806,29 +784,106 @@ public class EditProductPanel extends JPanel {
         });
     }
 
+    private void setupCategoryListener() {
+        cbCategory.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selectedCategory = (String) cbCategory.getSelectedItem();
+                // Only update style options if an actual category is selected (not "Pilih Kategori")
+                if (selectedCategory != null && !selectedCategory.equals("Pilih Kategori")) {
+                    updateStyleOptions(selectedCategory);
+                } else {
+                    // Clear style if no valid category is selected
+                    currentStyleOptions = new String[]{""};
+                    currentStyleIds = new String[]{""};
+                    currentStyleIndex = 0;
+                    updateStyleLabel();
+                    updateStyleNavigationButtons();
+                }
+            }
+        });
+    }
+
     private void updateStyleOptions(String category) {
+        try {
+            // Map category name to style IDs for database query
+            String categoryStyleFilter = "";
+            // Based on the product database, it seems styles are assigned based on category
+            switch (category) {
+                case "sepatu":
+                    categoryStyleFilter = "00001, 00002, 00003, 00004"; // Running, Casual, Formal, Sport
+                    break;
+                case "sandal":
+                    categoryStyleFilter = "00002, 00003, 00005, 00006"; // Casual, Formal, Outdoor, Pantai
+                    break;
+                case "kaos kaki":
+                    categoryStyleFilter = "00007, 00003, 00002, 00008"; // Olahraga, Formal, Casual, Ankle
+                    break;
+                case "lainnya":
+                    categoryStyleFilter = "00009, 00010, 00011, 00012"; // Vintage, Modern, Klasik, Trendy
+                    break;
+                default:
+                    categoryStyleFilter = "";
+                    break;
+            }
+            if (!categoryStyleFilter.isEmpty()) {
+                // Query to get styles for the selected category
+                String sql = "SELECT id_style, nama_style FROM style WHERE id_style IN (" + categoryStyleFilter + ") ORDER BY id_style ASC";
+
+                try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                    ResultSet rs = stmt.executeQuery();
+
+                    List<String> styleIdsList = new ArrayList<>();
+                    List<String> styleNamesList = new ArrayList<>();
+
+                    while (rs.next()) {
+                        styleIdsList.add(rs.getString("id_style"));
+                        styleNamesList.add(rs.getString("nama_style"));
+                    }
+
+                    if (!styleIdsList.isEmpty()) {
+                        currentStyleIds = styleIdsList.toArray(new String[0]);
+                        currentStyleOptions = styleNamesList.toArray(new String[0]);
+                    } else {
+                        // Fallback if no styles found
+                        setDefaultStylesForCategory(category);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error loading style options: " + e.getMessage());
+            e.printStackTrace();
+            setDefaultStylesForCategory(category);
+        }
+        // Reset index to first item
+        currentStyleIndex = 0;
+        updateStyleLabel();
+        updateStyleNavigationButtons();
+    }
+
+    private void setDefaultStylesForCategory(String category) {
         switch (category) {
             case "Sepatu":
-                currentStyleOptions = new String[]{"Casual", "Formal", "Sport", "Running"};
+                currentStyleOptions = new String[]{"Running", "Casual", "Formal", "Sport"};
+                currentStyleIds = new String[]{"00001", "00002", "00003", "00004"};
                 break;
             case "Sandal":
                 currentStyleOptions = new String[]{"Casual", "Formal", "Outdoor", "Pantai"};
+                currentStyleIds = new String[]{"00002", "00003", "00005", "00006"};
                 break;
             case "Kaos Kaki":
                 currentStyleOptions = new String[]{"Olahraga", "Formal", "Casual", "Ankle"};
+                currentStyleIds = new String[]{"00007", "00003", "00002", "00008"};
                 break;
             case "Lainnya":
                 currentStyleOptions = new String[]{"Vintage", "Modern", "Klasik", "Trendy"};
+                currentStyleIds = new String[]{"00009", "00010", "00011", "00012"};
                 break;
             default:
                 currentStyleOptions = new String[]{""};
+                currentStyleIds = new String[]{""};
                 break;
         }
-
-        // Reset index dan update label
-        currentStyleIndex = 0;
-        updateStyleLabel();
-        updateStyleNavigationButtons(); // Tambahkan ini untuk mereset navigasi tombol
     }
 
     private void updateStyleLabel() {
@@ -1040,18 +1095,17 @@ public class EditProductPanel extends JPanel {
     }
 
     private void updateStyleNavigationButtons() {
-        // Reset button state setiap kali dipanggil
+        // Reset button state each time this is called
         if (currentStyleOptions.length <= 1) {
-            // Jika hanya satu atau tidak ada style, nonaktifkan kedua tombol
+            // If only one or no style, disable both buttons
             btnPrevStyle.setEnabled(false);
             btnNextStyle.setEnabled(false);
         } else {
-            // Atur status tombol berdasarkan indeks saat ini
+            // Set button status based on current index
             btnPrevStyle.setEnabled(currentStyleIndex > 0);
             btnNextStyle.setEnabled(currentStyleIndex < currentStyleOptions.length - 1);
         }
-
-        // Atur warna teks tombol sesuai status
+        // Set button text color based on status
         btnPrevStyle.setForeground(btnPrevStyle.isEnabled() ? Color.BLACK : Color.GRAY);
         btnNextStyle.setForeground(btnNextStyle.isEnabled() ? Color.BLACK : Color.GRAY);
     }
@@ -1109,5 +1163,392 @@ public class EditProductPanel extends JPanel {
         button.setOpaque(false);
 
         return button;
+    }
+
+    private void getData() {
+        try {
+            String sql = "SELECT p.*, s.nama_style FROM produk p LEFT JOIN style s ON p.id_style = s.id_style WHERE p.id_produk = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, kode);
+                ResultSet rs = st.executeQuery();
+                if (rs.next()) {
+                    // Load basic product information
+                    txtNamaProduct.setText(rs.getString("nama_produk"));
+                    txtHargaJual.setText(String.valueOf(rs.getInt("harga_jual")));
+                    txtHargaBeli.setText(String.valueOf(rs.getInt("harga_beli")));
+                    txtMerk.setText(rs.getString("merk"));
+                    txtUkuran.setText(rs.getString("size"));
+
+                    // Get stock information
+                    String sqlstok = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
+                    try (PreparedStatement stok = con.prepareStatement(sqlstok)) {
+                        stok.setString(1, kode);
+                        ResultSet rsstok = stok.executeQuery();
+                        if (rsstok.next()) {
+                            // Get the latest stock value
+                            int latestStock = rsstok.getInt("produk_sisa");
+                            txtStok.setText(String.valueOf(latestStock));
+                        } else {
+                            txtStok.setText("0");
+                        }
+                    }
+
+                    // Set gender selection
+                    String gender = rs.getString("gender");
+                    if (gender != null) {
+                        switch (gender.toLowerCase()) {
+                            case "cowok":
+                                rbMale.setSelected(true);
+                                break;
+                            case "cewek":
+                                rbFemale.setSelected(true);
+                                break;
+                            case "unisex":
+                                rbUnisex.setSelected(true);
+                                break;
+                        }
+                    }
+
+                    // Get category and style ID
+                    String category = rs.getString("jenis_produk");
+                    String styleId = rs.getString("id_style");
+
+                    if (category != null && !category.isEmpty()) {
+                        // First update the ComboBox - this is crucial!
+                        // Remove ActionListener temporarily to prevent unwanted updates
+                        ActionListener[] listeners = cbCategory.getActionListeners();
+                        for (ActionListener listener : listeners) {
+                            cbCategory.removeActionListener(listener);
+                        }
+
+                        // Set the selected category
+                        for (int i = 0; i < cbCategory.getItemCount(); i++) {
+                            String item = (String) cbCategory.getItemAt(i);
+                            if (category.equalsIgnoreCase(item)) {
+                                cbCategory.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+
+                        updateStyleOptions(category);
+
+                        // Now try to find the matching style ID
+                        if (styleId != null && !styleId.isEmpty()) {
+                            for (int i = 0; i < currentStyleIds.length; i++) {
+                                if (styleId.equals(currentStyleIds[i])) {
+                                    currentStyleIndex = i;
+                                    break;
+                                }
+                            }
+                            updateStyleLabel();
+                            updateStyleNavigationButtons();
+                        }
+
+                        // Add back the ActionListener
+                        for (ActionListener listener : listeners) {
+                            cbCategory.addActionListener(listener);
+                        }
+                    }
+
+                    // Handle product image
+                    try {
+                        // Try to get image as BLOB
+                        Blob imageBlob = rs.getBlob("gambar");
+
+                        if (imageBlob != null && imageBlob.length() > 0) {
+                            try (InputStream is = imageBlob.getBinaryStream()) {
+                                BufferedImage originalImage = ImageIO.read(is);
+                                if (originalImage != null) {
+                                    // Resize image to fit preview area
+                                    Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                                    displayedImage = new ImageIcon(resizedImage);
+
+                                    // Show image
+                                    imagePreview.setIcon(displayedImage);
+
+                                    // Update UI
+                                    uploadInstructionsPanel.setVisible(false);
+                                    imagePreview.setVisible(true);
+                                    btnRemoveImage.setVisible(true);
+
+                                    // Update photo count label
+                                    lblPhotoCount.setText("foto maks (1/1)");
+
+                                    System.out.println("Successfully loaded image from BLOB");
+                                } else {
+                                    removeSelectedImage();
+                                }
+                            } catch (Exception e) {
+                                removeSelectedImage();
+                                e.printStackTrace();
+                            }
+                        } else {
+                            removeSelectedImage();
+                        }
+                    } catch (SQLException e) {
+                        removeSelectedImage();
+                        e.printStackTrace();
+                    }
+
+                    // Generate barcode if needed
+                    String barcode = rs.getString("id_produk");
+                    if (barcode != null && !barcode.isEmpty()) {
+                        generateBarcodeFromProductId(barcode);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Produk tidak ditemukan", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error saat mengambil data produk: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void generateBarcodeFromProductId(String productId) {
+        try {
+            barcodeArea.removeAll();
+
+            // Use the product ID as the barcode value instead of random number
+            String barcodeValue = productId;
+            Barcode barcode = BarcodeFactory.createCode128(barcodeValue);
+
+            barcode.setBarWidth(2);
+
+            barcodeArea.setLayout(new BorderLayout());
+
+            JPanel barcodeImagePanel = new JPanel();
+            barcodeImagePanel.setOpaque(false);
+
+            barcodeImagePanel.setLayout(new BoxLayout(barcodeImagePanel, BoxLayout.Y_AXIS));
+
+            barcodeImagePanel.add(Box.createVerticalStrut(25));
+
+            JPanel barcodeContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            barcodeContainer.setOpaque(false);
+
+            Component barcodeComp = barcode;
+            int newHeight = 80;
+
+            JPanel heightPanel = new JPanel(new BorderLayout()) {
+                @Override
+                public Dimension getPreferredSize() {
+                    Dimension dim = super.getPreferredSize();
+                    return new Dimension(dim.width, newHeight);
+                }
+            };
+            heightPanel.setOpaque(false);
+            heightPanel.add(barcodeComp, BorderLayout.CENTER);
+
+            barcodeContainer.add(heightPanel);
+
+            barcodeImagePanel.add(barcodeContainer);
+            barcodeArea.add(barcodeImagePanel, BorderLayout.CENTER);
+
+            // Update the display
+            barcodeArea.revalidate();
+            barcodeArea.repaint();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error saat membuat barcode: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public String getCurrentStyleId() {
+        if (currentStyleIds != null && currentStyleIndex >= 0 && currentStyleIndex < currentStyleIds.length) {
+            return currentStyleIds[currentStyleIndex];
+        }
+        return "";
+    }
+
+    private void updateProduct() {
+        try {
+            // Validate input fields
+            if (txtNamaProduct.getText().trim().isEmpty()
+                    || txtHargaJual.getText().trim().isEmpty()
+                    || txtHargaBeli.getText().trim().isEmpty()
+                    || txtMerk.getText().trim().isEmpty()
+                    || txtUkuran.getText().trim().isEmpty()) {
+
+                JOptionPane.showMessageDialog(this,
+                        "Semua field harus diisi",
+                        "Validasi Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Get values from form
+            String namaProduk = txtNamaProduct.getText().trim();
+            int hargaJual = Integer.parseInt(txtHargaJual.getText().trim());
+            int hargaBeli = Integer.parseInt(txtHargaBeli.getText().trim());
+            String merk = txtMerk.getText().trim();
+            String ukuran = txtUkuran.getText().trim();
+
+            // Get gender selection
+            String gender = "";
+            if (rbMale.isSelected()) {
+                gender = "Cowok";
+            } else if (rbFemale.isSelected()) {
+                gender = "Cewek";
+            } else if (rbUnisex.isSelected()) {
+                gender = "Unisex";
+            }
+
+            // Get category and style
+            String category = (String) cbCategory.getSelectedItem();
+            String styleId = currentStyleIds[currentStyleIndex];
+
+            // Create SQL statement for updating the product
+            String sql = "UPDATE produk SET "
+                    + "nama_produk = ?, "
+                    + "harga_jual = ?, "
+                    + "harga_beli = ?, "
+                    + "merk = ?, "
+                    + "size = ?, "
+                    + "gender = ?, "
+                    + "jenis_produk = ?, "
+                    + "id_style = ? ";
+
+            // Check if we need to update the image
+            if (displayedImage != null) {
+                sql += ", gambar = ? ";
+            }
+
+            sql += "WHERE id_produk = ?";
+
+            try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                // Set values in prepared statement
+                stmt.setString(1, namaProduk);
+                stmt.setInt(2, hargaJual);
+                stmt.setInt(3, hargaBeli);
+                stmt.setString(4, merk);
+                stmt.setString(5, ukuran);
+                stmt.setString(6, gender);
+                stmt.setString(7, category);
+                stmt.setString(8, styleId);
+
+                int paramIndex = 9;
+
+                // Handle image if it exists
+                if (displayedImage != null) {
+                    // Convert ImageIcon to byte array
+                    Image img = ((ImageIcon) displayedImage).getImage();
+                    BufferedImage bufferedImage = new BufferedImage(
+                            img.getWidth(null),
+                            img.getHeight(null),
+                            BufferedImage.TYPE_INT_RGB
+                    );
+
+                    Graphics g = bufferedImage.createGraphics();
+                    g.drawImage(img, 0, 0, null);
+                    g.dispose();
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ImageIO.write(bufferedImage, "jpg", baos);
+                    byte[] imageBytes = baos.toByteArray();
+
+                    stmt.setBytes(paramIndex++, imageBytes);
+                }
+
+                // Set product ID as the last parameter
+                stmt.setString(paramIndex, kode);
+
+                // Execute update
+                int rowsAffected = stmt.executeUpdate();
+
+                if (rowsAffected > 0) {
+                    // Update stock if necessary (if stock value changed)
+                    updateStockIfNeeded();
+
+                    JOptionPane.showMessageDialog(this,
+                            "Produk berhasil diupdate",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
+
+                    // Optionally refresh the form or close it
+                    // refreshForm(); or dispose();
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Gagal mengupdate produk",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Harga harus berupa angka",
+                    "Validasi Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Database error: " + e.getMessage(),
+                    "SQL Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void updateStockIfNeeded() {
+        try {
+            int newStock = Integer.parseInt(txtStok.getText().trim());
+
+            // Get current stock from database
+            String sqlGetStock = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
+            try (PreparedStatement stmt = con.prepareStatement(sqlGetStock)) {
+                stmt.setString(1, kode);
+                ResultSet rs = stmt.executeQuery();
+
+                int currentStock = 0;
+                if (rs.next()) {
+                    currentStock = rs.getInt("produk_sisa");
+                }
+
+                // If stock value changed, add a new entry in kartu_stok
+                if (newStock != currentStock) {
+                    String sqlInsertStock = "INSERT INTO kartu_stok (id_produk, tanggal_transaksi, produk_masuk, produk_keluar, produk_sisa) "
+                            + "VALUES (?, NOW(), ?, ?, ?)";
+
+                    try (PreparedStatement stmtInsert = con.prepareStatement(sqlInsertStock)) {
+                        stmtInsert.setString(1, kode);
+
+                        int produkMasuk = 0;
+                        int produkKeluar = 0;
+
+                        if (newStock > currentStock) {
+                            produkMasuk = newStock - currentStock;
+                        } else {
+                            produkKeluar = currentStock - newStock;
+                        }
+
+                        stmtInsert.setInt(2, produkMasuk);
+                        stmtInsert.setInt(3, produkKeluar);
+                        stmtInsert.setInt(4, newStock);
+
+                        stmtInsert.executeUpdate();
+                    }
+                }
+            }
+        } catch (NumberFormatException e) {
+            // Handle invalid stock number
+            JOptionPane.showMessageDialog(this,
+                    "Stok harus berupa angka",
+                    "Validasi Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
