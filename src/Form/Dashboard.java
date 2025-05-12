@@ -362,8 +362,11 @@ public class Dashboard extends JPanel {
 //            e.printStackTrace();
 //        }
         // Fix button position and size
-        JButton barangTelarisCekButton = createRegularButton("CEK BARANG", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        JButton barangTelarisCekButton = createRegularButton("BARANG TERLARIS", new Dimension(330, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         barangTelarisCekButton.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTelarisCekButton);
+            PopUp_DashboardOwnerBarangTerlaris popUpLupaPassword = new PopUp_DashboardOwnerBarangTerlaris(parentFrame);
+            popUpLupaPassword.setVisible(true);
             System.out.println("Cek Barang Telaris");
         });
 

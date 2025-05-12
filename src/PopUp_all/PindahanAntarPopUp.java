@@ -24,33 +24,37 @@ public class PindahanAntarPopUp {
     }
 
     public static void repositionAllPopups() {
-        if (activePopups.isEmpty()) return;
+        if (activePopups.isEmpty()) {
+            return;
+        }
 
         // Cari popup dengan class yang sama
         for (int i = 0; i < activePopups.size(); i++) {
             JDialog currentPopup = activePopups.get(i);
-            
+
             // Skip jika popup pertama (indeks 0)
-            if (i == 0) continue;
-            
+            if (i == 0) {
+                continue;
+            }
+
             // Cek apakah popup sebelumnya berbeda class
-            JDialog previousPopup = activePopups.get(i-1);
+            JDialog previousPopup = activePopups.get(i - 1);
             if (!currentPopup.getClass().equals(previousPopup.getClass())) {
                 try {
                     // Dapatkan posisi Y popup sebelumnya
                     int prevY = previousPopup.getY();
                     int prevHeight = previousPopup.getHeight();
-                    
+
                     // Geser popup saat ini ke bawah popup sebelumnya
-                    int newY = prevY + prevHeight + 10; 
-                    
+                    int newY = prevY + prevHeight + 10;
+
                     // Set posisi baru
                     currentPopup.setLocation(currentPopup.getX(), newY);
-                    
+
                     // Jika popup memiliki method setLocationOnClose, update juga
                     try {
                         Method setLocationMethod = currentPopup.getClass().getDeclaredMethod(
-                            "setLocationOnClose", int.class, int.class);
+                                "setLocationOnClose", int.class, int.class);
                         if (setLocationMethod != null) {
                             setLocationMethod.invoke(currentPopup, currentPopup.getX(), newY);
                         }
@@ -84,6 +88,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showSuksesBayarTransjual(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -104,6 +109,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showScanProdukTerlebihDahulu(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -124,6 +130,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showTidakAdaItemYangDibeli(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -144,6 +151,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showMasukkanUangTerlebihDahulu(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -164,6 +172,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showMasukkanBarangTerlebihDahulu(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -184,6 +193,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showProdukTidakDitemukan(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -204,6 +214,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showStrukBerhasilDicetak(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -224,6 +235,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showProdukBerhasilDihapus(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -244,6 +256,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showProdukBerhasilDiedit(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -264,6 +277,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showMasukSebagaiOwner(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -284,6 +298,7 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+
     public static void showMasukSebagaiKasir(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
@@ -304,7 +319,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showTambahKaryawanTIdakBolehKosong(JFrame parent) {
+
+    public static void showTambahKaryawanTIdakBolehKosong(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUpSmall_TambahKaryawanTidakBolehKosong popup = new PopUpSmall_TambahKaryawanTidakBolehKosong(parent) {
@@ -324,7 +340,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showTambahKaryawanEmailHarusBenarPenulisannya(JFrame parent) {
+
+    public static void showTambahKaryawanEmailHarusBenarPenulisannya(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_TambahKaryawanEmailHarusSesuai popup = new PopUp_TambahKaryawanEmailHarusSesuai(parent) {
@@ -344,7 +361,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditKaryawanSuksesDiEdit(JFrame parent) {
+
+    public static void showEditKaryawanSuksesDiEdit(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditKaryawanSuksesDiEdit popup = new PopUp_SmallEditKaryawanSuksesDiEdit(parent) {
@@ -364,7 +382,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showHapuskaryawanSuksesDiHapus(JFrame parent) {
+
+    public static void showHapuskaryawanSuksesDiHapus(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallHapusKaryawanSuksesDihapus popup = new PopUp_SmallHapusKaryawanSuksesDihapus(parent) {
@@ -384,7 +403,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showTambahKaryawanBerhasilDiTambah(JFrame parent) {
+
+    public static void showTambahKaryawanBerhasilDiTambah(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallTambahKaryawanBerhasilDiTambah popup = new PopUp_SmallTambahKaryawanBerhasilDiTambah(parent) {
@@ -404,7 +424,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showTambahKaryawanNomorTeleponTidakValid(JFrame parent) {
+
+    public static void showTambahKaryawanNomorTeleponTidakValid(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallTambahKaryawanNomorTeleponTidakVAlid popup = new PopUp_SmallTambahKaryawanNomorTeleponTidakVAlid(parent) {
@@ -424,7 +445,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditDataKaryawanNamaTidakLebihDari30karakter(JFrame parent) {
+
+    public static void showEditDataKaryawanNamaTidakLebihDari30karakter(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditDataKaryawanNamaTidakBolehLebihDari30Karakter popup = new PopUp_SmallEditDataKaryawanNamaTidakBolehLebihDari30Karakter(parent) {
@@ -444,7 +466,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditDataKaryawanEmailTidakLebihDari30karakter(JFrame parent) {
+
+    public static void showEditDataKaryawanEmailTidakLebihDari30karakter(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditDataKaryawanEmailTidakBolehLebihDari30Karakter popup = new PopUp_SmallEditDataKaryawanEmailTidakBolehLebihDari30Karakter(parent) {
@@ -464,7 +487,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditDataKaryawanPassswordTidakLebihDari20karakter(JFrame parent) {
+
+    public static void showEditDataKaryawanPassswordTidakLebihDari20karakter(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari20Karakter popup = new PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari20Karakter(parent) {
@@ -484,7 +508,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditDataKaryawanNoTlpHarusBerupaAngka(JFrame parent) {
+
+    public static void showEditDataKaryawanNoTlpHarusBerupaAngka(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditDataKaryawanNoTlpHarusBerupaAngka popup = new PopUp_SmallEditDataKaryawanNoTlpHarusBerupaAngka(parent) {
@@ -504,7 +529,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showEditDataKaryawanPassswordTidakLebihDari13karakter(JFrame parent) {
+
+    public static void showEditDataKaryawanPassswordTidakLebihDari13karakter(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari13Karakter popup = new PopUp_SmallEditDataKaryawanPAsswordTidakBolehLebihDari13Karakter(parent) {
@@ -524,7 +550,8 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showGajiKaryawanSuksesBayarGaji(JFrame parent) {
+
+    public static void showGajiKaryawanSuksesBayarGaji(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_GajiKAryawanSuksesBayarGaji popup = new PopUp_GajiKAryawanSuksesBayarGaji(parent) {
@@ -544,10 +571,295 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
-        public static void showDataKaryawanNoRFIDTIdakBolehLebihDari16(JFrame parent) {
+
+    public static void showDataKaryawanNoRFIDTIdakBolehLebihDari16(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
             // Buat popup password salah
             PopUp_SmallDataKaryawanNoRFIDTIdakBolehLebihDari16 popup = new PopUp_SmallDataKaryawanNoRFIDTIdakBolehLebihDari16(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+
+    public static void showTambahProdukNamaTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukNamaProdukTidakBolehKosong popup = new PopUp_SmallTambahProdukNamaProdukTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+
+    public static void showTambahProdukHargaJualTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukHargaJualTidakBolehKosong popup = new PopUp_SmallTambahProdukHargaJualTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+
+    public static void showTambahProdukHargaBeliTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukHargaBeliTidakBolehKosong popup = new PopUp_SmallTambahProdukHargaBeliTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+
+    public static void showTambahProdukUkuranTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukUkuranTidakBolehKosong popup = new PopUp_SmallTambahProdukUkuranTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukStokTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukStokTidakBolehKosong popup = new PopUp_SmallTambahProdukStokTidakBolehKosong(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukPilihKategoriDulu(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukPilihCategoryTerlebihDahulu popup = new PopUp_SmallTambahProdukPilihCategoryTerlebihDahulu(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukHargaJualLebihDari0(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukHargaJualHaruslebihDari0 popup = new PopUp_SmallTambahProdukHargaJualHaruslebihDari0(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukHargaBeliLebihDari0(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukHargaBeliHaruslebihDari0 popup = new PopUp_SmallTambahProdukHargaBeliHaruslebihDari0(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukhargaJualHarusLebihDariHargaBeli(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukhargaJualHarusLebihDariHargaBeli popup = new PopUp_SmallTambahProdukhargaJualHarusLebihDariHargaBeli(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukStokTidakBolehNegatif(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukStokTidakBolehNegatif popup = new PopUp_SmallTambahProdukStokTidakBolehNegatif(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukHargaDanStokHarusBerupaAngka(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukHargaDanStokHarusBerupaAngkaYgValid popup = new PopUp_SmallTambahProdukHargaDanStokHarusBerupaAngkaYgValid(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukBerhasilDiTambahkan(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukBerhasilDitambahkan popup = new PopUp_SmallTambahProdukBerhasilDitambahkan(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukGenerateBarcodeTerlebihDahulu(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukSilakanGenerateaBarcodeTerlebihDahulu popup = new PopUp_SmallTambahProdukSilakanGenerateaBarcodeTerlebihDahulu(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTambahProdukMerkTidakBolehKosong(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTambahProdukMerkTidakBolehKosong popup = new PopUp_SmallTambahProdukMerkTidakBolehKosong(parent) {
                 @Override
                 public void setVisible(boolean visible) {
                     if (visible) {

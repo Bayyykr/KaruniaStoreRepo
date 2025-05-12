@@ -297,6 +297,9 @@ public class DashboardKasir extends JPanel {
         // Fix the position and size of the report button
         JButton reportButton = createRegularButton("BARANG TERLARIS", new Dimension(330, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         reportButton.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(reportButton);
+            PopUp_DashboardKaryawanBarangTerlaris popUpLupaPassword = new PopUp_DashboardKaryawanBarangTerlaris(parentFrame);
+            popUpLupaPassword.setVisible(true);
             System.out.println("ini button barang terlaris");
         });
 

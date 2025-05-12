@@ -5,28 +5,27 @@ import SourceCode.ScrollPane;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import SourceCode.SidebarCustom.Menu;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import SourceCode.PopUp_transbelihapusdata;
-import SourceCode.PopUp_edittransbeli;
 import SourceCode.JTableRounded;
+import java.awt.geom.Path2D;
 import java.math.BigInteger;
 
 public class Transaksibeli extends JPanel {
 
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
-    private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, totalField;
+    private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, sizeProduk;
     private JPanel thisPanel;
     private JTableRounded roundedTable;
     private JButton btnClear, btnTambahBarang, btnCheckout;
+    private JLabel totalValueLabel;
 
     public Transaksibeli() {
         thisPanel = this;
@@ -54,52 +53,31 @@ public class Transaksibeli extends JPanel {
 
         // Label Transaksi Beli - posisi tetap
         JLabel transaksiLabel = new JLabel("Transaksi Beli");
-        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        transaksiLabel.setBounds(30, 30, 200, 30);
+        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        transaksiLabel.setBounds(30, 50, 250, 30);
         mainPanel.add(transaksiLabel);
 
+        // Field Tanggal otomatis - disesuaikan sedikit ke kanan
         JTextField dateField = createRoundedTextField(850, 30, 180, 30);
         dateField.setText(getCurrentDate());
         dateField.setEditable(false);
+        dateField.setFocusable(false);
+        dateField.setBounds(835, 30, 200, 30);
         dateField.setBackground(new Color(200, 200, 200));
         mainPanel.add(dateField);
 
-        // Search field - diperlebar sedikit
-        JTextField searchField = createRoundedTextField(30, 70, 280, 35);
-        searchField.setText("Search");
-        searchField.setForeground(Color.BLACK);
-        searchField.setBackground(new Color(200, 200, 200));
-        searchField.addFocusListener(new FocusListener() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (searchField.getText().equals("Search")) {
-                    searchField.setText("");
-                    searchField.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (searchField.getText().isEmpty()) {
-                    searchField.setText("Search");
-                    searchField.setForeground(Color.BLACK);
-                }
-            }
-        });
-        mainPanel.add(searchField);
-
         // Membuat rounded table dengan JTableRounded - diperlebar untuk mengisi space
         String[] columns = {"No", "Kode Produk", "Nama Produk", "Size", "Harga Satuan", "Qty", "Total", "Aksi"};
-        roundedTable = new JTableRounded(columns, 750, 450);
+        roundedTable = new JTableRounded(columns, 750, 445);
 
         // Mengatur lebar tiap kolom yang lebih proporsional
         roundedTable.setColumnWidth(0, 40);   // No
-        roundedTable.setColumnWidth(1, 100);  // Kode Produk (reduced from 120)
-        roundedTable.setColumnWidth(2, 170);  // Nama Produk (reduced from 180)
-        roundedTable.setColumnWidth(3, 45);   // Size
-        roundedTable.setColumnWidth(4, 120);  // Harga Satuan (reduced from 130)
+        roundedTable.setColumnWidth(1, 100);  // Kode Produk
+        roundedTable.setColumnWidth(2, 170);  // Nama Produk
+        roundedTable.setColumnWidth(3, 50);   // Size
+        roundedTable.setColumnWidth(4, 120);  // Harga Satuan
         roundedTable.setColumnWidth(5, 50);   // Qty
-        roundedTable.setColumnWidth(6, 120);  // Total (reduced from 130)
+        roundedTable.setColumnWidth(6, 120);  // Total
         roundedTable.setColumnWidth(7, 80);   // Aksi
 
         // Mendapatkan JTable dari JTableRounded untuk kustomisasi lanjutan
@@ -116,10 +94,10 @@ public class Transaksibeli extends JPanel {
 
         // Mengatur model tabel untuk menyesuaikan dengan JTableRounded
         DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-        tableModel.setRowCount(0);
+        tableModel.setRowCount(0); // Hapus semua baris yang mungkin sudah ada
 
         ScrollPane scrollPane = new ScrollPane(table);
-        scrollPane.setBounds(30, 120, 750, 480); // Diperlebar dan diperpanjang
+        scrollPane.setBounds(20, 120, 750, 445); // Diperlebar dan diperpanjang
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         scrollPane.setThumbColor(new Color(80, 80, 80, 180)); // Darker, more opaque scrollbar thumb
         scrollPane.setTrackColor(new Color(240, 240, 240, 80)); // Lighter track
@@ -128,14 +106,12 @@ public class Transaksibeli extends JPanel {
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        // Add the scrollPane to the main panel
         mainPanel.add(scrollPane);
 
         // Cell renderer - make panels transparent and icons larger
         table.getColumnModel().getColumn(7).setCellRenderer(new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
                 JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 3));
                 panel.setPreferredSize(new Dimension(80, 30)); // Lebih lebar untuk tombol
                 panel.setOpaque(false);
@@ -223,10 +199,7 @@ public class Transaksibeli extends JPanel {
                 currentRow = row;
                 isPushed = true;
 
-                // Create a completely transparent panel 
-                // Mengubah padding vertikal dari 5 menjadi 2 agar button posisinya lebih ke atas
                 panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 3)) {
-                    // Override paintComponent untuk memastikan panel transparan
                     @Override
                     protected void paintComponent(Graphics g) {
                         g.setColor(new Color(0, 0, 0, 0));
@@ -234,11 +207,10 @@ public class Transaksibeli extends JPanel {
                         super.paintComponent(g);
                     }
                 };
-                panel.setPreferredSize(new Dimension(80, 30)); // Sesuaikan dengan lebar kolom
+                panel.setPreferredSize(new Dimension(80, 30));
                 panel.setOpaque(false);
                 panel.setBackground(new Color(0, 0, 0, 0));
 
-                // Prepare icons - same as renderer
                 ImageIcon originalIconEdit = new ImageIcon(getClass().getResource("/SourceImage/edit_icon.png"));
                 ImageIcon originalIconDelete = new ImageIcon(getClass().getResource("/SourceImage/hapus_icon.png"));
 
@@ -248,46 +220,37 @@ public class Transaksibeli extends JPanel {
                 ImageIcon scaledIconEdit = new ImageIcon(scaledImageEdit);
                 ImageIcon scaledIconDelete = new ImageIcon(scaledImageDelete);
 
-                // Create the edit button dengan custom renderer yang menangani semua state
                 btnEdit = new JButton() {
                     @Override
                     protected void paintComponent(Graphics g) {
                         Graphics2D g2 = (Graphics2D) g.create();
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                        // Selalu gunakan warna yang sama apapun state tombol
                         g2.setColor(new Color(255, 187, 85));
                         g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-
-                        // Lanjutkan dengan rendering icon
                         super.paintComponent(g2);
                         g2.dispose();
                     }
 
-                    // Tidak mengubah appearance saat pressed
                     @Override
                     public void setPressedIcon(Icon icon) {
                         // Do nothing - keep the same appearance
                     }
 
-                    // Override UI delegate methods to prevent default look and feel
                     @Override
                     public void updateUI() {
                         super.updateUI();
-                        // Restore custom appearance after UI update
                         setContentAreaFilled(false);
                         setBorderPainted(false);
                         setFocusPainted(false);
                     }
 
-                    // Override isFocusable untuk mencegah fokus
                     @Override
                     public boolean isFocusable() {
                         return false;
                     }
                 };
                 btnEdit.setIcon(scaledIconEdit);
-                btnEdit.setPreferredSize(new Dimension(30, 26)); // Sedikit lebih besar
+                btnEdit.setPreferredSize(new Dimension(30, 26));
                 btnEdit.setHorizontalAlignment(SwingConstants.CENTER);
                 btnEdit.setVerticalAlignment(SwingConstants.CENTER);
                 btnEdit.setVerticalTextPosition(SwingConstants.CENTER);
@@ -301,59 +264,47 @@ public class Transaksibeli extends JPanel {
                 btnEdit.setName("edit");
                 btnEdit.setBackground(new Color(255, 187, 85));
 
-                // Action for Edit button
                 btnEdit.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        stopCellEditing(); // Hentikan editing sebelum menampilkan dialog
-                        // Use SwingUtilities to find the parent frame
+                        stopCellEditing();
                         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                         PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
                         dialog.setVisible(true);
-                        // fireEditingStopped sudah dipanggil oleh stopCellEditing()
                     }
                 });
 
-                // Create the delete button dengan custom renderer yang menangani semua state
                 btnDelete = new JButton() {
                     @Override
                     protected void paintComponent(Graphics g) {
                         Graphics2D g2 = (Graphics2D) g.create();
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                        // Selalu gunakan warna yang sama apapun state tombol
                         g2.setColor(new Color(255, 59, 48));
                         g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-
-                        // Lanjutkan dengan rendering icon
                         super.paintComponent(g2);
                         g2.dispose();
                     }
 
-                    // Tidak mengubah appearance saat pressed
                     @Override
                     public void setPressedIcon(Icon icon) {
                         // Do nothing - keep the same appearance
                     }
 
-                    // Override UI delegate methods to prevent default look and feel
                     @Override
                     public void updateUI() {
                         super.updateUI();
-                        // Restore custom appearance after UI update
                         setContentAreaFilled(false);
                         setBorderPainted(false);
                         setFocusPainted(false);
                     }
 
-                    // Override isFocusable untuk mencegah fokus
                     @Override
                     public boolean isFocusable() {
                         return false;
                     }
                 };
                 btnDelete.setIcon(scaledIconDelete);
-                btnDelete.setPreferredSize(new Dimension(30, 26)); // Sedikit lebih besar
+                btnDelete.setPreferredSize(new Dimension(30, 26));
                 btnDelete.setHorizontalAlignment(SwingConstants.CENTER);
                 btnDelete.setVerticalAlignment(SwingConstants.CENTER);
                 btnDelete.setVerticalTextPosition(SwingConstants.CENTER);
@@ -367,23 +318,18 @@ public class Transaksibeli extends JPanel {
                 btnDelete.setName("delete");
                 btnDelete.setBackground(new Color(255, 59, 48));
 
-                // Action for Delete button
                 btnDelete.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        stopCellEditing(); // Hentikan editing sebelum menampilkan dialog
-                        // Use SwingUtilities to find the parent frame
+                        stopCellEditing();
                         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                         PopUp_transbelihapusdata dialog = new PopUp_transbelihapusdata(parentFrame);
                         dialog.setVisible(true);
-                        // fireEditingStopped sudah dipanggil oleh stopCellEditing()
                     }
                 });
 
-                // Add buttons to panel
                 panel.add(btnEdit);
                 panel.add(btnDelete);
-
                 return panel;
             }
 
@@ -399,46 +345,51 @@ public class Transaksibeli extends JPanel {
             }
         });
 
-        // Panel Form - diposisikan lebih baik di sisi kanan
+       // Panel Form - diposisikan lebih baik di sisi kanan dengan tinggi yang disesuaikan
         JPanel formPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Menggambar latar belakang dengan sudut melengkung 15px
                 g2.setColor(new Color(220, 220, 220, 150));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                g2.setColor(Color.BLACK);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
                 g2.dispose();
             }
         };
-        formPanel.setBounds(800, 120, 235, 480); // Disesuaikan posisi dan ukurannya
-        formPanel.setOpaque(false); // Memastikan transparansi bekerja dengan baik
+        // Tinggi form disesuaikan untuk menampung field Size yang ditambahkan (dari 360 ke 390)
+        formPanel.setBounds(800, 130, 235, 390);
+        formPanel.setOpaque(false);
         mainPanel.add(formPanel);
 
-        // Tambahkan label dan text field dengan jarak yang lebih baik
-        formPanel.add(createLabel("Scan Kode Produk", 15, 25));
-        scanKodeField = createRoundedTextField(15, 50, 205, 35);
-        // Tambahkan key listener untuk memastikan hanya angka yang dapat diinput
+        // Jarak antar komponen lebih dipadatkan
+        formPanel.add(createLabel("Scan Kode Produk", 15, 10));
+        scanKodeField = createRoundedTextField(15, 30, 205, 30);
         scanKodeField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
-                // Hanya menerima digit angka dan tombol kontrol (backspace, delete, dll)
                 if (!Character.isDigit(c) && !Character.isISOControl(c)) {
-                    e.consume(); // Mengabaikan karakter yang bukan angka
+                    e.consume();
                 }
             }
         });
         formPanel.add(scanKodeField);
 
-        formPanel.add(createLabel("Nama Produk", 15, 95));
-        namaProduk = createRoundedTextField(15, 120, 205, 35);
+        formPanel.add(createLabel("Nama Produk", 15, 65));
+        namaProduk = createRoundedTextField(15, 85, 205, 30);
         formPanel.add(namaProduk);
+        
+        formPanel.add(createLabel("Size", 15, 120));
+        sizeProduk = createRoundedTextField(15, 140, 205, 30);
+        formPanel.add(sizeProduk);
 
-        formPanel.add(createLabel("Harga Beli", 15, 165));
-        hargaBeliField = createRoundedTextField(15, 190, 205, 35);
-        hargaBeliField.setText("Rp. "); // Prefix "Rp. "
+        formPanel.add(createLabel("Harga Beli", 15, 175));
+        hargaBeliField = createRoundedTextField(15, 195, 205, 30);
+        hargaBeliField.setText("Rp. ");
         hargaBeliField.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
                 enforceRpPrefix();
@@ -448,32 +399,27 @@ public class Transaksibeli extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) { // Jika tombol Enter ditekan
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     String hargaInput = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
-                    System.out.println(hargaInput); // Output hanya angka
+                    System.out.println(hargaInput);
                 }
             }
         });
         formPanel.add(hargaBeliField);
 
-        formPanel.add(createLabel("Qty", 15, 235));
-        qtyField = createRoundedTextField(15, 260, 60, 35);
-        // Modifikasi key listener untuk membatasi input hanya angka dan maksimal 3 digit
+        formPanel.add(createLabel("Qty", 15, 230));
+        qtyField = createRoundedTextField(15, 250, 60, 30);
         qtyField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
                 char c = e.getKeyChar();
                 String currentText = qtyField.getText().replace(".", "");
-
-                // Hanya menerima digit angka dan tombol kontrol
                 if (!Character.isDigit(c) && !Character.isISOControl(c)) {
-                    e.consume(); // Mengabaikan karakter yang bukan angka
+                    e.consume();
                     return;
                 }
-
-                // Jika sudah 3 digit dan bukan tombol kontrol, tolak input
                 if (currentText.length() >= 3 && Character.isDigit(c)) {
-                    e.consume(); // Mengabaikan digit ke-4 dan seterusnya
+                    e.consume();
                 }
             }
 
@@ -485,26 +431,221 @@ public class Transaksibeli extends JPanel {
         });
         formPanel.add(qtyField);
 
-        formPanel.add(createLabel("Total", 15, 305));
-        totalField = createRoundedTextField(15, 330, 205, 35);
-        totalField.setEditable(false);
-        formPanel.add(totalField);
+        // Posisi tombol Clear dan Tambah disesuaikan
+        btnClear = new JButton("CLEAR") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(255, 59, 48)); // Warna merah
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
 
-        // Membuat tombol dengan border 1px tanpa mengubah createRoundedButton
-        btnClear = createRoundedButtonWithThickBorder("Clear", 15, 385, 95, 35, new Color(255, 59, 48));
+                g2.setColor(Color.black);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
 
-        btnTambahBarang = createRoundedButtonWithThickBorder("Tambah Barang", 120, 385, 100, 35, new Color(0, 107, 214));
-        btnTambahBarang.addActionListener(e -> {
-            addItemToTable();
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                // No border
+            }
+        };
+        btnClear.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                btnClear.setLocation(btnClear.getX(), btnClear.getY() + 2);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                btnClear.setLocation(btnClear.getX(), btnClear.getY() - 2);
+            }
+        });
+        btnClear.setBounds(15, 290, 100, 35);
+        btnClear.setOpaque(false);
+        btnClear.setContentAreaFilled(false);
+        btnClear.setBorderPainted(false);
+        btnClear.setForeground(Color.WHITE);
+        btnClear.setFont(new Font("Arial", Font.BOLD, 14));
+        btnClear.setFocusPainted(false);
+        btnClear.addActionListener(e -> {
+            scanKodeField.setText("");
+            namaProduk.setText("");
+            sizeProduk.setText("");
+            hargaBeliField.setText("Rp. ");
+            qtyField.setText("");
+        });
+        formPanel.add(btnClear);
+
+        // Posisi tombol Tambah Barang disesuaikan
+        btnTambahBarang = new JButton("TAMBAH") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0, 122, 255)); // Warna biru
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+
+                g2.setColor(Color.black);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                // No border
+            }
+        };
+        btnTambahBarang.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                btnTambahBarang.setLocation(btnTambahBarang.getX(), btnTambahBarang.getY() + 2);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                btnTambahBarang.setLocation(btnTambahBarang.getX(), btnTambahBarang.getY() - 2);
+            }
+        });
+        btnTambahBarang.setBounds(120, 290, 100, 35);
+        btnTambahBarang.setOpaque(false);
+        btnTambahBarang.setContentAreaFilled(false);
+        btnTambahBarang.setBorderPainted(false);
+        btnTambahBarang.setForeground(Color.WHITE);
+        btnTambahBarang.setFont(new Font("Arial", Font.BOLD, 14));
+        btnTambahBarang.setFocusPainted(false);
+        btnTambahBarang.addActionListener(e -> addItemToTable());
+        formPanel.add(btnTambahBarang);
+
+        // Panel total disesuaikan 
+        JPanel totalPanel = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(60, 63, 65));
+
+                int width = getWidth();
+                int height = getHeight();
+                int arcWidth = 15;
+                int arcHeight = 15;
+
+                Path2D path = new Path2D.Float();
+                path.moveTo(0, 0);
+                path.lineTo(width, 0);
+                path.lineTo(width, height - arcHeight);
+                path.quadTo(width, height, width - arcWidth, height);
+                path.lineTo(arcWidth, height);
+                path.quadTo(0, height, 0, height - arcHeight);
+                path.closePath();
+
+                Path2D borderPath = new Path2D.Float();
+                borderPath.moveTo(0, 0);
+                borderPath.lineTo(width - 1, 0);
+                borderPath.lineTo(width - 1, height - arcHeight);
+                borderPath.quadTo(width - 1, height - 1, width - arcWidth, height - 1);
+                borderPath.lineTo(arcWidth, height - 1);
+                borderPath.quadTo(0, height - 1, 0, height - arcHeight);
+                borderPath.closePath();
+
+                g2.setColor(Color.BLACK);
+                g2.setStroke(new BasicStroke(3.0f));
+                g2.draw(borderPath);
+
+                g2.fill(path);
+                g2.dispose();
+            }
+        };
+        totalPanel.setBounds(0, 330, 235, 60);
+        totalPanel.setOpaque(false);
+        formPanel.add(totalPanel);
+
+        JLabel totalLabel = new JLabel("Total");
+        totalLabel.setForeground(Color.WHITE);
+        totalLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
+        totalLabel.setBounds(20, -45, 80, 140);
+        totalPanel.add(totalLabel);
+
+        totalValueLabel = new JLabel("Rp. ");
+        totalValueLabel.setForeground(Color.WHITE);
+        totalValueLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
+        totalValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        totalValueLabel.setBounds(80, -45, 140, 140);
+        totalPanel.add(totalValueLabel);
+
+        // Posisi tombol checkout disesuaikan
+        btnCheckout = new JButton("CHECKOUT") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(52, 199, 89));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+
+                g2.setColor(Color.black);
+                g2.setStroke(new BasicStroke(1.0f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                // No border
+            }
+        };
+        // Posisi tombol checkout disesuaikan dengan panel form yang baru
+        btnCheckout.setBounds(800, 530, 235, 40);
+        btnCheckout.setOpaque(false);
+        btnCheckout.setContentAreaFilled(false);
+        btnCheckout.setBorderPainted(false);
+        btnCheckout.setForeground(Color.WHITE);
+        btnCheckout.setFont(new Font("Arial", Font.BOLD, 14));
+        btnCheckout.setFocusPainted(false);
+        btnCheckout.addActionListener(e -> {
+            // Check if there are items in the table
+            DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+            if (model.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(thisPanel, "Tidak ada item yang ditambahkan", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            
+            // Show confirmation dialog
+            int option = JOptionPane.showConfirmDialog(thisPanel, 
+                    "Konfirmasi checkout transaksi pembelian?", 
+                    "Konfirmasi", 
+                    JOptionPane.YES_NO_OPTION);
+            
+            if (option == JOptionPane.YES_OPTION) {
+                // Clear the table after checkout
+                model.setRowCount(0);
+                totalValueLabel.setText("Rp. ");
+                JOptionPane.showMessageDialog(thisPanel, "Transaksi pembelian berhasil dicatat", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            }
         });
 
-        btnCheckout = createRoundedButtonWithThickBorder("Checkout", 15, 430, 205, 35, new Color(52, 199, 89));
+        btnCheckout.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                btnCheckout.setLocation(btnCheckout.getX(), btnCheckout.getY() + 2);
+            }
 
-        // Menambahkan tombol ke formPanel
-        formPanel.add(btnClear);
-        formPanel.add(btnTambahBarang);
-        formPanel.add(btnCheckout);
-    }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                btnCheckout.setLocation(btnCheckout.getX(), btnCheckout.getY() - 2);
+            }
+        });
+
+        mainPanel.add(btnCheckout);
+    } 
 
     private void formatQty() {
         try {
@@ -514,7 +655,7 @@ public class Transaksibeli extends JPanel {
             }
 
             int value = Integer.parseInt(text);
-            qtyField.setText(formatter.format(value)); // Format ribuan dengan separator titik
+            qtyField.setText(formatter.format(value));
         } catch (NumberFormatException e) {
             qtyField.setText("");
         }
@@ -538,17 +679,16 @@ public class Transaksibeli extends JPanel {
         try {
             String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
             if (hargaText.isEmpty() || qtyField.getText().isEmpty()) {
-                totalField.setText("");
                 return;
             }
 
             BigInteger harga = new BigInteger(hargaText);
-            BigInteger qty = new BigInteger(qtyField.getText());
+            BigInteger qty = new BigInteger(qtyField.getText().replace(".", ""));
 
             BigInteger total = harga.multiply(qty);
-            totalField.setText("Rp. " + formatter.format(total));
+            totalValueLabel.setText("Rp. " + formatter.format(total));
         } catch (NumberFormatException e) {
-            totalField.setText("");
+            totalValueLabel.setText("Rp. ");
         }
     }
 
@@ -577,122 +717,14 @@ public class Transaksibeli extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Background dengan sudut melengkung
                 g2.setColor(Color.WHITE);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
-
-                // Border
                 g2.setColor(Color.GRAY);
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius);
-
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-    }
-
-    private JButton createRoundedButton(String text, int x, int y, int width, int height, Color bgColor) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Warna latar dengan sudut melengkung
-                g2.setColor(getModel().isPressed() ? bgColor.darker() : bgColor); // Lebih gelap saat ditekan
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-
-                g2.dispose();
-                super.paintComponent(g); // Pastikan teks tetap terlihat
-            }
-
-            @Override
-            protected void paintBorder(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                g2.setStroke(new BasicStroke(0)); // Ketebalan border
-                g2.setColor(Color.BLACK);
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
-                g2.dispose();
-            }
-        };
-
-        button.setBounds(x, y, width, height);
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setFocusPainted(false);
-
-        // Efek hover dan klik
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                button.setLocation(button.getX(), button.getY() + 2); // Tombol turun sedikit
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                button.setLocation(button.getX(), button.getY() - 2); // Kembali ke posisi semula
-            }
-        });
-
-        return button;
-    }
-
-    private JButton createRoundedButtonWithThickBorder(String text, int x, int y, int width, int height, Color bgColor) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Mengubah warna tombol menjadi putih saat tombol ditekan
-                Color buttonColor = bgColor; // Menjadi putih jika ditekan
-                g2.setColor(buttonColor); // Warna latar belakang tombol
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-
-                g2.dispose();
-                super.paintComponent(g); // Pastikan teks tetap terlihat
-            }
-
-            @Override
-            protected void paintBorder(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                g2.setStroke(new BasicStroke(1)); // Ketebalan border 1px
-                g2.setColor(Color.BLACK); // Warna border hitam
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
-                g2.dispose();
-            }
-        };
-
-        button.setBounds(x, y, width, height);
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setFocusPainted(false);
-
-        // Efek hover dan klik
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                button.setLocation(button.getX(), button.getY() + 2); // Tombol turun sedikit
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                button.setLocation(button.getX(), button.getY() - 2); // Kembali ke posisi semula
-            }
-        });
-
-        return button;
     }
 
     private JLabel createLabel(String text, int x, int y) {
@@ -702,13 +734,63 @@ public class Transaksibeli extends JPanel {
     }
 
     private void addItemToTable() {
-        String kodeProduk = scanKodeField.getText();
-        String produkName = namaProduk.getText();
-        String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
-        int harga = Integer.parseInt(hargaText);
-        int qty = Integer.parseInt(qtyField.getText());
-        
-        
+    String kodeProduk = scanKodeField.getText();
+    String produkName = namaProduk.getText();
+    String size = sizeProduk.getText(); // Get the size value
+    String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+    
+    if (kodeProduk.isEmpty() || produkName.isEmpty() || hargaText.isEmpty() || qtyField.getText().isEmpty()) {
+        JOptionPane.showMessageDialog(thisPanel, "Harap lengkapi semua field", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        return;
     }
 
+    try {
+        int harga = Integer.parseInt(hargaText);
+        int qty = Integer.parseInt(qtyField.getText().replace(".", ""));
+        int total = harga * qty;
+
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        int rowCount = model.getRowCount() + 1;
+
+        model.addRow(new Object[]{
+            rowCount,
+            kodeProduk,
+            produkName,
+            size, // Add the size value to the table
+            "Rp. " + formatter.format(harga),
+            formatter.format(qty),
+            "Rp. " + formatter.format(total),
+            "" // Action column
+        });
+
+        // Clear fields after adding
+        scanKodeField.setText("");
+        namaProduk.setText("");
+        sizeProduk.setText(""); // Clear the size field
+        hargaBeliField.setText("Rp. ");
+        qtyField.setText("");
+        
+        // Update total
+        updateTotalAmount();
+        
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(thisPanel, "Format harga atau qty tidak valid", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+    
+    private void updateTotalAmount() {
+        double totalAmount = 0;
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "").replace(",", "");
+            try {
+                totalAmount += Double.parseDouble(totalStr);
+            } catch (NumberFormatException ex) {
+                System.err.println("Error parsing total amount: " + ex.getMessage());
+            }
+        }
+
+        totalValueLabel.setText("Rp. " + formatter.format(totalAmount));
+    }
 }
