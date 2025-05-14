@@ -19,7 +19,7 @@ public class Main extends JFrame {
     private GajiKaryawan gajikaryawanPanel;
     private AbsenKaryawan absenpanel;
 //    private Laporan laporanPanel;
-    private Transjual transaksiBeli;
+    private Transaksibeli transaksiBeli;
     // Current active panel
     private JPanel currentPanel;
 
@@ -46,7 +46,7 @@ public class Main extends JFrame {
         gajikaryawanPanel = new GajiKaryawan();
         absenpanel = new AbsenKaryawan();
 //        laporanPanel = new Laporan();
-        transaksiBeli = new Transjual();
+        transaksiBeli = new Transaksibeli();
 
         // Set bounds for fixed components
         sidebar.setBounds(0, 0, 260, screenSize.height);

@@ -1070,6 +1070,12 @@ public class Transjual extends JPanel {
                 return;
             }
 
+            int stokTersedia = cekStokProduk(kode);
+            if (stokTersedia <= 0) {
+                JOptionPane.showMessageDialog(this, "Stok produk tidak tersedia", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Get price from hargaBeliField
             String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
             int harga = Integer.parseInt(hargaText);
@@ -1166,8 +1172,30 @@ public class Transjual extends JPanel {
             scanKodeField.requestFocus();
 
         } catch (NumberFormatException ex) {
-
+            ex.printStackTrace();
         }
+    }
+
+    private int cekStokProduk(String kodeProduk) {
+        int stokTersedia = 0;
+
+        try {
+            String query = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, kodeProduk);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                stokTersedia = rs.getInt("produk_sisa");
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            System.err.println("Error saat memeriksa stok produk: " + ex.getMessage());
+        }
+
+        return stokTersedia;
     }
 
     public void updateTotalAmount() {
@@ -1318,8 +1346,8 @@ public class Transjual extends JPanel {
             psHeader.setString(1, transactionId);
 
             // Set tanggal transaksi
-            java.sql.Date currentDate = new java.sql.Date(System.currentTimeMillis());
-            psHeader.setDate(2, currentDate);
+            java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
+            psHeader.setTimestamp(2, currentTimestamp);
 
             // Set nomor referensi
             psHeader.setString(3, norfid);

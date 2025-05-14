@@ -1,5 +1,6 @@
 package Form;
 
+import PopUp_all.PopUp_BayarTransjual;
 import SourceCode.PopUp_edittransbeli;
 import SourceCode.ScrollPane;
 import java.awt.*;
@@ -17,21 +18,32 @@ import SourceCode.PopUp_transbelihapusdata;
 import SourceCode.JTableRounded;
 import java.awt.geom.Path2D;
 import java.math.BigInteger;
+import db.conn;
+import java.sql.*;
 
 public class Transaksibeli extends JPanel {
 
+    Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
-    private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, sizeProduk;
+    private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, sizeProduk, txtIdTransaksi;
     private JPanel thisPanel;
     private JTableRounded roundedTable;
     private JButton btnClear, btnTambahBarang, btnCheckout;
     private JLabel totalValueLabel;
+    private Connection con;
+    private String NoRFID, namaUser;
+    private static final String ID_PREFIX = "TRBL_";
+    private static final int PADDING_LENGTH = 5;
+    private String currentProductSize = "";
 
     public Transaksibeli() {
         thisPanel = this;
         setPreferredSize(new Dimension(1065, 640));
         setLayout(null);
         setBackground(Color.white);
+
+        con = conn.getConnection();
+        setNamaUser();
 
         // Panel utama - menggunakan seluruh area yang tersedia
         JPanel mainPanel = new JPanel(null) {
@@ -66,19 +78,25 @@ public class Transaksibeli extends JPanel {
         dateField.setBackground(new Color(200, 200, 200));
         mainPanel.add(dateField);
 
+        txtIdTransaksi = new JTextField();
+        txtIdTransaksi.setText(generateNextTransaksiId());
+        txtIdTransaksi.setEditable(false);
+        txtIdTransaksi.setBounds(300, 50, 235, 40);
+        txtIdTransaksi.setVisible(false);
+        mainPanel.add(txtIdTransaksi);
+
         // Membuat rounded table dengan JTableRounded - diperlebar untuk mengisi space
-        String[] columns = {"No", "Kode Produk", "Nama Produk", "Size", "Harga Satuan", "Qty", "Total", "Aksi"};
+        String[] columns = {"No", "Nama Produk", "Size", "Harga Satuan", "Qty", "Total", "Aksi"};
         roundedTable = new JTableRounded(columns, 750, 445);
 
         // Mengatur lebar tiap kolom yang lebih proporsional
         roundedTable.setColumnWidth(0, 40);   // No
-        roundedTable.setColumnWidth(1, 100);  // Kode Produk
-        roundedTable.setColumnWidth(2, 170);  // Nama Produk
-        roundedTable.setColumnWidth(3, 50);   // Size
-        roundedTable.setColumnWidth(4, 120);  // Harga Satuan
-        roundedTable.setColumnWidth(5, 50);   // Qty
-        roundedTable.setColumnWidth(6, 120);  // Total
-        roundedTable.setColumnWidth(7, 80);   // Aksi
+        roundedTable.setColumnWidth(1, 220);  // Nama Produk
+        roundedTable.setColumnWidth(2, 50);   // Size
+        roundedTable.setColumnWidth(3, 170);  // Harga Satuan
+        roundedTable.setColumnWidth(4, 50);   // Qty
+        roundedTable.setColumnWidth(5, 120);  // Total
+        roundedTable.setColumnWidth(6, 80);   // Aksi
 
         // Mendapatkan JTable dari JTableRounded untuk kustomisasi lanjutan
         JTable table = roundedTable.getTable();
@@ -87,7 +105,7 @@ public class Transaksibeli extends JPanel {
         table.setFillsViewportHeight(true);
 
         // Menyesuaikan lebar kolom agar lebih proporsional dengan ukuran tabel
-        int[] columnWidths = {40, 100, 170, 50, 120, 45, 120, 80};
+        int[] columnWidths = {40, 170, 50, 120, 45, 120, 80};
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
         }
@@ -109,7 +127,7 @@ public class Transaksibeli extends JPanel {
         mainPanel.add(scrollPane);
 
         // Cell renderer - make panels transparent and icons larger
-        table.getColumnModel().getColumn(7).setCellRenderer(new TableCellRenderer() {
+        table.getColumnModel().getColumn(6).setCellRenderer(new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 3));
@@ -186,7 +204,7 @@ public class Transaksibeli extends JPanel {
         });
 
         // Cell editor - make panels transparent and ensure buttons trigger popups
-        table.getColumnModel().getColumn(7).setCellEditor(new DefaultCellEditor(new JCheckBox()) {
+        table.getColumnModel().getColumn(6).setCellEditor(new DefaultCellEditor(new JCheckBox()) {
             private JPanel panel;
             private JButton btnEdit;
             private JButton btnDelete;
@@ -345,7 +363,7 @@ public class Transaksibeli extends JPanel {
             }
         });
 
-       // Panel Form - diposisikan lebih baik di sisi kanan dengan tinggi yang disesuaikan
+        // Panel Form - diposisikan lebih baik di sisi kanan dengan tinggi yang disesuaikan
         JPanel formPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -368,6 +386,9 @@ public class Transaksibeli extends JPanel {
         // Jarak antar komponen lebih dipadatkan
         formPanel.add(createLabel("Scan Kode Produk", 15, 10));
         scanKodeField = createRoundedTextField(15, 30, 205, 30);
+        scanKodeField.addActionListener(e -> {
+            getDataProduk();
+        });
         scanKodeField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -382,7 +403,7 @@ public class Transaksibeli extends JPanel {
         formPanel.add(createLabel("Nama Produk", 15, 65));
         namaProduk = createRoundedTextField(15, 85, 205, 30);
         formPanel.add(namaProduk);
-        
+
         formPanel.add(createLabel("Size", 15, 120));
         sizeProduk = createRoundedTextField(15, 140, 205, 30);
         formPanel.add(sizeProduk);
@@ -394,7 +415,6 @@ public class Transaksibeli extends JPanel {
             public void keyReleased(KeyEvent e) {
                 enforceRpPrefix();
                 formatHargaBeli();
-                hitungTotal();
             }
 
             @Override
@@ -426,7 +446,6 @@ public class Transaksibeli extends JPanel {
             @Override
             public void keyReleased(KeyEvent e) {
                 formatQty();
-                hitungTotal();
             }
         });
         formPanel.add(qtyField);
@@ -611,25 +630,32 @@ public class Transaksibeli extends JPanel {
         btnCheckout.setFont(new Font("Arial", Font.BOLD, 14));
         btnCheckout.setFocusPainted(false);
         btnCheckout.addActionListener(e -> {
-            // Check if there are items in the table
             DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
             if (model.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(thisPanel, "Tidak ada item yang ditambahkan", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+//                PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
+                System.out.println("tidak ada produk dibeli");
                 return;
             }
-            
-            // Show confirmation dialog
-            int option = JOptionPane.showConfirmDialog(thisPanel, 
-                    "Konfirmasi checkout transaksi pembelian?", 
-                    "Konfirmasi", 
-                    JOptionPane.YES_NO_OPTION);
-            
-            if (option == JOptionPane.YES_OPTION) {
-                // Clear the table after checkout
-                model.setRowCount(0);
-                totalValueLabel.setText("Rp. ");
-                JOptionPane.showMessageDialog(thisPanel, "Transaksi pembelian berhasil dicatat", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-            }
+
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+            final PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+
+            // Tambahkan listener ke tombol OK
+            dialog.addOKButtonActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+//                         Proses transaksi hanya jika OK diklik
+                    if (saveTransactionToDatabase()) {
+                        updateTotalAmount();
+                        txtIdTransaksi.setText(generateNextTransaksiId());
+                        clearTransactionTable();
+                        dialog.startCloseAnimation();
+                    }
+                }
+            });
+
+            // Tampilkan dialog
+            dialog.setVisible(true);
         });
 
         btnCheckout.addMouseListener(new MouseAdapter() {
@@ -645,7 +671,7 @@ public class Transaksibeli extends JPanel {
         });
 
         mainPanel.add(btnCheckout);
-    } 
+    }
 
     private void formatQty() {
         try {
@@ -672,23 +698,6 @@ public class Transaksibeli extends JPanel {
             hargaBeliField.setText("Rp. " + formatter.format(value));
         } catch (NumberFormatException e) {
             hargaBeliField.setText("Rp. ");
-        }
-    }
-
-    private void hitungTotal() {
-        try {
-            String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
-            if (hargaText.isEmpty() || qtyField.getText().isEmpty()) {
-                return;
-            }
-
-            BigInteger harga = new BigInteger(hargaText);
-            BigInteger qty = new BigInteger(qtyField.getText().replace(".", ""));
-
-            BigInteger total = harga.multiply(qty);
-            totalValueLabel.setText("Rp. " + formatter.format(total));
-        } catch (NumberFormatException e) {
-            totalValueLabel.setText("Rp. ");
         }
     }
 
@@ -734,56 +743,92 @@ public class Transaksibeli extends JPanel {
     }
 
     private void addItemToTable() {
-    String kodeProduk = scanKodeField.getText();
-    String produkName = namaProduk.getText();
-    String size = sizeProduk.getText(); // Get the size value
-    String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
-    
-    if (kodeProduk.isEmpty() || produkName.isEmpty() || hargaText.isEmpty() || qtyField.getText().isEmpty()) {
-        JOptionPane.showMessageDialog(thisPanel, "Harap lengkapi semua field", "Peringatan", JOptionPane.WARNING_MESSAGE);
-        return;
+        try {
+            String nama = namaProduk.getText();
+            String kode = scanKodeField.getText();
+            int qty = Integer.parseInt(qtyField.getText());
+            if (kode.isEmpty()) {
+//                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+//                PindahanAntarPopUp.showScanProdukTerlebihDahulu(parentFrame);
+                return;
+            }
+
+            // Get price from hargaBeliField
+            String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+            int harga = Integer.parseInt(hargaText);
+
+            double totalawal = harga * qty;
+
+            // Check if the item already exists in the table with the same discount
+            DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+            boolean itemFound = false;
+
+            double rowTotal;
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String existingName = model.getValueAt(i, 1).toString();
+                String existingSize = model.getValueAt(i, 2).toString();
+                String existingHarga = model.getValueAt(i, 3).toString();
+                String hargaForm = hargaBeliField.getText();
+
+                // Compare name, size and discount
+                if (existingName.equals(nama)
+                        && existingSize.equals(currentProductSize)
+                        && existingHarga.equals(hargaForm)) {
+
+                    // Update quantity
+                    int currentQty = Integer.parseInt(model.getValueAt(i, 4).toString());
+                    int newQty = currentQty + qty;
+                    model.setValueAt(newQty, i, 4);
+
+                    // Update total price for this row
+                    rowTotal = harga * qty;
+                    double currentTotal = Double.parseDouble(model.getValueAt(i, 5).toString().replace("Rp. ", "").replace(".", "").trim());
+                    double total = currentTotal + rowTotal;
+                    model.setValueAt("Rp. " + formatter.format(total), i, 5);
+
+                    itemFound = true;
+                    break;
+                }
+            }
+
+            // If item not found with same discount, add as new row
+            if (!itemFound) {
+                int rowCount = model.getRowCount() + 1;
+
+                model.addRow(new Object[]{
+                    rowCount,
+                    nama,
+                    currentProductSize,
+                    "Rp. " + formatter.format(harga),
+                    qty, // Default quantity
+                    "Rp. " + formatter.format(totalawal),
+                    "" // Action column
+                });
+            }
+
+            // Clear fields
+            scanKodeField.setText("");
+            namaProduk.setText("");
+            hargaBeliField.setText("Rp. ");
+            sizeProduk.setText("");
+            qtyField.setText("");
+            updateTotalAmount();
+
+            // Set focus back to scan field for next item
+            scanKodeField.requestFocus();
+
+        } catch (NumberFormatException ex) {
+            ex.printStackTrace();
+        }
     }
 
-    try {
-        int harga = Integer.parseInt(hargaText);
-        int qty = Integer.parseInt(qtyField.getText().replace(".", ""));
-        int total = harga * qty;
-
-        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
-        int rowCount = model.getRowCount() + 1;
-
-        model.addRow(new Object[]{
-            rowCount,
-            kodeProduk,
-            produkName,
-            size, // Add the size value to the table
-            "Rp. " + formatter.format(harga),
-            formatter.format(qty),
-            "Rp. " + formatter.format(total),
-            "" // Action column
-        });
-
-        // Clear fields after adding
-        scanKodeField.setText("");
-        namaProduk.setText("");
-        sizeProduk.setText(""); // Clear the size field
-        hargaBeliField.setText("Rp. ");
-        qtyField.setText("");
-        
-        // Update total
-        updateTotalAmount();
-        
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(thisPanel, "Format harga atau qty tidak valid", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-    
     private void updateTotalAmount() {
         double totalAmount = 0;
         DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
 
         for (int i = 0; i < model.getRowCount(); i++) {
-            String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "").replace(",", "");
+            String totalStr = model.getValueAt(i, 5).toString().replace("Rp. ", "").replace(".", "").replace(",", "");
             try {
                 totalAmount += Double.parseDouble(totalStr);
             } catch (NumberFormatException ex) {
@@ -792,5 +837,221 @@ public class Transaksibeli extends JPanel {
         }
 
         totalValueLabel.setText("Rp. " + formatter.format(totalAmount));
+    }
+
+    private void getDataProduk() {
+        try {
+            String kode = scanKodeField.getText();
+            String sql = "SELECT nama_produk, size FROM produk WHERE id_produk = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, kode);
+                ResultSet rs = st.executeQuery();
+
+                if (rs.next()) {
+                    namaProduk.setText(rs.getString("nama_produk"));
+                    String ukuran = rs.getString("size");
+                    sizeProduk.setText(ukuran);
+
+                    currentProductSize = ukuran != null ? ukuran : "";
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String generateNextTransaksiId() {
+        String nextId = ID_PREFIX + "00001"; // Default jika belum ada transaksi
+
+        try {
+            // Query untuk mendapatkan ID transaksi terakhir dari database
+            String query = "SELECT id_transaksibeli FROM transaksi_beli ORDER BY id_transaksibeli DESC LIMIT 1";
+            PreparedStatement pst = con.prepareStatement(query);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                String lastId = rs.getString("id_transaksibeli");
+                if (lastId != null && lastId.startsWith(ID_PREFIX)) {
+                    // Ekstrak nomor dari ID terakhir
+                    String numberPart = lastId.substring(ID_PREFIX.length());
+                    try {
+                        int lastNumber = Integer.parseInt(numberPart);
+                        // Increment nomor
+                        int nextNumber = lastNumber + 1;
+                        // Format nomor dengan padding nol di depan
+                        String paddedNumber = String.format("%0" + PADDING_LENGTH + "d", nextNumber);
+                        // Gabungkan prefix dengan nomor
+                        nextId = ID_PREFIX + paddedNumber;
+                    } catch (NumberFormatException e) {
+                        System.err.println("Format ID transaksi tidak valid: " + lastId);
+                    }
+                }
+            }
+
+            rs.close();
+            pst.close();
+        } catch (SQLException e) {
+            System.err.println("Error mengambil ID transaksi terakhir: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return nextId;
+    }
+
+    private boolean saveTransactionToDatabase() {
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        int rowCount = model.getRowCount();
+
+        if (rowCount == 0) {
+            return false; // Tidak ada item untuk disimpan
+        }
+
+        try {
+            // Mulai transaksi untuk atomisitas
+            con.setAutoCommit(false);
+
+            // Buat nomor referensi untuk transaksi (norfid)
+            String norfid = NoRFID;
+
+            // Masukkan header transaksi ke tabel transaksi_jual
+            String insertTransHeader = "INSERT INTO transaksi_beli (id_transaksibeli, tanggal_transaksi, norfid) VALUES (?, ?, ?)";
+            PreparedStatement psHeader = con.prepareStatement(insertTransHeader, Statement.RETURN_GENERATED_KEYS);
+
+            String transactionId = txtIdTransaksi.getText();
+            System.out.println(transactionId);
+            psHeader.setString(1, transactionId);
+
+            // Set tanggal transaksi
+            java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
+            psHeader.setTimestamp(2, currentTimestamp);
+
+            // Set nomor referensi
+            psHeader.setString(3, norfid);
+
+            psHeader.executeUpdate();
+
+            // Sekarang masukkan setiap item dari tabel sebagai detail transaksi
+            for (int i = 0; i < rowCount; i++) {
+                // Dapatkan data dari tabel
+                String productName = model.getValueAt(i, 1).toString();
+                String productSize = model.getValueAt(i, 2).toString();
+                System.out.println(productName);
+                System.out.println(productSize);
+                int quantity = Integer.parseInt(model.getValueAt(i, 4).toString());
+
+                // Dapatkan harga dari kolom 4, hilangkan "Rp. " dan "."
+                String priceStr = model.getValueAt(i, 3).toString().replace("Rp. ", "").replace(".", "");
+                double price = Double.parseDouble(priceStr);
+
+                // Dapatkan total harga dari kolom 6
+                String totalStr = model.getValueAt(i, 5).toString().replace("Rp. ", "").replace(".", "");
+                double totalPrice = Double.parseDouble(totalStr);
+
+                // Dapatkan ID produk dari nama dan ukuran
+                String productId = getProductIdFromNameAndSize(productName, productSize);
+                System.out.println(productId);
+                
+                String updateHargaProduk = "UPDATE produk SET harga_beli = ? WHERE id_produk = ?";
+                PreparedStatement psUpdate = con.prepareStatement(updateHargaProduk);
+                psUpdate.setDouble(1, price);
+                psUpdate.setString(2, productId);
+                psUpdate.executeUpdate();
+                psUpdate.close();
+
+                String insertDetail = "INSERT INTO detail_transaksibeli (id_produk, id_transaksibeli, total_harga, jumlah_produk) VALUES (?, ?, ?, ?)";
+                PreparedStatement psDetail = con.prepareStatement(insertDetail);
+
+                psDetail.setString(1, productId);
+                psDetail.setString(2, transactionId);
+                psDetail.setDouble(3, totalPrice);
+                psDetail.setInt(4, quantity);
+
+                psDetail.executeUpdate();
+                psDetail.close();
+            }
+
+            con.commit();
+            con.setAutoCommit(true);
+
+            // Tampilkan pesan sukses
+            JOptionPane.showMessageDialog(parentComponent,
+                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
+//            PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
+            return true; // Transaksi berhasil
+
+        } catch (SQLException ex) {
+            // Rollback jika terjadi kesalahan
+            try {
+                con.rollback();
+                con.setAutoCommit(true);
+            } catch (SQLException rollbackEx) {
+                System.err.println("Error melakukan rollback transaksi: " + rollbackEx.getMessage());
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Error menyimpan transaksi: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+
+            return false; // Transaksi gagal
+        }
+    }
+
+    private void clearTransactionTable() {
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+        model.setRowCount(0); // Remove all rows
+
+        // Clear related fields
+        scanKodeField.setText("");
+        namaProduk.setText("");
+        sizeProduk.setText("");
+        hargaBeliField.setText("Rp. ");
+        totalValueLabel.setText("Rp. ");
+
+        scanKodeField.requestFocus();
+    }
+
+    private String getProductIdFromNameAndSize(String productName, String productSize) {
+        String productId = "";
+
+        try {
+            String query = "SELECT id_produk FROM produk WHERE nama_produk = ? AND size = ?";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, productName);
+            ps.setString(2, productSize);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                productId = rs.getString("id_produk");
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException ex) {
+            System.err.println("Error looking up product ID: " + ex.getMessage());
+        }
+
+        return productId;
+    }
+
+    private void setNamaUser() {
+        String email = LoginForm.getNamaUser();
+        String norfid = LoginForm.getNoRFID();
+
+        String sql = "SELECT nama_user, norfid FROM user WHERE email = ? OR norfid = ?";
+        try (PreparedStatement st = con.prepareStatement(sql)) {
+            st.setString(1, email);
+            st.setString(2, norfid);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                NoRFID = rs.getString("norfid");
+                namaUser = rs.getString("nama_user");
+            } else {
+                System.out.println("No karyawan found ");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
