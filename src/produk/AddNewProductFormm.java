@@ -44,7 +44,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.PlainDocument;
 
 public class AddNewProductFormm extends JPanel {
 
@@ -175,6 +184,7 @@ public class AddNewProductFormm extends JPanel {
 
         txtHargaJual = new RoundedTextField();
         txtHargaJual.setBounds(100, 145, 250, 35);
+        setRpField(txtHargaJual);
         panelGeneral.add(txtHargaJual);
 
         // Merk
@@ -193,6 +203,7 @@ public class AddNewProductFormm extends JPanel {
 
         txtHargaBeli = new RoundedTextField();
         txtHargaBeli.setBounds(100, 215, 250, 35);
+        setRpField(txtHargaBeli);
         panelGeneral.add(txtHargaBeli);
 
 //        // Set Discount
@@ -205,6 +216,177 @@ public class AddNewProductFormm extends JPanel {
 //        panelGeneral.add(cbDiscount);
     }
 
+   private void setRpField(final JTextField textField) {
+    final String PREFIX = "Rp. ";
+    final NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
+    if (formatter instanceof DecimalFormat) {
+        ((DecimalFormat) formatter).applyPattern("#,###");
+    }
+
+    // Inisialisasi dengan prefix
+    if (!textField.getText().startsWith(PREFIX)) {
+        textField.setText(PREFIX);
+    }
+
+    ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                throws BadLocationException {
+
+            // Blok edit pada prefix
+            if (offset < PREFIX.length()) {
+                return;
+            }
+
+            // Hanya izinkan digit
+            if (!text.matches("\\d*")) {
+                return;
+            }
+
+            Document doc = fb.getDocument();
+            StringBuilder sb = new StringBuilder(doc.getText(0, doc.getLength()));
+            sb.replace(offset, offset + length, text);
+
+            // Ekstrak hanya angka (hapus prefix dan format)
+            String numericText = sb.toString().substring(PREFIX.length()).replaceAll("[.,]", "");
+
+            // Batasi maksimal 10 digit (maksimal 2.147.483.647 untuk INT)
+            if (numericText.length() > 10) {
+                Toolkit.getDefaultToolkit().beep(); // Beri feedback
+                return;
+            }
+
+            try {
+                if (numericText.isEmpty()) {
+                    super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+                    return;
+                }
+
+                // Parse sebagai long untuk validasi
+                long value = Long.parseLong(numericText);
+                
+                // Batasi nilai maksimal INT (2.147.483.647)
+                if (value > Integer.MAX_VALUE) {
+                    Toolkit.getDefaultToolkit().beep();
+                    return;
+                }
+
+                // Format teks
+                String formattedText = PREFIX + formatter.format(value);
+                super.replace(fb, 0, doc.getLength(), formattedText, attrs);
+
+                // Hitung posisi kursor
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        int newPos = Math.min(offset + text.length(), formattedText.length());
+                        // Sesuaikan untuk karakter pemisah
+                        int addedSeparators = countSeparators(formattedText, offset + text.length());
+                        textField.setCaretPosition(Math.min(newPos + addedSeparators, formattedText.length()));
+                    } catch (Exception e) {
+                        textField.setCaretPosition(formattedText.length());
+                    }
+                });
+            } catch (NumberFormatException e) {
+                super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+            }
+        }
+
+        private int countSeparators(String text, int position) {
+            int count = 0;
+            for (int i = PREFIX.length(); i < Math.min(position, text.length()); i++) {
+                if (text.charAt(i) == '.' || text.charAt(i) == ',') {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                throws BadLocationException {
+            replace(fb, offset, 0, string, attr);
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            // Blok penghapusan prefix
+            if (offset < PREFIX.length()) {
+                if (offset + length > PREFIX.length()) {
+                    length = (offset + length) - PREFIX.length();
+                    offset = PREFIX.length();
+                } else {
+                    return;
+                }
+            }
+            replace(fb, offset, length, "", null);
+        }
+    });
+
+    // Handle focus dan navigasi
+    textField.addFocusListener(new FocusAdapter() {
+        @Override
+        public void focusGained(FocusEvent e) {
+            if (textField.getText().equals(PREFIX)) {
+                textField.setCaretPosition(PREFIX.length());
+            }
+        }
+    });
+
+    textField.addKeyListener(new KeyAdapter() {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            int caretPos = textField.getCaretPosition();
+            if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) 
+                    && caretPos <= PREFIX.length()) {
+                textField.setCaretPosition(PREFIX.length());
+                e.consume();
+            }
+            if (e.getKeyCode() == KeyEvent.VK_HOME) {
+                textField.setCaretPosition(PREFIX.length());
+                e.consume();
+            }
+        }
+    });
+}
+ 
+private int getNumericValue(JTextField textField, String prefix) {
+    String text = textField.getText().substring(prefix.length()).replaceAll("[.,]", "");
+    return Integer.parseInt(text); // Akan throw exception jika melebihi INT.MAX_VALUE
+}
+
+// Method utility untuk mengatur nilai numerik ke textfield
+    private void setNumericValue(JTextField textField, long value, String prefix) {
+        String ValueStr = String.valueOf(value);
+        if (ValueStr.length() > 12) {
+            value = Long.parseLong(ValueStr.substring(0, 12));
+        }
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
+        if (formatter instanceof DecimalFormat) {
+            ((DecimalFormat) formatter).applyPattern("#,###");
+        }
+        textField.setText(prefix + formatter.format(value));
+    }
+
+    private void resetPriceFields() {
+    // Hapus DocumentFilter yang ada terlebih dahulu
+    txtHargaJual.setDocument(new PlainDocument());
+    txtHargaBeli.setDocument(new PlainDocument());
+    
+    // Setel ulang dengan format Rp.
+    setRpField(txtHargaJual);
+    setRpField(txtHargaBeli);
+    
+    // Setel nilai default
+    txtHargaJual.setText("Rp. ");
+    txtHargaBeli.setText("Rp. ");
+    
+    // Setel posisi kursor
+    SwingUtilities.invokeLater(() -> {
+        txtHargaJual.setCaretPosition(4);
+        txtHargaBeli.setCaretPosition(4);
+    });
+}
+    
     private void createUploadImagesPanel() {
         // Main panel
         panelImages = new RoundedPanelProduk();
@@ -585,9 +767,7 @@ public class AddNewProductFormm extends JPanel {
     private void printBarcode() {
         try {
             if (barcodeArea.getComponentCount() == 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Silakan generate barcode terlebih dahulu sebelum mencetak.",
-                        "Peringatan", JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTambahProdukGenerateBarcodeTerlebihDahulu(parentFrame);
                 return;
             }
 
@@ -831,6 +1011,7 @@ public class AddNewProductFormm extends JPanel {
     private void clearForm() {
         // Reset text fields
         txtNamaProduct.setText("");
+        resetPriceFields();
         txtHargaJual.setText("");
         txtHargaBeli.setText("");
         txtMerk.setText("");
@@ -848,10 +1029,10 @@ public class AddNewProductFormm extends JPanel {
                 c.setVisible(false);
             }
         }
-        
+
         // Reset radio buttons
         rbMale.setSelected(true);
-        
+
         removeSelectedImage();
         // Reset photo count label
         lblPhotoCount.setText("foto maks (0/1)");
@@ -866,6 +1047,8 @@ public class AddNewProductFormm extends JPanel {
         barcodeArea.removeAll();
         barcodeArea.revalidate();
         barcodeArea.repaint();
+        
+        txtNamaProduct.requestFocus();
     }
 
 // Method to reset form when panel is changed or closed
@@ -1110,208 +1293,250 @@ public class AddNewProductFormm extends JPanel {
     }
 
     private void addProduct() {
-        if (!validateForm()) {
-            return;
-        }
+    // First validate the form
+    if (!validateForm()) {
+        return;
+    }
 
-        if (currentBarcodeValue == null || currentBarcodeValue.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Silakan generate barcode terlebih dahulu.",
-                    "Peringatan", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+    // Check barcode
+    if (currentBarcodeValue == null || currentBarcodeValue.isEmpty()) {
+        PindahanAntarPopUp.showTambahProdukGenerateBarcodeTerlebihDahulu(parentFrame);
+        return;
+    }
 
-        int stockAmount = 0;
-        try {
-            stockAmount = Integer.parseInt(txtStok.getText().trim());
-            if (stockAmount < 0) {
-                JOptionPane.showMessageDialog(this,
-                        "Jumlah stok harus lebih dari atau sama dengan 0.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        } catch (NumberFormatException e) {
+    // Validate stock amount
+    int stockAmount;
+    try {
+        stockAmount = Integer.parseInt(txtStok.getText().trim());
+        if (stockAmount < 0) {
             JOptionPane.showMessageDialog(this,
-                    "Jumlah stok harus berupa angka yang valid.",
+                    "Jumlah stok harus lebih dari atau sama dengan 0.",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this,
+                "Jumlah stok harus berupa angka yang valid.",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
 
+    // Show confirmation dialog
+    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(AddNewProductFormm.this);
+    PopUp_TambahProdukApakahAndaYakinTambahProduk dialog = new PopUp_TambahProdukApakahAndaYakinTambahProduk(parentFrame);
+    
+    // Add action listener for OK button
+    dialog.addOKButtonActionListener(e -> {
         try {
-            String productId = currentBarcodeValue; // Use barcode value as product ID
-            String sql = "INSERT INTO produk (id_produk, merk, jenis_produk, size, gender, gambar, nama_produk, "
-                    + "harga_jual, harga_beli, id_style, status) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            try (PreparedStatement st = con.prepareStatement(sql)) {
-                st.setString(1, productId);
-                st.setString(2, txtMerk.getText().trim());
-                String category = (String) cbCategory.getSelectedItem();
-
-                switch (category) {
-                    case "Sandal":
-                        category = "sandal";
-                        break;
-                    case "Sepatu":
-                        category = "sepatu";
-                        break;
-                    case "Kaos Kaki":
-                        category = "kaoskaki";
-                        break;
-                    case "Lainnya":
-                        category = "aksesoris tambahan";
-                        break;
-                    default:
-                        category = "";
-                        break;
-                }
-
-                st.setString(3, category);
-                st.setString(4, txtUkuran.getText().trim());
-                String gender = "Cowok";
-                if (rbFemale.isSelected()) {
-                    gender = "Cewek";
-                } else if (rbUnisex.isSelected()) {
-                    gender = "Unisex";
-                }
-                st.setString(5, gender);
-                if (selectedImageFile != null) {
-                    String imagePath = saveImageToServer(selectedImageFile);
-                    st.setString(6, imagePath);
-                } else {
-                    st.setString(6, "default.jpg");
-                }
-                st.setString(7, txtNamaProduct.getText().trim());
-
-                try {
-                    double hargaJual = Double.parseDouble(txtHargaJual.getText().trim().replace(",", ""));
-                    double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replace(",", ""));
-                    st.setDouble(8, hargaJual);
-                    st.setDouble(9, hargaBeli);
-                } catch (NumberFormatException e) {
-                    throw new Exception("Harga harus berupa angka yang valid.");
-                }
-
-                String styleId = getStyleIdFromName(currentStyleOptions[currentStyleIndex]);
-                st.setString(10, styleId);
-                st.setString(11, "dijual");
-
-                int rowsAffected = st.executeUpdate();
-                if (rowsAffected <= 0) {
-                    throw new Exception("Gagal menambahkan produk.");
-                }
-            }
-
-            String stockSql = "INSERT INTO kartu_stok (produk_masuk, produk_keluar, tanggal_transaksi, produk_sisa, id_produk) "
-                    + "VALUES (?, ?, ?, ?, ?)";
-
-            try (PreparedStatement stockSt = con.prepareStatement(stockSql)) {
-                stockSt.setInt(1, stockAmount);
-                stockSt.setInt(2, 0);
-
-                Date now = new Date();
-                Timestamp timestamp = new Timestamp(now.getTime());
-                stockSt.setTimestamp(3, timestamp);
-
-                stockSt.setInt(4, stockAmount);
-                stockSt.setString(5, productId);
-
-                int stockRowsAffected = stockSt.executeUpdate();
-                if (stockRowsAffected <= 0) {
-                    throw new Exception("Gagal menambahkan informasi stok.");
-                }
-            }
-
-            JOptionPane.showMessageDialog(this,
-                    "Produk berhasil ditambahkan dengan stok awal " + stockAmount + "!",
-                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            // Prepare product data
+            String productId = currentBarcodeValue;
+            String category = convertCategory((String) cbCategory.getSelectedItem());
+            String gender = getSelectedGender();
+            String imagePath = selectedImageFile != null ? saveImageToServer(selectedImageFile) : "default.jpg";
+            
+            // Parse prices
+            double hargaJual = parsePrice(txtHargaJual.getText().trim(), "Harga jual tidak boleh kosong.");
+            double hargaBeli = parsePrice(txtHargaBeli.getText().trim(), "Harga beli tidak boleh kosong.");
+            
+            // Insert product
+            insertProduct(productId, txtMerk.getText().trim(), category, 
+                         txtUkuran.getText().trim(), gender, imagePath,
+                         txtNamaProduct.getText().trim(), hargaJual, hargaBeli,
+                         getStyleIdFromName(currentStyleOptions[currentStyleIndex]));
+            
+            // Insert stock
+            insertStock(stockAmount, productId);
+            
+            // Show success message and clear form
+            PindahanAntarPopUp.showTambahProdukBerhasilDiTambahkan(parentFrame);
             clearForm();
+            
+            Productt mainFrame = Productt.getMainFrame();
+            if (mainFrame != null) {
+                // Pindah ke panel product
+                mainFrame.switchBackToProductPanel();
+            }
+        
+            
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(AddNewProductFormm.this, 
+                "Gagal menambahkan produk: " + ex.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    });
+    
+    dialog.setVisible(true);
+}
 
-        } catch (Exception e) {
-            e.printStackTrace();
+// Helper methods for the addProduct function
+private String convertCategory(String category) {
+    switch (category) {
+        case "Sandal": return "sandal";
+        case "Sepatu": return "sepatu";
+        case "Kaos Kaki": return "kaoskaki";
+        case "Lainnya": return "aksesoris tambahan";
+        default: return "";
+    }
+}
 
+private String getSelectedGender() {
+    if (rbFemale.isSelected()) return "Cewek";
+    if (rbUnisex.isSelected()) return "Unisex";
+    return "Cowok";
+}
+
+private double parsePrice(String priceText, String errorMessage) throws Exception {
+    String cleanedPrice = priceText.replace("Rp. ", "").replace(".", "").replace(",", "").trim();
+    if (cleanedPrice.isEmpty()) {
+        throw new NumberFormatException(errorMessage);
+    }
+    return Double.parseDouble(cleanedPrice);
+}
+
+private void insertProduct(String productId, String merk, String category, String size, 
+                         String gender, String imagePath, String namaProduk,
+                         double hargaJual, double hargaBeli, String styleId) throws Exception {
+    String sql = "INSERT INTO produk (id_produk, merk, jenis_produk, size, gender, gambar, nama_produk, "
+               + "harga_jual, harga_beli, id_style, status) "
+               + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    try (PreparedStatement st = con.prepareStatement(sql)) {
+        st.setString(1, productId);
+        st.setString(2, merk);
+        st.setString(3, category);
+        st.setString(4, size);
+        st.setString(5, gender);
+        st.setString(6, imagePath);
+        st.setString(7, namaProduk);
+        st.setDouble(8, hargaJual);
+        st.setDouble(9, hargaBeli);
+        st.setString(10, styleId);
+        st.setString(11, "dijual");
+
+        if (st.executeUpdate() <= 0) {
+            throw new Exception("Gagal menambahkan produk.");
         }
     }
+}
+
+private void insertStock(int stockAmount, String productId) throws Exception {
+    String stockSql = "INSERT INTO kartu_stok (produk_masuk, produk_keluar, tanggal_transaksi, produk_sisa, id_produk) "
+                    + "VALUES (?, ?, ?, ?, ?)";
+    
+    try (PreparedStatement stockSt = con.prepareStatement(stockSql)) {
+        stockSt.setInt(1, stockAmount);
+        stockSt.setInt(2, 0);
+        stockSt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+        stockSt.setInt(4, stockAmount);
+        stockSt.setString(5, productId);
+
+        if (stockSt.executeUpdate() <= 0) {
+            throw new Exception("Gagal menambahkan informasi stok.");
+        }
+    }
+}
 
     private boolean validateForm() {
         if (txtNamaProduct.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukNamaTidakBolehKosong(parentFrame);
             txtNamaProduct.requestFocus();
             return false;
         }
 
         if (txtHargaJual.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Harga jual tidak boleh kosong.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukHargaJualTidakBolehKosong(parentFrame);
             txtHargaJual.requestFocus();
             return false;
         }
 
         if (txtHargaBeli.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Harga beli tidak boleh kosong.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukHargaBeliTidakBolehKosong(parentFrame);
             txtHargaBeli.requestFocus();
+            return false;
+        }
+        if (txtMerk.getText().trim().isEmpty()) {
+            PindahanAntarPopUp.showTambahProdukMerkTidakBolehKosong(parentFrame);
+            txtMerk.requestFocus();
             return false;
         }
 
         if (txtUkuran.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ukuran tidak boleh kosong.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukUkuranTidakBolehKosong(parentFrame);
             txtUkuran.requestFocus();
             return false;
         }
 
         if (txtStok.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Stok tidak boleh kosong.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukStokTidakBolehKosong(parentFrame);
             txtStok.requestFocus();
             return false;
         }
 
         // Validate category selection
         if (cbCategory.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(this, "Silakan pilih kategori produk.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukPilihKategoriDulu(parentFrame);
             cbCategory.requestFocus();
             return false;
         }
 
         try {
-            double hargaJual = Double.parseDouble(txtHargaJual.getText().trim().replace(",", ""));
-            double hargaBeli = Double.parseDouble(txtHargaBeli.getText().trim().replace(",", ""));
+            // Persiapkan input harga untuk konversi dengan menghapus format mata uang
+            String hargaJualText = txtHargaJual.getText().trim().replace("Rp. ", "").replace("Rp.", "")
+                    .replace("Rp ", "").replace("rp. ", "").replace("rp ", "").replace("rp.", "")
+                    .replace(".", "").replace(",", "").trim();
+
+            String hargaBeliText = txtHargaBeli.getText().trim().replace("Rp. ", "").replace("Rp.", "")
+                    .replace("Rp ", "").replace("rp. ", "").replace("rp ", "").replace("rp.", "")
+                    .replace(".", "").replace(",", "").trim();
+
+            // Validasi format harga yang sudah dibersihkan
+            if (hargaJualText.isEmpty()) {
+                PindahanAntarPopUp.showTambahProdukHargaJualTidakBolehKosong(parentFrame);
+                txtHargaJual.requestFocus();
+                return false;
+            }
+
+            if (hargaBeliText.isEmpty()) {
+                PindahanAntarPopUp.showTambahProdukHargaBeliTidakBolehKosong(parentFrame);
+                txtHargaBeli.requestFocus();
+                return false;
+            }
+
+            // Konversi ke nilai numerik
+            double hargaJual = Double.parseDouble(hargaJualText);
+            double hargaBeli = Double.parseDouble(hargaBeliText);
             int stok = Integer.parseInt(txtStok.getText().trim());
 
+            // Validasi nilai-nilai numerik
             if (hargaJual <= 0) {
-                JOptionPane.showMessageDialog(this, "Harga jual harus lebih dari 0.",
-                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTambahProdukHargaJualLebihDari0(parentFrame);
+                txtHargaJual.requestFocus();
                 return false;
             }
 
             if (hargaBeli <= 0) {
-                JOptionPane.showMessageDialog(this, "Harga beli harus lebih dari 0.",
-                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTambahProdukHargaBeliLebihDari0(parentFrame);
+                txtHargaBeli.requestFocus();
                 return false;
             }
-            
+
             if (hargaJual <= hargaBeli) {
-                JOptionPane.showMessageDialog(this, "Harga jual harus lebih dari besar dari harga beli.",
-                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTambahProdukhargaJualHarusLebihDariHargaBeli(parentFrame);
+                txtHargaJual.requestFocus();
                 return false;
             }
 
             if (stok < 0) {
-                JOptionPane.showMessageDialog(this, "Stok tidak boleh negatif.",
-                        "Validasi Error", JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTambahProdukStokTidakBolehNegatif(parentFrame);
+                txtStok.requestFocus();
                 return false;
             }
-
+            
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Harga dan stok harus berupa angka yang valid.",
-                    "Validasi Error", JOptionPane.WARNING_MESSAGE);
+            PindahanAntarPopUp.showTambahProdukHargaDanStokHarusBerupaAngka(parentFrame);
             return false;
         }
-
         return true;
     }
 

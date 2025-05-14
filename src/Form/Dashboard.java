@@ -32,7 +32,7 @@ public class Dashboard extends JPanel {
     private CardLayout headerCardLayout;
     private JPanel headerCardsPanel;
     private int currentCardIndex = 0;
-    private final String[] cardNames = {"welcome", "aturBiayaOperasional","barangTelaris", "promo"};
+    private final String[] cardNames = {"welcome", "diskon","laporan","barangTelaris"};
 
     // Animation properties
     private JPanel animationPanel;
@@ -84,14 +84,14 @@ public class Dashboard extends JPanel {
 
         // Create header panels
         JPanel welcomeHeaderPanel = createWelcomeHeader();
-        JPanel barangTelarisPanelSlide = createBarangTelarisPanelSlide();
-        JPanel promoHeaderPanel = createPromoHeader();
-        JPanel AturBiayaOperasionalPanel = createAturBiayaOperasional();
+        JPanel diskonPanel = createAturDiskon();
+        JPanel cekLaporanPanel = createLaporanSlidee();
+        JPanel barangTelarisPanelSlide = createBarangTerlaris();
 
         headerCardsPanel.add(welcomeHeaderPanel, "welcome");
-        headerCardsPanel.add(AturBiayaOperasionalPanel, "aturBiayaOperasional");
+        headerCardsPanel.add(diskonPanel, "diskon");
+        headerCardsPanel.add(cekLaporanPanel, "laporan");
         headerCardsPanel.add(barangTelarisPanelSlide, "barangTelaris");
-        headerCardsPanel.add(promoHeaderPanel, "promo");
 
         // Create animation panel that will be used for transitions
         animationPanel = new JPanel() {
@@ -278,7 +278,7 @@ public class Dashboard extends JPanel {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 try {
-                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-laporan.png"));
+                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide_biaya_operasional.png"));
                     // Draw the image to fit the entire panel, with small margins
                     g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
                 } catch (Exception e) {
@@ -305,19 +305,22 @@ public class Dashboard extends JPanel {
         });
 
         // Fix the position and size of the report button
-        JButton reportButton = createRegularButton("CEK LAPORAN", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
-        reportButton.addActionListener(e -> {
-            System.out.println("ini button laporan");
+        JButton biayaoperasional = createRegularButton("Atur Biaya Operasional", new Dimension(350, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        biayaoperasional.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(biayaoperasional);
+            PopUp_DashboardIOwnerInputBiayaOperasional aturbiayaoperasional = new PopUp_DashboardIOwnerInputBiayaOperasional(parentFrame);
+            aturbiayaoperasional.setVisible(true);
+            System.out.println("ini button biaya operasional");
         });
 
         headerPanel.add(welcomeLabel);
-        headerPanel.add(reportButton);
+        headerPanel.add(biayaoperasional);
         headerPanel.add(slideRightButton);
 
         return headerPanel;
     }
 
-    private JPanel createBarangTelarisPanelSlide() {
+    private JPanel createLaporanSlidee() {
         JPanel headerPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -325,7 +328,7 @@ public class Dashboard extends JPanel {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 try {
-                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-terlaris.png"));
+                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-laporan.png"));
                     // Draw the image to fit the entire panel
                     g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
                 } catch (Exception e) {
@@ -362,12 +365,9 @@ public class Dashboard extends JPanel {
 //            e.printStackTrace();
 //        }
         // Fix button position and size
-        JButton barangTelarisCekButton = createRegularButton("BARANG TERLARIS", new Dimension(330, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
-        barangTelarisCekButton.addActionListener(e -> {
-            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTelarisCekButton);
-            PopUp_DashboardOwnerBarangTerlaris popUpLupaPassword = new PopUp_DashboardOwnerBarangTerlaris(parentFrame);
-            popUpLupaPassword.setVisible(true);
-            System.out.println("Cek Barang Telaris");
+        JButton ceklaporanbutton = createRegularButton("CEK LAPORAN", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        ceklaporanbutton.addActionListener(e -> {
+            System.out.println("ini cek laporan");
         });
 
         // Fix right button position
@@ -379,83 +379,13 @@ public class Dashboard extends JPanel {
         headerPanel.add(slideLeftButton);
         headerPanel.add(titleLabel);
 //        headerPanel.add(imageLabel);
-        headerPanel.add(barangTelarisCekButton);
+        headerPanel.add(ceklaporanbutton);
         headerPanel.add(slideRightButton);
 
         return headerPanel;
     }
     
-    private JPanel createAturBiayaOperasional() {
-        JPanel headerPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.setColor(Color.WHITE);
-                g.fillRect(0, 0, getWidth(), getHeight());
-                try {
-                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide_biaya_operasional.png"));
-                    // Draw the image to fit the entire panel
-                    g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
-                } catch (Exception e) {
-                    // Fallback if image not found
-                    g.setColor(new Color(200, 220, 255));
-                    g.fillRect(0, 0, getWidth(), getHeight());
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        headerPanel.setLayout(null);
-        headerPanel.setPreferredSize(new Dimension(800, 233));
-
-        // Fix left button position
-        JButton slideLeftButton = createAnimatedSlideButton("←", new Dimension(50, 50), 5, 100);
-        slideLeftButton.addActionListener(e -> {
-            animateTransition(false);
-        });
-
-        JLabel titleLabel = new JLabel("Welcome Sy.syluss");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
-        titleLabel.setForeground(Color.white);
-        titleLabel.setBounds(80, 50, 400, 40);
-
-        // Correctly position and size the product image
-//        JLabel imageLabel = new JLabel();
-//        try {
-//            BufferedImage shoeImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-laporan.png"));
-//            ImageIcon icon = new ImageIcon(shoeImage.getScaledInstance(150, 150, Image.SCALE_SMOOTH));
-//            imageLabel.setIcon(icon);
-//            imageLabel.setBounds(600, 40, 150, 150);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-        // Fix button position and size
-        JButton barangTelarisCekButton = createRegularButton("Atur Biaya Operasional", new Dimension(370, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
-        barangTelarisCekButton.addActionListener(e -> {
-            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTelarisCekButton);
-            PopUp_DashboardIOwnerInputBiayaOperasional popUpLupaPassword = new PopUp_DashboardIOwnerInputBiayaOperasional(parentFrame);
-            popUpLupaPassword.setVisible(true);
-            System.out.println("Atur Biaya Operasional");
-            
-        });
-
-        // Fix right button position
-        JButton slideRightButton = createAnimatedSlideButton("→", new Dimension(50, 50), 1010, 100);
-        slideRightButton.addActionListener(e -> {
-            animateTransition(true);
-        });
-
-        headerPanel.add(slideLeftButton);
-        headerPanel.add(titleLabel);
-//        headerPanel.add(imageLabel);
-        headerPanel.add(barangTelarisCekButton);
-        headerPanel.add(slideRightButton);
-
-        return headerPanel;
-    }
-
-// In createPromoHeader() method:
-    private JPanel createPromoHeader() {
+    private JPanel createAturDiskon() {
         JPanel headerPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -464,6 +394,76 @@ public class Dashboard extends JPanel {
                 g.fillRect(0, 0, getWidth(), getHeight());
                 try {
                     BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-diskon.png"));
+                    // Draw the image to fit the entire panel
+                    g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
+                } catch (Exception e) {
+                    // Fallback if image not found
+                    g.setColor(new Color(200, 220, 255));
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        headerPanel.setLayout(null);
+        headerPanel.setPreferredSize(new Dimension(800, 233));
+
+        // Fix left button position
+        JButton slideLeftButton = createAnimatedSlideButton("←", new Dimension(50, 50), 5, 100);
+        slideLeftButton.addActionListener(e -> {
+            animateTransition(false);
+        });
+
+        JLabel titleLabel = new JLabel("Welcome Sy.syluss");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        titleLabel.setForeground(Color.white);
+        titleLabel.setBounds(80, 50, 400, 40);
+
+        // Correctly position and size the product image
+//        JLabel imageLabel = new JLabel();
+//        try {
+//            BufferedImage shoeImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-laporan.png"));
+//            ImageIcon icon = new ImageIcon(shoeImage.getScaledInstance(150, 150, Image.SCALE_SMOOTH));
+//            imageLabel.setIcon(icon);
+//            imageLabel.setBounds(600, 40, 150, 150);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+        // Fix button position and size
+        JButton buttondiskon = createRegularButton("ATUR DISKON", new Dimension(280, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        buttondiskon.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(buttondiskon);
+            PopUp_DashboardKasirCekPromoDanDiskon cekpromo = new PopUp_DashboardKasirCekPromoDanDiskon(parentFrame);
+            cekpromo.setVisible(true);
+
+            System.out.println("ini button diskon");
+        });
+
+        // Fix right button position
+        JButton slideRightButton = createAnimatedSlideButton("→", new Dimension(50, 50), 1010, 100);
+        slideRightButton.addActionListener(e -> {
+            animateTransition(true);
+        });
+
+        headerPanel.add(slideLeftButton);
+        headerPanel.add(titleLabel);
+//        headerPanel.add(imageLabel);
+        headerPanel.add(buttondiskon);
+        headerPanel.add(slideRightButton);
+
+        return headerPanel;
+    }
+
+// In createPromoHeader() method:
+    private JPanel createBarangTerlaris() {
+        JPanel headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                try {
+                    BufferedImage bgImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/slide-terlaris.png"));
                     // Draw the image to fit the entire panel
                     g.drawImage(bgImage, 25, 0, getWidth() - 50, getHeight(), this);
                 } catch (Exception e) {
@@ -500,15 +500,18 @@ public class Dashboard extends JPanel {
 //            e.printStackTrace();
 //        }
         // Fix button position and size
-        JButton promoButton = createRegularButton("LIHAT PROMO", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
-        promoButton.addActionListener(e -> {
-            System.out.println("Lihat Promo");
+        JButton barangTelarisCekButton = createRegularButton("BARANG TERLARIS", new Dimension(330, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
+        barangTelarisCekButton.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTelarisCekButton);
+            PopUp_DashboardOwnerBarangTerlaris cekbarangterlaris = new PopUp_DashboardOwnerBarangTerlaris(parentFrame);
+            cekbarangterlaris.setVisible(true);
+            System.out.println("ini barang terlaris");
         });
 
         headerPanel.add(slideLeftButton);
         headerPanel.add(titleLabel);
 //        headerPanel.add(imageLabel);
-        headerPanel.add(promoButton);
+        headerPanel.add(barangTelarisCekButton);
 
         return headerPanel;
     }

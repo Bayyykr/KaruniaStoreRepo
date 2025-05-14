@@ -3,6 +3,12 @@ package Form;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import org.jfree.chart.ChartFactory;
@@ -16,10 +22,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
+import db.conn; // Import koneksi database
 
 /**
- *
- * @author HP
+ * Kelas untuk membuat diagram batang dari data transaksi
  */
 public class cobadiagram extends JPanel {
     
@@ -32,8 +38,8 @@ public class cobadiagram extends JPanel {
         this.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         this.setPreferredSize(new Dimension(800, 500));
         
-        // Create dataset
-        DefaultCategoryDataset dataset = createDataset();
+        // Create dataset from database
+        DefaultCategoryDataset dataset = createDatasetFromDatabase();
         
         // Create chart
         chart = createChart(dataset);
@@ -48,53 +54,128 @@ public class cobadiagram extends JPanel {
         this.add(chartPanel);
     }
     
-    private DefaultCategoryDataset createDataset() {
+    private DefaultCategoryDataset createDatasetFromDatabase() {
         // Create dataset for chart
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         
-        // Monthly income data
-        dataset.addValue(80, "Pemasukan", "January");
-        dataset.addValue(65, "Pemasukan", "February");
-        dataset.addValue(85, "Pemasukan", "March");
-        dataset.addValue(90, "Pemasukan", "April");
-        dataset.addValue(55, "Pemasukan", "May");
-        dataset.addValue(60, "Pemasukan", "June");
-        dataset.addValue(15, "Pemasukan", "July");
-        dataset.addValue(10, "Pemasukan", "August");
-        dataset.addValue(65, "Pemasukan", "September");
-        dataset.addValue(75, "Pemasukan", "October");
-        dataset.addValue(50, "Pemasukan", "November");
-        dataset.addValue(45, "Pemasukan", "December");
+        // Inisialisasi map untuk menyimpan data per bulan
+        Map<Integer, Double> pembelianMap = new HashMap<>();
+        Map<Integer, Double> penjualanMap = new HashMap<>();
+        Map<Integer, Double> labaMap = new HashMap<>();
         
-        // Monthly expense data
-        dataset.addValue(70, "Pengeluaran", "January");
-        dataset.addValue(60, "Pengeluaran", "February");
-        dataset.addValue(10, "Pengeluaran", "March");
-        dataset.addValue(40, "Pengeluaran", "April");
-        dataset.addValue(25, "Pengeluaran", "May");
-        dataset.addValue(45, "Pengeluaran", "June");
-        dataset.addValue(80, "Pengeluaran", "July");
-        dataset.addValue(95, "Pengeluaran", "August");
-        dataset.addValue(15, "Pengeluaran", "September");
-        dataset.addValue(65, "Pengeluaran", "October");
-        dataset.addValue(90, "Pengeluaran", "November");
-        dataset.addValue(35, "Pengeluaran", "December");
-        
-        // Monthly profit data
-        dataset.addValue(85, "Laba", "January");
-        dataset.addValue(45, "Laba", "February");
-        dataset.addValue(15, "Laba", "March");
-        dataset.addValue(25, "Laba", "April");
-        dataset.addValue(85, "Laba", "May");
-        dataset.addValue(20, "Laba", "June");
-        dataset.addValue(100, "Laba", "July");
-        dataset.addValue(85, "Laba", "August");
-        dataset.addValue(45, "Laba", "September");
-        dataset.addValue(20, "Laba", "October");
-        dataset.addValue(30, "Laba", "November");
-        dataset.addValue(40, "Laba", "December");
+        try {
+            // Dapatkan koneksi dari kelas conn
+            Connection connection = conn.getConnection();
+            
+            // Query untuk mendapatkan total transaksi beli per bulan dari detail_transaksibeli
+            String queryBeli = "SELECT " +
+                "MONTH(j.tanggal_transaksi) AS bulan, " +
+                "SUM(d.total_harga) AS total_beli " +
+                "FROM transaksi_beli j " +
+                "JOIN detail_transaksibeli d ON j.id_transaksibeli = d.id_transaksibeli " +
+                "GROUP BY bulan " +
+                "ORDER BY bulan";
+            
+            // Query untuk mendapatkan total transaksi jual per bulan dari detail_transaksijual
+            String queryJual = "SELECT " +
+                "MONTH(j.tanggal_transaksi) AS bulan, " +
+                "SUM(d.total_harga) AS total_jual " +
+                "FROM transaksi_jual j " +
+                "JOIN detail_transaksijual d ON j.id_transaksijual = d.id_transaksijual " +
+                "GROUP BY bulan " +
+                "ORDER BY bulan";
+            
+            // Query untuk mendapatkan laba per bulan
+            String queryLaba = "SELECT " +
+                "MONTH(jual.tanggal_transaksi) AS bulan, " +
+                "SUM(djual.total_harga - dbeli.total_harga) AS total_laba " +
+                "FROM transaksi_jual jual " +
+                "JOIN detail_transaksijual djual ON jual.id_transaksijual = djual.id_transaksijual " +
+                "JOIN transaksi_beli beli ON MONTH(jual.tanggal_transaksi) = MONTH(beli.tanggal_transaksi) " +
+                "JOIN detail_transaksibeli dbeli ON beli.id_transaksibeli = dbeli.id_transaksibeli " +
+                "GROUP BY bulan " +
+                "ORDER BY bulan";
+            
+            // Eksekusi query untuk transaksi beli
+            Statement stmtBeli = connection.createStatement();
+            ResultSet rsBeli = stmtBeli.executeQuery(queryBeli);
+            
+            // Tambahkan data beli ke map
+            while (rsBeli.next()) {
+                int bulan = rsBeli.getInt("bulan");
+                double totalBeli = rsBeli.getDouble("total_beli");
+                pembelianMap.put(bulan, totalBeli);
+            }
+            
+            // Eksekusi query untuk transaksi jual
+            Statement stmtJual = connection.createStatement();
+            ResultSet rsJual = stmtJual.executeQuery(queryJual);
+            
+            // Tambahkan data jual ke map
+            while (rsJual.next()) {
+                int bulan = rsJual.getInt("bulan");
+                double totalJual = rsJual.getDouble("total_jual");
+                penjualanMap.put(bulan, totalJual);
+            }
+            
+            // Eksekusi query untuk laba
+            Statement stmtLaba = connection.createStatement();
+            ResultSet rsLaba = stmtLaba.executeQuery(queryLaba);
+            
+            // Tambahkan data laba ke map
+            while (rsLaba.next()) {
+                int bulan = rsLaba.getInt("bulan");
+                double totalLaba = rsLaba.getDouble("total_laba");
+                labaMap.put(bulan, totalLaba);
+            }
+            
+            // Tutup koneksi
+            rsBeli.close();
+            stmtBeli.close();
+            rsJual.close();
+            stmtJual.close();
+            rsLaba.close();
+            stmtLaba.close();
+            
+            // Tambahkan data ke dataset untuk setiap bulan
+            for (int bulan = 1; bulan <= 12; bulan++) {
+                // Tambahkan Pemasukan (Pembelian)
+                dataset.addValue(
+                    pembelianMap.getOrDefault(bulan, 0.0), 
+                    "Pemasukan", 
+                    getNamaBulan(bulan)
+                );
+                
+                // Tambahkan Pengeluaran (Penjualan)
+                dataset.addValue(
+                    penjualanMap.getOrDefault(bulan, 0.0), 
+                    "Pengeluaran", 
+                    getNamaBulan(bulan)
+                );
+                
+                // Tambahkan Laba
+                dataset.addValue(
+                    labaMap.getOrDefault(bulan, 0.0), 
+                    "Laba", 
+                    getNamaBulan(bulan)
+                );
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         
         return dataset;
+    }
+    
+    // Metode untuk mengubah nomor bulan menjadi nama bulan
+    private String getNamaBulan(int bulan) {
+        String[] namaBulan = {
+            "Januari", "Februari", "Maret", "April", 
+            "Mei", "Juni", "Juli", "Agustus", 
+            "September", "Oktober", "November", "Desember"
+        };
+        return namaBulan[bulan - 1];
     }
     
     private JFreeChart createChart(DefaultCategoryDataset dataset) {
@@ -102,7 +183,7 @@ public class cobadiagram extends JPanel {
         JFreeChart chart = ChartFactory.createBarChart(
                 "Diagram Laporan",      // chart title
                 "Bulan",                // x-axis label
-                "Nilai",                // y-axis label
+                "Total Transaksi",       // y-axis label
                 dataset,                // data
                 PlotOrientation.VERTICAL, // orientation
                 true,                   // show legend
@@ -166,7 +247,8 @@ public class cobadiagram extends JPanel {
     }
     
     // Method to update data if needed
-    public void updateData(DefaultCategoryDataset newDataset) {
+    public void updateData() {
+        DefaultCategoryDataset newDataset = createDatasetFromDatabase();
         CategoryPlot plot = (CategoryPlot) chart.getPlot();
         plot.setDataset(newDataset);
         chartPanel.repaint();

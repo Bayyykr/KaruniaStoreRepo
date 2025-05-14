@@ -876,4 +876,24 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+    public static void showEditProductBerhasilDiEdit(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditProductSuksesDiEdit popup = new PopUp_SmallEditProductSuksesDiEdit(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
 }
