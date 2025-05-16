@@ -1374,8 +1374,8 @@ private String convertCategory(String category) {
     switch (category) {
         case "Sandal": return "sandal";
         case "Sepatu": return "sepatu";
-        case "Kaos Kaki": return "kaoskaki";
-        case "Lainnya": return "aksesoris tambahan";
+        case "Kaos Kaki": return "kaos kaki";
+        case "Lainnya": return "lainnya";
         default: return "";
     }
 }
@@ -1413,6 +1413,7 @@ private void insertProduct(String productId, String merk, String category, Strin
         st.setDouble(9, hargaBeli);
         st.setString(10, styleId);
         st.setString(11, "dijual");
+        System.out.println(category);
 
         if (st.executeUpdate() <= 0) {
             throw new Exception("Gagal menambahkan produk.");
