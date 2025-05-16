@@ -1,5 +1,6 @@
 package produk;
 
+import Form.FormKasir;
 import SourceCode.RoundedButtonLaporan;
 import javax.swing.*;
 import java.awt.*;
@@ -288,7 +289,7 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         @Override
         public void mouseClicked(MouseEvent e) {
             startCloseAnimation();
-            Productt.getMainFrame().switchToTransJualPanel();
+            FormKasir.getMainFrame().switchToTransJualPanel();
         }
     });
 

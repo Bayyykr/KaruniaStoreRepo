@@ -1,5 +1,7 @@
 package Form;
 
+
+import PopUp_all.PindahanAntarPopUp;
 import PopUp_all.PopUp_BayarTransjual;
 import SourceCode.PopUp_edittransbeli;
 import SourceCode.ScrollPane;
@@ -22,7 +24,8 @@ import db.conn;
 import java.sql.*;
 
 public class Transaksibeli extends JPanel {
-
+    
+    private JFrame parentFrame;
     Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
     private JTextField hargaBeliField, scanKodeField, namaProduk, qtyField, sizeProduk, txtIdTransaksi;
@@ -600,7 +603,7 @@ public class Transaksibeli extends JPanel {
         totalPanel.add(totalValueLabel);
 
         // Posisi tombol checkout disesuaikan
-        btnCheckout = new JButton("CHECKOUT") {
+        btnCheckout = new JButton("SIMPAN") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -973,11 +976,8 @@ public class Transaksibeli extends JPanel {
             con.commit();
             con.setAutoCommit(true);
 
-            // Tampilkan pesan sukses
-            JOptionPane.showMessageDialog(parentComponent,
-                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
-                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
-//            PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
+            PindahanAntarPopUp.showEditTransJualBerhasilDiSimpan(parentFrame);
+//          PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
             return true; // Transaksi berhasil
 
         } catch (SQLException ex) {

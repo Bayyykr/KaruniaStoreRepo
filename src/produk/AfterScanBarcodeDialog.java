@@ -346,12 +346,18 @@ public class AfterScanBarcodeDialog extends JDialog {
         editButton.setBackground(new Color(60, 63, 65));
         editButton.setForeground(Color.WHITE);
         editButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                startCloseAnimation();
-                Productt.getMainFrame().switchToEditProductPanel();
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
+                startCloseAnimation(); // animasi tutup pop-up (jika ada)
+
+                // Panggil method switchToEditProductPanel dengan parameter scannedBarcode
+                Productt.getMainFrame().switchToEditProductPanelScan(scannedBarcode);
+            } else {
+                JOptionPane.showMessageDialog(null, "Barcode kosong atau tidak valid.");
             }
-        });
+        }
+    });
 
         // Buat dan atur UI rounded dengan border hitam
         RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();

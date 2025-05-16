@@ -11,6 +11,11 @@ import java.util.Map;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import SourceCode.ScrollPane;
+import db.conn;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
 
@@ -49,7 +54,8 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
     private ArrayList<StockItem> kaosKakiItems = new ArrayList<>();
     private ArrayList<StockItem> lainnyaItems = new ArrayList<>();
     private ArrayList<StockItem> currentItems = new ArrayList<>();
-    private String currentCategory = "Sepatu"; // Diubah menjadi "Sepatu" sebagai default
+    private ArrayList<StockItem> allItems = new ArrayList<>();
+    private String currentCategory = "Sepatu"; 
 
     // Icon paths - diperbarui untuk menggunakan SourceImage.icon
     private final String WARNING_ICON_PATH = "/SourceImage/icon/warning_segitiga_merah.png";
@@ -72,8 +78,9 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
         }
         isShowingPopup = true;
         
-        initializeData();
-
+        // Load data from database first
+        loadDataFromDatabase();
+        
         glassPane = new JComponent() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -115,25 +122,78 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
         startScaleAnimation();
     }
 
-    private void initializeData() {
-        sepatuItems.add(new StockItem("Sepatu Kulit Hitam", 4));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-        sepatuItems.add(new StockItem("Sepatu Sneakers", 2));
-
-        sandalItems.add(new StockItem("Sandal Kulit Hitam", 5));
-        sandalItems.add(new StockItem("Sandal Gunung", 3));
-
-        kaosKakiItems.add(new StockItem("Kaos Kaki Putih", 6));
-        kaosKakiItems.add(new StockItem("Kaos Kaki Hitam", 4));
-
-        lainnyaItems.add(new StockItem("Toe Sock Kulit", 3));
-        lainnyaItems.add(new StockItem("Tali Sepatu", 7));
-
-        currentItems = sepatuItems;
+    private void loadDataFromDatabase() {
+        // Clear existing data
+        sepatuItems.clear();
+        sandalItems.clear();
+        kaosKakiItems.clear();
+        lainnyaItems.clear();
+        allItems.clear();
+        
+        Connection connection = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            connection = conn.getConnection();
+            
+            String sql = "SELECT p.jenis_produk, p.nama_produk, ks.produk_sisa " +
+                         "FROM produk p " +
+                         "LEFT JOIN ( " +
+                         "    SELECT ks1.id_produk, ks1.produk_sisa " +
+                         "    FROM kartu_stok ks1 " +
+                         "    INNER JOIN ( " +
+                         "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+                         "        FROM kartu_stok " +
+                         "        GROUP BY id_produk " +
+                         "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+                         ") ks ON p.id_produk = ks.id_produk " +
+                         "WHERE ks.produk_sisa < 10 " +
+                         "ORDER BY ks.produk_sisa ASC";
+            
+            stmt = connection.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                String category = rs.getString("jenis_produk");
+                String itemName = rs.getString("nama_produk");
+                int stockCount = rs.getInt("produk_sisa");
+                
+                StockItem item = new StockItem(itemName, stockCount);
+                allItems.add(item);
+                
+                // Sort by category
+                if (category != null) {
+                    if (category.equalsIgnoreCase("Sepatu")) {
+                        sepatuItems.add(item);
+                    } else if (category.equalsIgnoreCase("Sandal")) {
+                        sandalItems.add(item);
+                    } else if (category.equalsIgnoreCase("Kaos Kaki")) {
+                        kaosKakiItems.add(item);
+                    } else {
+                        lainnyaItems.add(item);
+                    }
+                } else {
+                    lainnyaItems.add(item);
+                }
+            }
+            
+            // Set the current items to the default category
+            currentItems = sepatuItems;
+            
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error loading data: " + e.getMessage(), 
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                // Don't close the connection here as it's managed by conn class
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void createComponents() {
@@ -148,6 +208,7 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
             Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
             searchIcon.setIcon(new ImageIcon(img));
         } catch (Exception e) {
+            // Handle icon loading error silently
         }
         searchIcon.setBounds(25, 13, 24, 24);
         headerPanel.add(searchIcon);
@@ -228,6 +289,21 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
                 }
             }
         });
+        
+        // Add search functionality
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                String searchText = searchField.getText().toLowerCase();
+                if (searchText.equals("search")) {
+                    // If default text, just show all items for the category
+                    updateItemList();
+                    return;
+                }
+                
+                filterItemsBySearchText(searchText);
+            }
+        });
 
         JLabel searchIconRight = new JLabel();
         try {
@@ -235,6 +311,7 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
             Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
             searchIconRight.setIcon(new ImageIcon(img));
         } catch (Exception e) {
+            // Handle icon loading error silently
         }
         searchIconRight.setBounds(FINAL_WIDTH - 90, 15, 24, 24);
 
@@ -253,6 +330,7 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
             Image img = icon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
             filterIcon.setIcon(new ImageIcon(img));
         } catch (Exception e) {
+            // Handle icon loading error silently
         }
         filterIcon.setBounds(0, 15, 20, 20);
         filterPanel.add(filterIcon);
@@ -292,8 +370,8 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
         itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
         itemListPanel.setBackground(Color.WHITE);
 
-        ScrollPane scrollPane = new ScrollPane(itemListPanel,ScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-        ScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        ScrollPane scrollPane = new ScrollPane(itemListPanel, ScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBounds(25, 180, FINAL_WIDTH - 50, 450);
 
         scrollPane.setThumbColor(new Color(100, 100, 100, 150)); 
@@ -307,91 +385,132 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
         updateItemList();
     }
 
-private JButton createFilterButton(String text, int x) {
-    JButton button = new JButton(text) {
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            if (getModel().isPressed()) {
-                g2.setColor(getBackground().darker());
-            } else {
-                g2.setColor(getBackground());
-            }
-
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), BUTTON_RADIUS*2, BUTTON_RADIUS*2);
-
-            if (getBackground().equals(Color.BLACK)) {
-                setForeground(Color.WHITE);
-            } else {
-                setForeground(Color.BLACK);
-            }
-            
-            g2.dispose();
-            super.paintComponent(g);
+    private void filterItemsBySearchText(String searchText) {
+        // Clear current items
+        itemListPanel.removeAll();
+        
+        ArrayList<StockItem> filteredItems = new ArrayList<>();
+        
+        // Filter the current category items
+        ArrayList<StockItem> itemsToFilter;
+        if (searchText.isEmpty()) {
+            // If search field is empty, just use current category
+            itemsToFilter = getCurrentCategoryItems();
+        } else {
+            // Otherwise filter from all items to allow cross-category search
+            itemsToFilter = allItems;
         }
         
-        @Override
-        protected void paintBorder(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // Perform filtering
+        for (StockItem item : itemsToFilter) {
+            if (item.getName().toLowerCase().contains(searchText)) {
+                filteredItems.add(item);
+            }
+        }
+        
+        // Display filtered items
+        for (StockItem item : filteredItems) {
+            JPanel itemPanel = createItemPanel(item);
+            itemListPanel.add(itemPanel);
+            itemListPanel.add(createSpacingPanel());
+        }
+        
+        // Add empty panels for spacing if needed
+        int emptySpacesToAdd = Math.max(0, 5 - filteredItems.size());
+        for (int i = 0; i < emptySpacesToAdd; i++) {
+            itemListPanel.add(createEmptyItemPanel());
+        }
+        
+        // Refresh panel
+        itemListPanel.revalidate();
+        itemListPanel.repaint();
+    }
+    
+    private ArrayList<StockItem> getCurrentCategoryItems() {
+        switch (currentCategory) {
+            case "Sepatu":
+                return sepatuItems;
+            case "Sandal":
+                return sandalItems;
+            case "Kaos Kaki":
+                return kaosKakiItems;
+            case "Lainnya":
+            default:
+                return lainnyaItems;
+        }
+    }
 
-            if (getBackground().equals(Color.BLACK)) {
-                g2.setColor(Color.BLACK);  
-            } else {
-                g2.setColor(Color.LIGHT_GRAY); 
+    private JButton createFilterButton(String text, int x) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(getBackground().darker());
+                } else {
+                    g2.setColor(getBackground());
+                }
+
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), BUTTON_RADIUS*2, BUTTON_RADIUS*2);
+
+                if (getBackground().equals(Color.BLACK)) {
+                    setForeground(Color.WHITE);
+                } else {
+                    setForeground(Color.BLACK);
+                }
+                
+                g2.dispose();
+                super.paintComponent(g);
             }
             
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, BUTTON_RADIUS*2, BUTTON_RADIUS*2);
-            g2.dispose();
+            @Override
+            protected void paintBorder(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                if (getBackground().equals(Color.BLACK)) {
+                    g2.setColor(Color.BLACK);  
+                } else {
+                    g2.setColor(Color.LIGHT_GRAY); 
+                }
+                
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, BUTTON_RADIUS*2, BUTTON_RADIUS*2);
+                g2.dispose();
+            }
+        };
+        
+        button.setBounds(x, 10, 100, 30);
+        button.setFont(new Font("Arial", Font.PLAIN, 14));
+        button.setBackground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
+        button.setBorderPainted(true);
+        button.setContentAreaFilled(false);  
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.addActionListener(e -> {
+            updateActiveCategory(text);
+            updateItemList();
+        });
+
+        return button;
+    }
+
+    private void updateActiveCategory(String category) {
+        for (Map.Entry<String, JButton> entry : categoryButtons.entrySet()) {
+            entry.getValue().setBackground(Color.WHITE);
         }
-    };
-    
-    button.setBounds(x, 10, 100, 30);
-    button.setFont(new Font("Arial", Font.PLAIN, 14));
-    button.setBackground(Color.WHITE);
-    button.setForeground(Color.BLACK);
-    button.setFocusPainted(false);
-    button.setBorderPainted(true);
-    button.setContentAreaFilled(false);  
-    button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        JButton activeButton = categoryButtons.get(category);
+        if (activeButton != null) {
+            activeButton.setBackground(Color.BLACK);
+        }
 
-    button.addActionListener(e -> {
-        updateActiveCategory(text);
-        updateItemList();
-    });
-
-    return button;
-}
-
-private void updateActiveCategory(String category) {
-    for (Map.Entry<String, JButton> entry : categoryButtons.entrySet()) {
-        entry.getValue().setBackground(Color.WHITE);
+        currentCategory = category;
+        currentItems = getCurrentCategoryItems();
     }
-    
-    JButton activeButton = categoryButtons.get(category);
-    if (activeButton != null) {
-        activeButton.setBackground(Color.BLACK);
-    }
-
-    currentCategory = category;
-    switch (category) {
-        case "Sepatu":
-            currentItems = sepatuItems;
-            break;
-        case "Sandal":
-            currentItems = sandalItems;
-            break;
-        case "Kaos Kaki":
-            currentItems = kaosKakiItems;
-            break;
-        case "Lainnya":
-        default:
-            currentItems = lainnyaItems;
-            break;
-    }
-}
 
     private void updateItemList() {
         // Clear current items
@@ -407,7 +526,7 @@ private void updateActiveCategory(String category) {
         }
 
         // Add empty panels for spacing if needed
-        int emptySpacesToAdd = 5 - currentItems.size();
+        int emptySpacesToAdd = Math.max(0, 5 - currentItems.size());
         for (int i = 0; i < emptySpacesToAdd; i++) {
             itemListPanel.add(createEmptyItemPanel());
         }
@@ -550,9 +669,7 @@ private void updateActiveCategory(String category) {
         return parentFrame.getLayeredPane();
     }
 
-    // Class untuk menyimpan item stok
     private class StockItem {
-
         private String name;
         private int stockCount;
 
@@ -571,7 +688,6 @@ private void updateActiveCategory(String category) {
     }
 
     class RoundBorder extends AbstractBorder {
-
         private int radius;
         private Color color;
 
@@ -606,7 +722,6 @@ private void updateActiveCategory(String category) {
     }
 
     class RoundedPanel extends JPanel {
-
         private int radius;
 
         public RoundedPanel(int radius) {
@@ -668,7 +783,6 @@ private void updateActiveCategory(String category) {
     }
 
     class RoundedTopPanel extends JPanel {
-
         private int radius;
 
         public RoundedTopPanel(int radius) {

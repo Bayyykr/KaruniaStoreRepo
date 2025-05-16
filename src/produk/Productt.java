@@ -99,7 +99,7 @@ public class Productt extends JFrame {
         produkPanel.setPlusButtonListener(() -> {
             switchToAddProductPanel();
         });
-        
+
         produkPanel.setPindahTransJual(() -> {
             switchToEditProductPanel();
         });
@@ -117,6 +117,13 @@ public class Productt extends JFrame {
             switchToDataKaryawan();
         });
 
+        karyawanPanel.setGajiKaryawan(() -> {
+            switchToGajiKaryawanPanel();
+        });
+
+        gajikaryawan.setBackToDataKaryawan(() -> {
+            switchToDataKaryawan();
+        });
         // Add menu change event listener
         sidebar.addEventMenu(new EventMenu() {
             @Override
@@ -129,7 +136,7 @@ public class Productt extends JFrame {
                 // Show the appropriate panel based on menu index
                 switch (index) {
                     case 0: // Dashboard
-                        currentPanel = dashboardPanelKasir;
+                        currentPanel = dashboardPanel;
                         break;
                     case 1: // Produk
                         currentPanel = produkPanel;
@@ -148,7 +155,7 @@ public class Productt extends JFrame {
                         System.exit(0);
                         break;
                     default:
-                        currentPanel = dashboardPanelKasir;
+                        currentPanel = dashboardPanel;
                         break;
                 }
 
@@ -167,13 +174,37 @@ public class Productt extends JFrame {
         add(top);
 
         // Set Dashboard as initial panel
-        currentPanel = dashboardPanelKasir;
+        currentPanel = dashboardPanel;
         add(currentPanel);
 
         // Make all components visible
         sidebar.setVisible(true);
         top.setVisible(true);
         currentPanel.setVisible(true);
+    }
+
+    public void switchToEditProductPanelScan(String scannedBarcode) {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+
+        // Buat panel edit baru dengan parameter barcode
+        editproductpanel = new EditProductPanel(this, scannedBarcode);
+
+        // Set bounds (ukuran & posisi)
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int panelX = 280;
+        int panelY = 80;
+        int panelWidth = screenSize.width - 300;
+        int panelHeight = screenSize.height - 110;
+        editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+
+        currentPanel = editproductpanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
     }
 
     // Method untuk beralih ke panel AddNewProductFormm
@@ -205,38 +236,37 @@ public class Productt extends JFrame {
     }
 
     public void switchToEditProductPanel() {
-    if (currentPanel != null) {
-        remove(currentPanel);
-    }
-    
-    // Get the selected product ID from ProductDisplayy
-    String selectedId = produkPanel.getSelectedProductId();
-    System.out.println("Switching to edit panel with ID: " + selectedId);
-    
-    // Create a new EditProductPanel with the correct parameters
-    editproductpanel = new EditProductPanel(this, selectedId);
-    
-    // Set bounds for the new panel (use the same bounds as before)
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    int panelX = 280;
-    int panelY = 80;
-    int panelWidth = screenSize.width - 300;
-    int panelHeight = screenSize.height - 110;
-    editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
-    
-    currentPanel = editproductpanel;
-    add(currentPanel);
-    currentPanel.setVisible(true);
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
 
-    revalidate();
-    repaint();
-}
-    
+        // Get the selected product ID from ProductDisplayy
+        String selectedId = produkPanel.getSelectedProductId();
+        System.out.println("Switching to edit panel with ID: " + selectedId);
+
+        // Create a new EditProductPanel with the correct parameters
+        editproductpanel = new EditProductPanel(this, selectedId);
+
+        // Set bounds for the new panel (use the same bounds as before)
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int panelX = 280;
+        int panelY = 80;
+        int panelWidth = screenSize.width - 300;
+        int panelHeight = screenSize.height - 110;
+        editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+
+        currentPanel = editproductpanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
+    }
+
 //    //INI GANTI PANEL EDIT    
 //    public EditProductPanel getEditProductPanel() {
 //        return this.editproductpanel;
 //    }
-
     // Tambahkan method untuk beralih ke panel Transjual
     public void switchToTransJualPanel() {
         if (currentPanel != null) {
@@ -298,6 +328,19 @@ public class Productt extends JFrame {
         }
 
         currentPanel = karyawanPanel;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
+    }
+
+    public void switchToGajiKaryawanPanel() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+
+        currentPanel = gajikaryawan;
         add(currentPanel);
         currentPanel.setVisible(true);
 

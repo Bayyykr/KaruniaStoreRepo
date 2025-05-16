@@ -96,13 +96,12 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         tanggalPanel.setLayout(new BorderLayout());
 
         tanggalLabel = createTextLabel(currentDate, 0, 0, 120, 30,
-                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166)); // Font dikecilkan
-        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER); // Perataan tengah
-        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Border lebih kecil
+                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166)); 
+        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER); 
+        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5)); 
         tanggalPanel.add(tanggalLabel, BorderLayout.CENTER);
         contentPanel.add(tanggalPanel);
 
-        // Panel data input dengan latar belakang abu-abu muda
         JPanel dataPanel = new RoundedPanel(RADIUS);
         dataPanel.setLayout(null);
         dataPanel.setBounds(30, 90, FINAL_WIDTH - 60, 85);
@@ -115,6 +114,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         dataPanel.add(idLabel);
 
         idField = createRoundTextField(50, 30, 180, 35);
+        idField.setFocusable(false);
         dataPanel.add(idField);
 
         ((PlainDocument) idField.getDocument()).setDocumentFilter(new DocumentFilter() {
@@ -156,6 +156,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
 
         // Memperbaiki lebar field penanggung jawab agar tidak terlihat putih di belakangnya
         penanggungJawabField = createRoundTextField(430, 30, dataPanel.getWidth() - 440, 35);
+        penanggungJawabField.setFocusable(false);
         dataPanel.add(penanggungJawabField);
 
         ((PlainDocument) penanggungJawabField.getDocument()).setDocumentFilter(new DocumentFilter() {
@@ -199,7 +200,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         
         ((PlainDocument) totalField.getDocument()).setDocumentFilter(new DocumentFilter() {
             private final String prefix = "Rp. ";
-            private final int maxDigits = 12; 
+            private final int maxDigits = 10; 
 
             private String formatWithSeparator(String value) {
                 // Hapus semua pemisah ribuan yang sudah ada

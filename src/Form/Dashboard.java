@@ -27,6 +27,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import db.conn;
+import java.sql.SQLException;
 
 public class Dashboard extends JPanel {
     private CardLayout headerCardLayout;
@@ -433,7 +434,7 @@ public class Dashboard extends JPanel {
         JButton buttondiskon = createRegularButton("ATUR DISKON", new Dimension(280, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         buttondiskon.addActionListener(e -> {
             JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(buttondiskon);
-            PopUp_DashboardKasirCekPromoDanDiskon cekpromo = new PopUp_DashboardKasirCekPromoDanDiskon(parentFrame);
+            PopUp_aturdiskon cekpromo = new PopUp_aturdiskon(parentFrame);
             cekpromo.setVisible(true);
 
             System.out.println("ini button diskon");
@@ -655,144 +656,203 @@ public class Dashboard extends JPanel {
         return button;
     }
 
-    private JPanel createInventoryStockPanel() {
-        // Main panel with padding and rounded border
-        JPanel stockPanel = new JPanel();
-        stockPanel.setLayout(new BorderLayout(0, 5));
-        stockPanel.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(50, new Color(220, 220, 220), 2),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        stockPanel.setBackground(Color.white);
+   private JPanel createInventoryStockPanel() {
+    JPanel stockPanel = new JPanel();
+    stockPanel.setLayout(new BorderLayout(0, 5));
+    stockPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(50, new Color(220, 220, 220), 2),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+    ));
+    stockPanel.setBackground(Color.white);
 
-        // Title label
-        JLabel titleLabel = new JLabel("Stok Harian");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        stockPanel.add(titleLabel, BorderLayout.NORTH);
+    JLabel titleLabel = new JLabel("Stok Harian");
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+    stockPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Panel for product items
-        JPanel itemsContainer = new JPanel();
-        itemsContainer.setLayout(new BoxLayout(itemsContainer, BoxLayout.Y_AXIS));
-        itemsContainer.setBackground(Color.WHITE);
+    JPanel itemsContainer = new JPanel();
+    itemsContainer.setLayout(new BoxLayout(itemsContainer, BoxLayout.Y_AXIS));
+    itemsContainer.setBackground(Color.WHITE);
+    itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
-        itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+String sql = "SELECT p.jenis_produk, COALESCE(SUM(ks.produk_sisa), 0) AS total_stok " +
+             "FROM produk p " +
+             "LEFT JOIN ( " +
+             "    SELECT ks1.id_produk, ks1.produk_sisa " +
+             "    FROM kartu_stok ks1 " +
+             "    INNER JOIN ( " +
+             "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+             "        FROM kartu_stok " +
+             "        GROUP BY id_produk " +
+             "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+             ") ks ON p.id_produk = ks.id_produk " +
+             "GROUP BY p.jenis_produk";
 
-        // Product data
-        String[][] data = {
-            {"Sepatu", "130", "shoes-icon.png"},
-            {"Sandal", "120", "sandal-icon.png"},
-            {"Sabuk", "70", "sabuk-icon.png"},
-            {"Produk Lainnya", "50", "produk-lainnya-icon.png"}
-        };
 
-        // Create each product row
-        for (int i = 0; i < data.length; i++) {
-            JPanel itemPanel = createProductRow(data[i][0], data[i][1], data[i][2]);
+    Connection connection = null;
+    PreparedStatement stmt = null;
+    ResultSet rs = null;
+
+    try {
+        connection = db.conn.getConnection();
+        stmt = connection.prepareStatement(sql);
+        rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            String jenisProduk = rs.getString("jenis_produk");
+            int totalStok = rs.getInt("total_stok");
+
+            String iconFile = switch (jenisProduk.toLowerCase()) {
+                case "sepatu" -> "shoes-icon.png";
+                case "sandal" -> "sandal-icon.png";
+                case "kaos kaki" -> "kaoskaki.png";
+                default -> "produk-lainnya-icon.png";
+            };
+
+            JPanel itemPanel = createProductRow(jenisProduk, String.valueOf(totalStok), iconFile, jenisProduk);
             itemsContainer.add(itemPanel);
-
-            // Add gap between rows
-            if (i < data.length - 1) {
-                itemsContainer.add(Box.createVerticalStrut(10));
-            }
+            itemsContainer.add(Box.createVerticalStrut(10));
         }
 
-        stockPanel.add(itemsContainer, BorderLayout.CENTER);
-        return stockPanel;
-    }
-
-    private JPanel createProductRow(String productName, String quantity, String iconPath) {
-        // Main row panel with rounded border
-        JPanel rowPanel = new JPanel();
-        rowPanel.setLayout(new BorderLayout());
-        rowPanel.setBackground(Color.WHITE);
-        rowPanel.setBorder(BorderFactory.createCompoundBorder(
-                new RoundedBorder(10, new Color(220, 220, 220), 1),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-
-        // Left panel for icon and product name
-        JPanel leftPanel = new JPanel();
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
-        leftPanel.setBackground(Color.WHITE);
-
-        // Add product icon
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JLabel errorLabel = new JLabel("Gagal memuat data stok.");
+        errorLabel.setForeground(Color.RED);
+        itemsContainer.add(errorLabel);
+    } finally {
+        // Jangan menutup koneksi karena di-handle oleh class conn
         try {
-            ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/" + iconPath));
-            // Scale icon to appropriate size (24x24 pixels)
-            Image scaledImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
-            JLabel iconLabel = new JLabel(new ImageIcon(scaledImage));
-            iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-            leftPanel.add(iconLabel);
-        } catch (Exception e) {
-            // Fallback if icon not found - create a small colored square as placeholder
-            JPanel iconPlaceholder = new JPanel();
-            iconPlaceholder.setBackground(new Color(230, 230, 230));
-            iconPlaceholder.setPreferredSize(new Dimension(24, 24));
-            iconPlaceholder.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-            leftPanel.add(iconPlaceholder);
-            System.err.println("Icon not found: " + iconPath);
-        }
-
-        // Product name label
-        JLabel nameLabel = new JLabel(productName);
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-
-        leftPanel.add(nameLabel);
-
-        // Right panel for quantity and menu button
-        JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
-        rightPanel.setBackground(Color.WHITE);
-
-        // Quantity field with border
-        JLabel quantityField = new JLabel(quantity);
-        quantityField.setFont(new Font("Arial", Font.PLAIN, 14));
-        quantityField.setHorizontalAlignment(SwingConstants.CENTER);
-        quantityField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                BorderFactory.createEmptyBorder(5, 15, 5, 15)
-        ));
-        quantityField.setBackground(Color.WHITE);
-        quantityField.setOpaque(true);
-
-        // Menu button (using icon from PNG)
-        JButton menuButton = new JButton();
-        try {
-            // Load the icon image
-            BufferedImage iconImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/titik 3 sepatu.png"));
-            // Scale the image to fit the button
-            Image scaledImage = iconImage.getScaledInstance(4, 17, Image.SCALE_SMOOTH);
-            menuButton.setIcon(new ImageIcon(scaledImage));
-        } catch (IOException e) {
-            // Fallback to text if image can't be loaded
-            menuButton.setText("⋮");
-            menuButton.setFont(new Font("Arial", Font.BOLD, 16));
-            menuButton.setForeground(new Color(100, 100, 100));
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        menuButton.setBorderPainted(false);
-        menuButton.setContentAreaFilled(false);
-        menuButton.setFocusPainted(false);
-        menuButton.setPreferredSize(new Dimension(30, 30));
-        menuButton.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-
-        rightPanel.add(quantityField);
-        rightPanel.add(Box.createHorizontalStrut(10));
-        rightPanel.add(menuButton);
-
-        // Add components to row panel
-        rowPanel.add(leftPanel, BorderLayout.WEST);
-        rowPanel.add(rightPanel, BorderLayout.EAST);
-
-        // Set fixed height for consistent row sizes
-        rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-        rowPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 60));
-
-        return rowPanel;
     }
+    stockPanel.add(itemsContainer, BorderLayout.CENTER);
+    return stockPanel;
+}
+
+
+  private JPanel createProductRow(String productName, String quantity, String iconPath, String jenisProduk) {
+    // Main row panel with rounded border
+    JPanel rowPanel = new JPanel();
+    rowPanel.setLayout(new BorderLayout());
+    rowPanel.setBackground(Color.WHITE);
+    rowPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(10, new Color(0, 0, 0), 1),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+    ));
+
+    // Left panel for icon and product name
+    JPanel leftPanel = new JPanel();
+    leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
+    leftPanel.setBackground(Color.WHITE);
+
+    // Add product icon
+    try {
+        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/SourceImage/" + iconPath));
+        Image scaledImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+        JLabel iconLabel = new JLabel(new ImageIcon(scaledImage));
+        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        leftPanel.add(iconLabel);
+    } catch (Exception e) {
+        JPanel iconPlaceholder = new JPanel();
+        iconPlaceholder.setBackground(new Color(230, 230, 230));
+        iconPlaceholder.setPreferredSize(new Dimension(24, 24));
+        iconPlaceholder.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+        leftPanel.add(iconPlaceholder);
+        System.err.println("Icon not found: " + iconPath);
+    }
+
+    // Product name label
+    JLabel nameLabel = new JLabel(productName);
+    nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+    nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+    leftPanel.add(nameLabel);
+
+    // Right panel for quantity
+    JPanel rightPanel = new JPanel();
+    rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
+    rightPanel.setBackground(Color.WHITE);
+
+    // Quantity field
+    JLabel quantityField = new JLabel(quantity);
+    quantityField.setFont(new Font("Arial", Font.PLAIN, 14));
+    quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+    quantityField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
+            BorderFactory.createEmptyBorder(5, 15, 5, 15)
+    ));
+    quantityField.setBackground(Color.WHITE);
+    quantityField.setOpaque(true);
+
+    JButton menuButton = new JButton();
+
+    String titik3Icon = switch (jenisProduk.toLowerCase()) {
+        case "sepatu" -> "titik 3 sepatu.png";
+        case "sandal" -> "titik 3 sepatu.png";
+        case "kaos kaki" -> "titik 3 sepatu.png";
+        default -> "titik 3 sepatu.png";
+    };
+
+    try {
+        BufferedImage iconImage = ImageIO.read(getClass().getResourceAsStream("/SourceImage/" + titik3Icon));
+        Image scaledImage = iconImage.getScaledInstance(4, 17, Image.SCALE_SMOOTH);
+        menuButton.setIcon(new ImageIcon(scaledImage));
+    } catch (IOException e) {
+        menuButton.setText("⋮");
+        menuButton.setFont(new Font("Arial", Font.BOLD, 16));
+        menuButton.setForeground(new Color(100, 100, 100));
+        System.err.println("Titik tiga icon not found: " + titik3Icon);
+        e.printStackTrace();
+    }
+
+    menuButton.setBorderPainted(false);
+    menuButton.setContentAreaFilled(false);
+    menuButton.setFocusPainted(false);
+    menuButton.setPreferredSize(new Dimension(30, 30));
+    menuButton.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+    menuButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    
+     menuButton.addActionListener(e -> {
+    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(rowPanel);
+
+    switch (jenisProduk.toLowerCase()) {
+        case "sepatu" -> {
+            PopUp_DashboardOwnerTitik3Sepatu popup = new PopUp_DashboardOwnerTitik3Sepatu(parentFrame);
+            popup.setVisible(true);
+            System.out.println("Ini Titik Sepatu");
+        }
+        case "sandal" -> {
+            PopUp_DashboardOwnerTitik3Sandal popupSandal = new PopUp_DashboardOwnerTitik3Sandal(parentFrame);
+            popupSandal.setVisible(true);
+             System.out.println("Ini Titik Sandal");
+        }
+        case "kaos kaki" -> {
+            PopUp_DashboardOwnerTitik3KaosKaki popupKaosKaki = new PopUp_DashboardOwnerTitik3KaosKaki(parentFrame);
+            popupKaosKaki.setVisible(true);
+             System.out.println("Ini Titik kaos kaki");
+        }
+        default -> {
+            PopUp_DashboardOwnerTitik3Lainnya popupLainnya = new PopUp_DashboardOwnerTitik3Lainnya(parentFrame);
+            popupLainnya.setVisible(true);
+             System.out.println("Ini Titik Lainnya");
+        }
+    }
+});
+
+    rightPanel.add(quantityField);
+    rightPanel.add(Box.createHorizontalStrut(10));
+    rightPanel.add(menuButton);
+
+    // Add panels to main row
+    rowPanel.add(leftPanel, BorderLayout.WEST);
+    rowPanel.add(rightPanel, BorderLayout.EAST);
+    rowPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+    rowPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, 60));
+
+    return rowPanel;
+}
 
     private void setNamaUser() {
         String email = LoginForm.getNamaUser();

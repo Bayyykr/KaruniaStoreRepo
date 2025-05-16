@@ -27,8 +27,11 @@ public class Menu extends javax.swing.JPanel {
     private int speed = 2;
     private EventMenuCallBack callBack;
     private EventMenu event;
+    private boolean isKasir = false; // Flag untuk menentukan apakah pengguna adalah kasir
 
-    public Menu() {
+    // Constructor baru dengan parameter userRole
+    public Menu(String userRole) {
+        this.isKasir = userRole.equalsIgnoreCase("kasir");
         initComponents();
         setOpaque(false);
         listMenu.setOpaque(false);
@@ -100,13 +103,25 @@ public class Menu extends javax.swing.JPanel {
             event.menuIndexChange(selectedIndex);
         }
     }
+    
+    // Constructor tanpa parameter untuk kompatibilitas dengan kode lama (Owner)
+    public Menu() {
+        this("owner"); // Default role adalah owner
+    }
 
     private void initData() {
+        // Semua pengguna memiliki menu Dashboard dan Produk
         listMenu.addItem(new Model_Menu("home", "Dashboard", Model_Menu.MenuType.MENU));
         listMenu.addItem(new Model_Menu("produk", "Produk", Model_Menu.MenuType.MENU));
-        listMenu.addItem(new Model_Menu("karyawan", "Karyawan", Model_Menu.MenuType.MENU));
-        listMenu.addItem(new Model_Menu("laporan", "Laporan", Model_Menu.MenuType.MENU));
-        listMenu.addItem(new Model_Menu("transaksibeli", "Transaksi Beli", Model_Menu.MenuType.MENU));
+        
+        // Menu tambahan hanya untuk owner
+        if (!isKasir) {
+            listMenu.addItem(new Model_Menu("karyawan", "Karyawan", Model_Menu.MenuType.MENU));
+            listMenu.addItem(new Model_Menu("laporan", "Laporan", Model_Menu.MenuType.MENU));
+            listMenu.addItem(new Model_Menu("transaksibeli", "Transaksi Beli", Model_Menu.MenuType.MENU));
+        }
+        
+        // Menu keluar untuk semua pengguna
         listMenu.addItem(new Model_Menu("keluar", "Keluar", Model_Menu.MenuType.MENU));
     }
 

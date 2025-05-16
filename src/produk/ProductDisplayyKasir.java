@@ -1,5 +1,6 @@
 package produk;
 
+import Form.FormKasir;
 import PopUp_all.PopUp_aturdiskon;
 import SourceCode.ScrollPane;
 import javax.swing.*;
@@ -554,7 +555,7 @@ private void addLabelClickListener(JLabel label) {
     label.addMouseListener(new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
-            Productt.getMainFrame().switchToTransJualPanel();
+            FormKasir.getMainFrame().switchToTransJualPanel();
         }
     });
 }
@@ -564,7 +565,7 @@ private void addPanelClickListener(JPanel panel) {
     panel.addMouseListener(new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
-            Productt.getMainFrame().switchToTransJualPanel();
+            FormKasir.getMainFrame().switchToTransJualPanel();
         }
     });
 }
@@ -615,7 +616,7 @@ private void addPanelClickListener(JPanel panel) {
             // Cara yang lebih aman untuk memeriksa tipe parentFrame
             try {
                 // Menggunakan reflection untuk memanggil metode pada kelas Productt
-                Class<?> producttClass = Class.forName("Form.Productt");
+                Class<?> producttClass = Class.forName("Form.FormKasir");
                 if (producttClass.isInstance(parentFrame)) {
                     // Memanggil metode switchToTransJualPanel melalui reflection
                     java.lang.reflect.Method method = producttClass.getMethod("switchToTransJualPanel");

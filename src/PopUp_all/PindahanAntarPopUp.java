@@ -896,4 +896,64 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+    public static void showTransJualStokProdukTidakTersedia(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTransJualStokProdukTidakTersedia popup = new PopUp_SmallTransJualStokProdukTidakTersedia(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showEditProductGenerateBarcodeTidakBisaDiGanti(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallEditProductGenerateBarcodeTidakBisa popup = new PopUp_SmallEditProductGenerateBarcodeTidakBisa(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showEditTransJualBerhasilDiSimpan(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTransBeliSuksesDiSimpan popup = new PopUp_SmallTransBeliSuksesDiSimpan(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
 }

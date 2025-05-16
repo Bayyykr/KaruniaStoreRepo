@@ -24,6 +24,8 @@ import javax.swing.plaf.basic.BasicCheckBoxUI;
 
 public class DeleteProductPanel extends JPanel {
 
+    private JFrame parentFrame;
+    Component parentComponent = this;
     private boolean selectMode = false;
     private List<JCheckBox> checkBoxes = new ArrayList<>();
     private List<RoundedPanelProduk> productPanels = new ArrayList<>();
@@ -246,9 +248,7 @@ public class DeleteProductPanel extends JPanel {
                     // Update status to "tidakdijual" for selected products
                     int updatedCount = updateSelectedProductsStatus();
 
-                    JOptionPane.showMessageDialog(DeleteProductPanel.this,
-                            updatedCount + " produk berhasil diupdate status menjadi 'tidakdijual'",
-                            "Update Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                    PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
 
                     // Setelah menghapus, reset mode pilihan
                     selectMode = false;
@@ -407,7 +407,8 @@ public class DeleteProductPanel extends JPanel {
         scrollPane.getViewport().setBackground(Color.WHITE); // Set viewport background to white
 
         // Hide vertical scrollbar by default
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         // Add listener to show scrollbar only when needed
         SwingUtilities.invokeLater(() -> {

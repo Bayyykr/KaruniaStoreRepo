@@ -490,7 +490,7 @@ public class Transjual extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 // Fungsi saat label X diklik
                 System.out.println("Tombol close diklik");
-                Productt.getMainFrame().switchBackToProductPanelKasir();
+                FormKasir.getMainFrame().switchBackToProductPanelKasir();
                 scanKodeField.setText("");
                 namabarang.setText("");
                 hargaBeliField.setText("Rp. ");
@@ -1072,7 +1072,7 @@ public class Transjual extends JPanel {
 
             int stokTersedia = cekStokProduk(kode);
             if (stokTersedia <= 0) {
-                JOptionPane.showMessageDialog(this, "Stok produk tidak tersedia", "Error", JOptionPane.ERROR_MESSAGE);
+                PindahanAntarPopUp.showTransJualStokProdukTidakTersedia(parentFrame);
                 return;
             }
 
@@ -1133,6 +1133,12 @@ public class Transjual extends JPanel {
 
                     // Update quantity
                     int currentQty = Integer.parseInt(model.getValueAt(i, 3).toString());
+                    
+                     if (currentQty + 1 > stokTersedia) {
+                    PindahanAntarPopUp.showTransJualStokProdukTidakTersedia(parentFrame); 
+                    return;
+                    }
+                     
                     int newQty = currentQty + 1;
                     model.setValueAt(newQty, i, 3);
 
