@@ -19,6 +19,7 @@ import SourceCode.RoundedPanelProduk;
 import SourceCode.RoundedButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.geom.Path2D;
 import javax.swing.plaf.basic.BasicCheckBoxUI;
 
@@ -239,23 +240,26 @@ public class DeleteProductPanel extends JPanel {
         deleteSelectedButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Get confirmation before deleting
-                int confirm = JOptionPane.showConfirmDialog(DeleteProductPanel.this,
-                        "Anda yakin ingin menghapus " + selectedCount + " produk terpilih?",
-                        "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
+                // Get the parent frame
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(DeleteProductPanel.this);
 
-                if (confirm == JOptionPane.YES_OPTION) {
+                // Show custom confirmation dialog
+                PopUp_DeleteProductKonfirmasi dialog = new PopUp_DeleteProductKonfirmasi(parentFrame);
+                dialog.setLocationRelativeTo(parentFrame);
+                dialog.setVisible(true);
+
+                // Check the user's selection (assuming the PopUp_DeleteProductKonfirmasi 
+                // class has a method to get the user's choice)
+                if (dialog.isConfirmed()) {  // You may need to adjust this based on your PopUp class implementation
                     // Update status to "tidakdijual" for selected products
                     int updatedCount = updateSelectedProductsStatus();
-
                     PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
-
                     // Setelah menghapus, reset mode pilihan
                     selectMode = false;
                     selectedCount = 0;
                     counterLabel.setText("0 Product Selected");
                     updateButtonsForSelectionMode();
-                    loadProductsFromDatabase(""); // Refresh products with no search term
+                    refreshProductList();
                 }
             }
         });
@@ -342,6 +346,28 @@ public class DeleteProductPanel extends JPanel {
                 }
             }
         });
+        
+        searchField.addKeyListener(new java.awt.event.KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+               String searchTerm = searchField.getText();
+                if (searchTerm.equals("Search")) {
+                    searchTerm = "";
+                }
+                loadProductsFromDatabase(searchTerm);
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                 
+            }
+            
+        });
 
         // Tombol pencarian dengan background hitam
         ButtonLingkaran searchButton = new ButtonLingkaran(5, Color.BLACK);
@@ -365,18 +391,6 @@ public class DeleteProductPanel extends JPanel {
         searchButton.setBackground(Color.BLACK);
         searchButton.setForeground(Color.WHITE);
         searchButton.setPreferredSize(new Dimension(30, 25));
-
-        // Add action listener for search button
-        searchButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String searchTerm = searchField.getText();
-                if (searchTerm.equals("Search")) {
-                    searchTerm = "";
-                }
-                loadProductsFromDatabase(searchTerm);
-            }
-        });
 
         JPanel searchContainer = new JPanel(new BorderLayout());
         searchContainer.setOpaque(false);
@@ -523,10 +537,6 @@ public class DeleteProductPanel extends JPanel {
             stmt.close();
 
             if (result > 0) {
-                JOptionPane.showMessageDialog(this, "Produk berhasil dihapus (status diubah menjadi tidakdijual)",
-                        "Hapus Berhasil", JOptionPane.INFORMATION_MESSAGE);
-
-                // Refresh the product list
                 String searchTerm = searchField.getText();
                 if (searchTerm.equals("Search")) {
                     searchTerm = "";
@@ -667,12 +677,25 @@ public class DeleteProductPanel extends JPanel {
         deleteButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int confirm = JOptionPane.showConfirmDialog(DeleteProductPanel.this,
-                        "Anda yakin ingin menghapus produk '" + productName + "'?",
-                        "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(DeleteProductPanel.this);
 
-                if (confirm == JOptionPane.YES_OPTION) {
+                // Show custom confirmation dialog
+                PopUp_DeleteProductKonfirmasi dialog = new PopUp_DeleteProductKonfirmasi(parentFrame);
+                dialog.setLocationRelativeTo(parentFrame);
+                dialog.setVisible(true);
+
+                // Check the user's selection (assuming the PopUp_DeleteProductKonfirmasi 
+                // class has a method to get the user's choice)
+                if (dialog.isConfirmed()) {  // You may need to adjust this based on your PopUp class implementation
+                    // Update status to "tidakdijual" for selected products
                     deleteSingleProduct(productId);
+                    PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
+                    // Setelah menghapus, reset mode pilihan
+                    selectMode = false;
+                    selectedCount = 0;
+                    counterLabel.setText("0 Product Selected");
+                    updateButtonsForSelectionMode();
+                    refreshProductList();
                 }
             }
         });

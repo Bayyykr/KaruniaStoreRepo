@@ -28,6 +28,7 @@ public class PopUp_DeleteProductKonfirmasi extends JDialog {
 
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+    private boolean confirmed = false;
 
     public PopUp_DeleteProductKonfirmasi(JFrame parent) {
         this.parentFrame = parent;
@@ -94,6 +95,7 @@ public class PopUp_DeleteProductKonfirmasi extends JDialog {
         cancelButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                confirmed = false;
                 startCloseAnimation();
             }
         });
@@ -104,9 +106,7 @@ public class PopUp_DeleteProductKonfirmasi extends JDialog {
         deleteButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Tambahkan logika untuk menghapus data di sini
-
-                // Ubah untuk menambahkan popup sukses
+                confirmed = true;
                 startCloseAnimation();
             }
         });
@@ -122,6 +122,10 @@ public class PopUp_DeleteProductKonfirmasi extends JDialog {
 
         // Memulai animasi setelah pop-up muncul
         startScaleAnimation();
+    }
+    
+    public boolean isConfirmed(){
+        return confirmed;
     }
 
     // Metode untuk membersihkan glassPane yang mungkin sudah ada
