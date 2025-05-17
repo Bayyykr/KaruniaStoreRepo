@@ -956,4 +956,104 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+    public static void showProdukDisplayDiskonSuksesDiTambahkan(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_ProdukDisplayDiskonSuksesDitambahkan popup = new PopUp_ProdukDisplayDiskonSuksesDitambahkan(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showProdukDisplayDiskonSuksesDiHapus(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_ProdukDisplayDiskonSuksesDiHapus popup = new PopUp_ProdukDisplayDiskonSuksesDiHapus(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showProdukDisplayDiskonNamaSudahAda(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_ProdukDisplayDiskonNamaDiskonSudahAda popup = new PopUp_ProdukDisplayDiskonNamaDiskonSudahAda(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showProdukDisplayDiskonSuksesDiPerbarui(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_ProdukDisplayDiskonSuksesDiPerbarui popup = new PopUp_ProdukDisplayDiskonSuksesDiPerbarui(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showProdukDisplayDiskonGagalDiHapus(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_ProdukDisplayDiskonGagalDiHapus popup = new PopUp_ProdukDisplayDiskonGagalDiHapus(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
 }

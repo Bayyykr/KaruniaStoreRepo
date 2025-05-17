@@ -6,11 +6,16 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import SourceCode.ScrollPane;
+import db.conn;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
 
@@ -20,15 +25,12 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
     private JTextField searchField;
     private JPanel itemListPanel;
     private JLabel closeButton;
-    private Map<String, JButton> categoryButtons = new HashMap<>();
 
     // Radius terpisah untuk setiap komponen
     private final int MAIN_PANEL_RADIUS = 20;
     private final int BUTTON_RADIUS = 10;
     private final int SEARCH_FIELD_RADIUS = 18;
     private final int ITEM_PANEL_RADIUS = 12;
-    private final int STOCK_COUNT_RADIUS = 10;
-    private final int INDICATOR_RADIUS = 10;
 
     private final int FINAL_WIDTH = 600;
     private final int FINAL_HEIGHT = 650;
@@ -43,9 +45,7 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
     private static boolean isShowingPopup = false;
 
     // Data untuk item diskon
-    private ArrayList<DiskonItem> sepatuItems = new ArrayList<>();
-    private ArrayList<DiskonItem> currentItems = new ArrayList<>();
-    private String currentCategory = "Sepatu"; 
+    private ArrayList<DiskonItem> diskonItems = new ArrayList<>();
     private final String SEARCH_ICON_PATH = "/SourceImage/icon/icon_search_hitam.png";
 
     public PopUp_DashboardKasirCekPromoDanDiskon() {
@@ -53,7 +53,7 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
     }
 
     public PopUp_DashboardKasirCekPromoDanDiskon(JFrame parent) {
-        super(parent, "Cari Promo/Diskon", true);
+        super(parent, "Diskon yang Dipakai", true);
         this.parentFrame = parent;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
@@ -64,7 +64,8 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
         }
         isShowingPopup = true;
         
-        initializeData();
+        // Ambil data diskon dari database
+        loadDiskonDataDariDatabase();
 
         glassPane = new JComponent() {
             @Override
@@ -107,12 +108,46 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
         startScaleAnimation();
     }
 
-    private void initializeData() {
-        // Inisialisasi data promo dan diskon
-        sepatuItems.add(new DiskonItem("Rusak", 25));
-        sepatuItems.add(new DiskonItem("Lama", 15));
-
-        currentItems = sepatuItems;
+    private void loadDiskonDataDariDatabase() {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        
+        try {
+            // Mendapatkan koneksi dari class conn
+            connection = conn.getConnection();
+            
+            // Query untuk mengambil data diskon dengan status = dipakai
+            String sql = "SELECT nama_diskon, total_diskon FROM diskon WHERE status = 'dipakai'";
+            statement = connection.prepareStatement(sql);
+            
+            resultSet = statement.executeQuery();
+            
+            // Reset list diskon
+            diskonItems.clear();
+            
+            // Memproses hasil query
+            while (resultSet.next()) {
+                String namaDiskon = resultSet.getString("nama_diskon");
+                int totalDiskon = resultSet.getInt("total_diskon");
+                
+                diskonItems.add(new DiskonItem(namaDiskon, totalDiskon));
+            }
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(PopUp_DashboardKasirCekPromoDanDiskon.class.getName()).log(Level.SEVERE, "Error saat mengambil data diskon", ex);
+            JOptionPane.showMessageDialog(null, "Terjadi kesalahan saat mengambil data diskon: " + ex.getMessage(), 
+                    "Error Database", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            // Menutup resources
+            try {
+                if (resultSet != null) resultSet.close();
+                if (statement != null) statement.close();
+                // Jangan tutup koneksi karena kita menggunakan shared connection
+            } catch (SQLException ex) {
+                Logger.getLogger(PopUp_DashboardKasirCekPromoDanDiskon.class.getName()).log(Level.SEVERE, "Error saat menutup resources", ex);
+            }
+        }
     }
 
     private void createComponents() {
@@ -121,13 +156,13 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
         headerPanel.setBackground(Color.WHITE);
         headerPanel.setLayout(null);
 
-        // Judul diganti sesuai gambar
-        JLabel titleLabel = new JLabel("Cari Promo/Diskon");
+        // Judul
+        JLabel titleLabel = new JLabel("Daftar Diskon yang Dipakai");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setBounds(25, 10, 300, 30);
         headerPanel.add(titleLabel);
 
-        // Close button (diubah menjadi JLabel dengan X)
+        // Close button
         closeButton = new JLabel("×");
         closeButton.setFont(new Font("Arial", Font.BOLD, 24));
         closeButton.setBounds(FINAL_WIDTH - 50, 10, 30, 30);
@@ -153,7 +188,6 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
         });
 
         headerPanel.add(closeButton);
-
         contentPanel.add(headerPanel);
 
         // Search field
@@ -197,6 +231,13 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
                 }
             }
         });
+        
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                filterItems(searchField.getText());
+            }
+        });
 
         JLabel searchIconRight = new JLabel();
         try {
@@ -204,6 +245,8 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
             Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
             searchIconRight.setIcon(new ImageIcon(img));
         } catch (Exception e) {
+            // Jika gagal memuat ikon, tampilkan teks sebagai pengganti
+            searchIconRight.setText("🔍");
         }
         searchIconRight.setBounds(FINAL_WIDTH - 90, 15, 24, 24);
 
@@ -219,7 +262,7 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
 
         ScrollPane scrollPane = new ScrollPane(itemListPanel, ScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBounds(25, 120, FINAL_WIDTH - 50, 510); // Diperpanjang karena tidak ada panel filter
+        scrollPane.setBounds(25, 120, FINAL_WIDTH - 50, 510);
 
         scrollPane.setThumbColor(new Color(100, 100, 100, 150)); 
         scrollPane.setTrackColor(new Color(240, 240, 240, 100)); 
@@ -228,34 +271,42 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
 
         contentPanel.add(scrollPane);
 
-        // Load initial items
+        // Load items
         updateItemList();
     }
-
-    private void updateActiveCategory(String category) {
-        for (Map.Entry<String, JButton> entry : categoryButtons.entrySet()) {
-            entry.getValue().setBackground(Color.WHITE);
+    
+    private void filterItems(String searchText) {
+        if (searchText.equals("Search")) {
+            updateItemList();
+            return;
         }
         
-        JButton activeButton = categoryButtons.get(category);
-        if (activeButton != null) {
-            activeButton.setBackground(Color.BLACK);
+        // Clear current items
+        itemListPanel.removeAll();
+        
+        searchText = searchText.toLowerCase();
+        
+        // Add filtered items
+        for (DiskonItem item : diskonItems) {
+            if (item.getName().toLowerCase().contains(searchText)) {
+                JPanel itemPanel = createDiskonItemPanel(item);
+                itemListPanel.add(itemPanel);
+                // Menambahkan panel kosong untuk jarak antar item
+                itemListPanel.add(createSpacingPanel());
+            }
         }
-
-        currentCategory = category;
-        switch (category) {
-            case "Sepatu":
-                currentItems = sepatuItems;
-                break;
-        }
+        
+        // Refresh panel
+        itemListPanel.revalidate();
+        itemListPanel.repaint();
     }
 
     private void updateItemList() {
         // Clear current items
         itemListPanel.removeAll();
 
-        // Add items based on current category
-        for (DiskonItem item : currentItems) {
+        // Add items from database
+        for (DiskonItem item : diskonItems) {
             JPanel itemPanel = createDiskonItemPanel(item);
             itemListPanel.add(itemPanel);
 
@@ -284,13 +335,13 @@ public class PopUp_DashboardKasirCekPromoDanDiskon extends JDialog {
         panel.setBackground(Color.WHITE);
         panel.setBorder((Border) new RoundBorder(ITEM_PANEL_RADIUS, Color.LIGHT_GRAY));
 
-        // Item name (alasan diskon)
+        // Item name (nama diskon)
         JLabel nameLabel = new JLabel(item.getName());
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setBounds(25, 15, 400, 20);
         panel.add(nameLabel);
 
-        // Diskon percentage dengan format persentase
+        // Diskon value dengan format persentase
         JLabel percentLabel = new JLabel(item.getDiskonPercent() + " %");
         percentLabel.setFont(new Font("Arial", Font.BOLD, 14));
         percentLabel.setHorizontalAlignment(SwingConstants.RIGHT);

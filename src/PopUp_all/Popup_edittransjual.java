@@ -129,7 +129,7 @@ public class Popup_edittransjual extends JDialog {
             String discountValue = originalDiscount.replace("%", "").trim();
             // Get the actual discount name from database based on the percentage
             try {
-                String query = "SELECT nama_diskon FROM diskon WHERE total_diskon = ?";
+                String query = "SELECT nama_diskon FROM diskon WHERE total_diskon = ? AND status = 'dipakai'";
                 PreparedStatement ps = con.prepareStatement(query);
                 ps.setDouble(1, Double.parseDouble(discountValue));
                 ResultSet rs = ps.executeQuery();
@@ -246,7 +246,7 @@ public class Popup_edittransjual extends JDialog {
             if (!diskonText.isEmpty()) {
                 // Get the actual discount percentage from database based on the selected name
                 try {
-                    String query = "SELECT total_diskon FROM diskon WHERE nama_diskon = ?";
+                    String query = "SELECT total_diskon FROM diskon WHERE nama_diskon = ? AND status = 'dipakai'";
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, diskonText);
                     ResultSet rs = ps.executeQuery();
@@ -554,7 +554,7 @@ public class Popup_edittransjual extends JDialog {
     private String[] getDiscountOptionsFromDatabase() {
         try {
             // Query to get distinct discount options from database
-            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' ORDER BY total_diskon ASC";
+            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' AND status = 'dipakai' ORDER BY total_diskon ASC";
             PreparedStatement ps = con.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
 

@@ -1087,7 +1087,7 @@ public class Transjual extends JPanel {
             if (!diskonText.isEmpty()) {
                 // Get the actual discount percentage from database based on the selected name
                 try {
-                    String query = "SELECT total_diskon FROM diskon WHERE nama_diskon = ?";
+                    String query = "SELECT total_diskon FROM diskon WHERE nama_diskon = ? AND status = 'dipakai'";
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, diskonText);
                     ResultSet rs = ps.executeQuery();
@@ -1249,7 +1249,7 @@ public class Transjual extends JPanel {
     private String[] getDiscountOptionsFromDatabase() {
         try {
             // Query to get distinct discount options from database
-            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' ORDER BY total_diskon ASC";
+            String query = "SELECT DISTINCT nama_diskon FROM diskon WHERE id_diskon != 'DS_00' AND status = 'dipakai' ORDER BY total_diskon ASC";
             PreparedStatement ps = con.prepareStatement(query);
             ResultSet rs = ps.executeQuery();
 
@@ -1503,7 +1503,7 @@ public class Transjual extends JPanel {
             float discountValue = Float.parseFloat(cleanDiscount);
 
             // Query untuk mendapatkan ID diskon berdasarkan nilai total_diskon
-            String query = "SELECT id_diskon FROM diskon WHERE total_diskon = ?";
+            String query = "SELECT id_diskon FROM diskon WHERE total_diskon = ? AND status = 'dipakai'";
             PreparedStatement pst = con.prepareStatement(query);
             pst.setFloat(1, discountValue);
 

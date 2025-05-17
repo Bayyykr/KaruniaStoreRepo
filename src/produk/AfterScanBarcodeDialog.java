@@ -46,11 +46,11 @@ public class AfterScanBarcodeDialog extends JDialog {
         con = conn.getConnection();
         this.scannedBarcode = barcode;
 
-        if (isShowingPopup) {
-            dispose();
-            return;
-        }
-        isShowingPopup = true;
+//        if (isShowingPopup) {
+//            dispose();
+//            return;
+//        }
+//        isShowingPopup = true;
 
         fetchProductData();
         setupGlassPane();
@@ -349,9 +349,7 @@ public class AfterScanBarcodeDialog extends JDialog {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
-                startCloseAnimation(); // animasi tutup pop-up (jika ada)
-
-                // Panggil method switchToEditProductPanel dengan parameter scannedBarcode
+                startCloseAnimation();
                 Productt.getMainFrame().switchToEditProductPanelScan(scannedBarcode);
             } else {
                 JOptionPane.showMessageDialog(null, "Barcode kosong atau tidak valid.");
@@ -426,7 +424,7 @@ public class AfterScanBarcodeDialog extends JDialog {
     }
 
     private void cleanupAndClose() {
-        isShowingPopup = false;
+//        isShowingPopup = false;
         closePopup();
         dispose();
     }

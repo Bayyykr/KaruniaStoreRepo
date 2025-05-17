@@ -6,10 +6,11 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
+import javax.swing.border.Border;
 
 public class PopUp_ProdukDisplayKonfirmasiHapusDataDiskon extends JDialog {
 
-    private JComponent glassPane;
+//    private JComponent glassPane;
     private JFrame parentFrame;
     private static final int RADIUS = 20;
     private JButton cancelButton, deleteButton;
@@ -45,24 +46,24 @@ public class PopUp_ProdukDisplayKonfirmasiHapusDataDiskon extends JDialog {
         isShowingPopup = true;
 
         // Buat overlay transparan dengan warna hitam semi transparan
-        glassPane = new JComponent() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 180));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                g2.dispose();
-            }
-        };
-        glassPane.setOpaque(false);
-        glassPane.setBounds(0, 0, parent.getWidth(), parent.getHeight());
+//        glassPane = new JComponent() {
+//            @Override
+//            protected void paintComponent(Graphics g) {
+//                super.paintComponent(g);
+//                Graphics2D g2 = (Graphics2D) g.create();
+//                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+//                g2.setColor(new Color(0, 0, 0, 180));
+//                g2.fillRect(0, 0, getWidth(), getHeight());
+//                g2.dispose();
+//            }
+//        };
+//        glassPane.setOpaque(false);
+//        glassPane.setBounds(0, 0, parent.getWidth(), parent.getHeight());
 
         // Menghapus glassPane yang mungkin sudah ada sebelumnya
-        cleanupExistingGlassPane();
+//        cleanupExistingGlassPane();
 
-        parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
+//        parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
 
         setUndecorated(true);
         setSize(FINAL_WIDTH, FINAL_HEIGHT);
@@ -73,7 +74,7 @@ public class PopUp_ProdukDisplayKonfirmasiHapusDataDiskon extends JDialog {
         JPanel contentPanel = new RoundedPanel(RADIUS);
         contentPanel.setLayout(null);
         contentPanel.setBounds(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
-        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBackground(Color.lightGray);
         add(contentPanel);
 
         warningIconLabel = createLabel("/SourceImage/icon_seru_merah.png", 205, 10, 80, 80);
@@ -86,7 +87,7 @@ public class PopUp_ProdukDisplayKonfirmasiHapusDataDiskon extends JDialog {
 
         confirmTextLabel = createTextLabel(
                 "<html><center>Are you sure you want to delete this<br>item data?</center></html>",
-                25, 110, 400, 50, new Font("Arial", Font.PLAIN, 14), Color.BLACK);
+                25, 110, 400, 50, new Font("Arial", Font.BOLD, 14), Color.BLACK);
         confirmTextLabel.setVisible(false);
         contentPanel.add(confirmTextLabel);
 
@@ -229,7 +230,7 @@ public class PopUp_ProdukDisplayKonfirmasiHapusDataDiskon extends JDialog {
     }
 
     private void closePopup() {
-        parentLayeredPane().remove(glassPane);
+//        parentLayeredPane().remove(glassPane);
         parentLayeredPane().repaint();
     }
 

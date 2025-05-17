@@ -22,7 +22,7 @@ public class PopUp_aturdiskon extends JDialog {
     private JPanel contentPanel;
     private JTextField totalDiskonField, namaDiskonField, kodePromo;
     private JLabel aturDiskonLabel, listDiskonLabel;
-    private JPanel aturDiskonIndicator, listDiskonIndicator;
+    private JPanel aturDiskonIndicator, listDiskonIndicator, listItemPanel;
     private JPanel currentActivePanel;
     private JPanel aturDiskonPanel, listDiskonPanel;
     private DefaultTableModel tableModel;
@@ -390,56 +390,66 @@ public class PopUp_aturdiskon extends JDialog {
 
     private JPanel createListDiskonPanel() {
         JPanel panel = new RoundedPanel(20);
-        panel.setBackground(Color.WHITE);
-        panel.setBounds(30, 70, 440, 300);
-        panel.setLayout(null);
+    panel.setBackground(Color.WHITE);
+    panel.setBounds(30, 70, 440, 300);
+    panel.setLayout(null);
 
-        // Panel untuk menampung daftar item
-        JPanel listItemPanel = new JPanel();
-        listItemPanel.setLayout(new BoxLayout(listItemPanel, BoxLayout.Y_AXIS));
-        listItemPanel.setBackground(Color.WHITE);
+    JButton saveButton = createRoundedButton("Simpan", new Color(52, 199, 89), Color.WHITE);
+    saveButton.setBounds(270, 230, 160, 35);
+    saveButton.setVisible(false);
 
-        // Fetch data from database
-        List<String[]> diskonList = fetchDiskonData();
-        EditableListItem[] items = new EditableListItem[diskonList.size()];
+    JButton cancelButton = createRoundedButton("Batal", Color.RED, Color.WHITE);
+    cancelButton.setBounds(20, 230, 160, 35);
+    cancelButton.setVisible(false);
 
-        for (int i = 0; i < diskonList.size(); i++) {
-            String[] diskon = diskonList.get(i);
-            items[i] = createRoundedListItem(diskon[0], diskon[1], i == 0);
-            listItemPanel.add(items[i].itemPanel);
-            if (i < diskonList.size() - 1) {
-                listItemPanel.add(Box.createVerticalStrut(10));
-            }
-        }
+    panel.add(saveButton);
+    panel.add(cancelButton);
 
-        // Gunakan custom ScrollPane dengan hanya vertical scrollbar
-        ScrollPane scrollPane = new ScrollPane(listItemPanel,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBounds(0, 0, 440, 210);
-        panel.add(scrollPane);
+    listItemPanel = new JPanel();
+    listItemPanel.setLayout(new BoxLayout(listItemPanel, BoxLayout.Y_AXIS));
+    listItemPanel.setBackground(Color.WHITE);
 
-        // Create Save and Cancel buttons
-        JButton saveButton = createRoundedButton("Simpan", new Color(52, 199, 89), Color.WHITE);
-        saveButton.setBounds(270, 230, 160, 35);
-        saveButton.setVisible(false);
+    List<String[]> diskonList = fetchDiskonData();
+    EditableListItem[] items = new EditableListItem[diskonList.size()];
 
-        JButton cancelButton = createRoundedButton("Batal", Color.RED, Color.WHITE);
-        cancelButton.setBounds(20, 230, 160, 35);
-        cancelButton.setVisible(false);
-
-        for (EditableListItem item : items) {
-            item.percentagePanel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    // Cek apakah sedang mengedit item lain
-                    if (!isEditing || currentEditingItem == item) {
-                        // Mulai mode edit
-                        startEditing(item, saveButton, cancelButton);
-                    }
+    for (int i = 0; i < diskonList.size(); i++) {
+        String[] diskon = diskonList.get(i);
+        items[i] = createRoundedListItem(diskon[0], diskon[1], i == 0);
+        listItemPanel.add(items[i].itemPanel);
+  
+        final EditableListItem currentItem = items[i];
+        items[i].percentagePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!isEditing || currentEditingItem == currentItem) {
+                    startEditing(currentItem, saveButton, cancelButton);
                 }
-            });
+            }
+        });
+        
+        if (i < diskonList.size() - 1) {
+            listItemPanel.add(Box.createVerticalStrut(10));
         }
+    }
+
+    ScrollPane scrollPane = new ScrollPane(listItemPanel,
+            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollPane.setBounds(0, 0, 440, 210);
+    panel.add(scrollPane);
+
+//        for (EditableListItem item : items) {
+//            item.percentagePanel.addMouseListener(new MouseAdapter() {
+//                @Override
+//                public void mouseClicked(MouseEvent e) {
+//                    // Cek apakah sedang mengedit item lain
+//                    if (!isEditing || currentEditingItem == item) {
+//                        // Mulai mode edit
+//                        startEditing(item, saveButton, cancelButton);
+//                    }
+//                }
+//            });
+//        }
 
         saveButton.addActionListener(e -> {
             if (currentEditingItem != null) {
@@ -466,11 +476,45 @@ public class PopUp_aturdiskon extends JDialog {
 
         return panel;
     }
+    
+  private void Refresh() {
+    listItemPanel.removeAll();
+    
+    List<String[]> diskonList = fetchDiskonData();
+    EditableListItem[] items = new EditableListItem[diskonList.size()];
+    
+    JButton saveButton = findButton("Simpan");
+    JButton cancelButton = findButton("Batal");
+
+    for (int i = 0; i < diskonList.size(); i++) {
+        String[] diskon = diskonList.get(i);
+        items[i] = createRoundedListItem(diskon[0], diskon[1], i == 0);
+        listItemPanel.add(items[i].itemPanel);
+        
+          // Tambahkan listener untuk item baru
+        final EditableListItem currentItem = items[i];
+        items[i].percentagePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!isEditing || currentEditingItem == currentItem) {
+                    startEditing(currentItem, saveButton, cancelButton);
+                }
+            }
+        });
+        
+        if (i < diskonList.size() - 1) {
+            listItemPanel.add(Box.createRigidArea(new Dimension(0, 10))); 
+        }
+    }
+    
+    listItemPanel.revalidate();
+    listItemPanel.repaint();
+}
 
     private List<String[]> fetchDiskonData() {
         List<String[]> diskonList = new ArrayList<>();
         try {
-            String sql = "SELECT nama_diskon, total_diskon FROM diskon WHERE id_diskon != 'DS_00'";
+            String sql = "SELECT nama_diskon, total_diskon FROM diskon WHERE id_diskon != 'DS_00' AND status = 'dipakai'";
 
             try (PreparedStatement st = con.prepareStatement(sql)) {
                 ResultSet rs = st.executeQuery();
@@ -499,8 +543,7 @@ public class PopUp_aturdiskon extends JDialog {
                 int rowsAffected = st.executeUpdate();
 
                 if (rowsAffected > 0) {
-                    JOptionPane.showMessageDialog(null, "Diskon berhasil diperbarui!",
-                            "Update Successful", JOptionPane.INFORMATION_MESSAGE);
+                    PindahanAntarPopUp.showProdukDisplayDiskonSuksesDiPerbarui(parentFrame);
                 } else {
                     JOptionPane.showMessageDialog(null, "Gagal memperbarui diskon. Item tidak ditemukan.",
                             "Update Failed", JOptionPane.WARNING_MESSAGE);
@@ -513,15 +556,55 @@ public class PopUp_aturdiskon extends JDialog {
         }
     }
 
-    private void startEditing(EditableListItem item, JButton saveButton, JButton cancelButton) {
-        isEditing = true;
-        currentEditingItem = item;
-        item.percentagePanel.setVisible(false);
-        item.percentageEditField.setVisible(true);
-        saveButton.setVisible(true);
-        cancelButton.setVisible(true);
-        item.percentageEditField.requestFocusInWindow();
+   private void startEditing(EditableListItem item, JButton saveButton, JButton cancelButton) {
+    isEditing = true;
+    currentEditingItem = item;
+    item.percentagePanel.setVisible(false);
+    item.percentageEditField.setVisible(true);
+
+    String currentValue = item.percentageLabel.getText().replace(" %", "").trim();
+
+    try {
+        int value = Integer.parseInt(currentValue);
+        if (value < 0) {
+            item.percentageEditField.setText("0");
+        } else if (value > 100) {
+            item.percentageEditField.setText("100");
+        } else {
+            item.percentageEditField.setText(String.valueOf(value));
+        }
+    } catch (NumberFormatException e) {
+        item.percentageEditField.setText("0");
     }
+
+    // Tambahkan listener agar mencegah input lebih dari 100
+    item.percentageEditField.addKeyListener(new KeyAdapter() {
+        @Override
+        public void keyReleased(KeyEvent e) {
+            String text = item.percentageEditField.getText().trim();
+            if (text.isEmpty()) {
+                item.percentageEditField.setText("");
+            } else {
+                try {
+                    int val = Integer.parseInt(text);
+                    if (val > 100) {
+                        item.percentageEditField.setText("100");
+                    } else if (val < 0) {
+                        item.percentageEditField.setText("");
+                    }
+                } catch (NumberFormatException ex) {
+                    item.percentageEditField.setText("");
+                }
+            }
+        }
+    });
+
+    saveButton.setVisible(true);
+    cancelButton.setVisible(true);
+    item.percentageEditField.requestFocusInWindow();
+}
+
+
 
     private void endEditing(JButton saveButton, JButton cancelButton) {
         if (currentEditingItem != null) {
@@ -680,11 +763,7 @@ public class PopUp_aturdiskon extends JDialog {
                         parent.revalidate();
                         parent.repaint();
 
-                        // Show success message
-                        JOptionPane.showMessageDialog(parentFrame,
-                                "Data diskon '" + name + "' berhasil dihapus",
-                                "Hapus Berhasil",
-                                JOptionPane.INFORMATION_MESSAGE);
+                     PindahanAntarPopUp.showProdukDisplayDiskonSuksesDiHapus(parentFrame);
                     }
                 }
             }
@@ -705,7 +784,7 @@ public class PopUp_aturdiskon extends JDialog {
         boolean success = false;
 
         try {
-            String sql = "DELETE FROM diskon WHERE nama_diskon = ?";
+            String sql = "UPDATE diskon SET status = 'gadipakai' WHERE nama_diskon = ?";
 
             try (PreparedStatement st = con.prepareStatement(sql)) {
                 st.setString(1, namaDiskon);
@@ -714,10 +793,7 @@ public class PopUp_aturdiskon extends JDialog {
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                    "Error saat menghapus diskon: " + ex.getMessage(),
-                    "Database Error",
-                    JOptionPane.ERROR_MESSAGE);
+            PindahanAntarPopUp.showProdukDisplayDiskonGagalDiHapus(parentFrame);
         }
         return success;
     }
@@ -777,10 +853,23 @@ public class PopUp_aturdiskon extends JDialog {
         String totalDiskon = totalDiskonField.getText();
         String namaDiskon = namaDiskonField.getText();
         String idPromo = kodePromo.getText();
+        
+        System.out.println("button simpan");
 
         try {
             if (!totalDiskon.isEmpty() && !namaDiskon.isEmpty()) {
-                String sql = "INSERT INTO diskon (id_diskon, total_diskon, nama_diskon) VALUES (?, ?, ?)";
+                 String cekSql = "SELECT COUNT(*) FROM diskon WHERE nama_diskon = ? AND status = 'dipakai'";
+            try (PreparedStatement cekSt = con.prepareStatement(cekSql)) {
+                cekSt.setString(1, namaDiskon);
+                ResultSet rs = cekSt.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) {
+                    PindahanAntarPopUp.showProdukDisplayDiskonNamaSudahAda(parentFrame); 
+                    System.out.println("Nama diskon sudah digunakan");
+                    return;
+                }
+            }
+                
+                String sql = "INSERT INTO diskon (id_diskon, total_diskon, nama_diskon, status) VALUES (?, ?, ?, 'dipakai')";
                 try (PreparedStatement st = con.prepareStatement(sql)) {
                     st.setString(1, idPromo);
                     st.setString(2, totalDiskon);
@@ -788,17 +877,21 @@ public class PopUp_aturdiskon extends JDialog {
 
                     int rowInserted = st.executeUpdate();
                     if (rowInserted > 0) {
-                        //POPUP KECIL BERHASIL
+                        PindahanAntarPopUp.showProdukDisplayDiskonSuksesDiTambahkan(parentFrame);
                         System.out.println("berhasil ditambahkan");
+                    }else{
+                        System.out.println("gagal");
                     }
                 }
 
                 totalDiskonField.setText("");
                 namaDiskonField.setText("");
+                kodePromo.setText(generateNextTransaksiId());
+                Refresh();
                 switchToPanel(listDiskonPanel, listDiskonIndicator, aturDiskonIndicator);
             } else {
                 System.out.println(idPromo);
-                JOptionPane.showMessageDialog(this, "Mohon isi semua field", "Error", JOptionPane.ERROR_MESSAGE);
+                PindahanAntarPopUp.showTambahKaryawanTIdakBolehKosong(parentFrame);
             }
         } catch (Exception e) {
         }

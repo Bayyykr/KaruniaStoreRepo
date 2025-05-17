@@ -212,7 +212,7 @@ public class Productt extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-
+        
         currentPanel = addProductPanel;
         add(currentPanel);
         currentPanel.setVisible(true);

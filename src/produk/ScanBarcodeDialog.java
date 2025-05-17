@@ -196,14 +196,14 @@ public class ScanBarcodeDialog extends JDialog {
                     if (rs.next()) {
                         scannedBarcode = barcode;
                         System.out.println("BERHASIL MENCOCOKAN " + scannedBarcode);
-                        
-                        this.dispose();
+                        startCloseAnimation();
+//                        this.dispose();
 
                         // Baru munculkan AfterScanBarcodeDialog
                         AfterScanBarcodeDialog dialog = new AfterScanBarcodeDialog(parentFrame, scannedBarcode);
                         dialog.setVisible(true);
 
-                        startCloseAnimation();
+//                        
                     }else{
                         System.out.println("DATA PRODUK TIDAK ADA");
                     }
@@ -219,7 +219,15 @@ public class ScanBarcodeDialog extends JDialog {
     public String getScannedBarcode() {
         return scannedBarcode;
     }
-
+    public void showScanBarcodeDialog() {
+    // Pastikan tidak ada dialog yang sedang aktif
+    if (ScanBarcodeDialog.isShowingPopup) {
+        return;
+    }
+    
+    ScanBarcodeDialog dialog = new ScanBarcodeDialog(parentFrame);
+    dialog.showDialog();
+}
     private JPanel createScannerBox() {
         JPanel scannerBox = new JPanel(new BorderLayout()) {
             @Override
