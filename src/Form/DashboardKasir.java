@@ -430,7 +430,7 @@ public class DashboardKasir extends JPanel {
         JButton barangTerlarisButton = createRegularButton("BARANG TERLARIS", new Dimension(320, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         barangTerlarisButton.addActionListener(e -> {
             JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(barangTerlarisButton);
-            PopUp_DashboardKaryawanBarangTerlaris popupbarangterlaris = new PopUp_DashboardKaryawanBarangTerlaris(parentFrame);
+            PopUp_DashboardOwnerBarangTerlaris popupbarangterlaris = new PopUp_DashboardOwnerBarangTerlaris(parentFrame);
             popupbarangterlaris.setVisible(true);
             System.out.println("ini barang terlaris");
         });
@@ -643,13 +643,6 @@ public class DashboardKasir extends JPanel {
         JLabel errorLabel = new JLabel("Gagal memuat data stok.");
         errorLabel.setForeground(Color.RED);
         itemsContainer.add(errorLabel);
-    } finally {
-        try {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
     stockPanel.add(itemsContainer, BorderLayout.CENTER);

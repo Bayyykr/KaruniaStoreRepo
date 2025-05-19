@@ -11,6 +11,14 @@ import java.util.Map;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import SourceCode.ScrollPane;
+import db.conn;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
 
@@ -21,11 +29,10 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
     private JLabel closeButton;
     private JButton filterSepatuButton, filterSandalButton, filterKaosKakiButton, filterLainnyaButton;
     private Map<String, JButton> categoryButtons = new HashMap<>();
-    private JLabel filterIcon; // Icon filter
-    private JLabel filterText; // Text filter
-    private boolean isFilterActive = false; // Status filter
+    private JLabel filterIcon;
+    private JLabel filterText;
+    private boolean isFilterActive = false;
 
-    // Radius terpisah untuk setiap komponen
     private final int MAIN_PANEL_RADIUS = 20;
     private final int BUTTON_RADIUS = 10;
     private final int SEARCH_FIELD_RADIUS = 18;
@@ -42,19 +49,16 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
     private Timer animationTimer;
     private Timer closeAnimationTimer;
 
-    // Flag to avoid adding glassPane multiple times
     private static boolean isShowingPopup = false;
 
-    // Data untuk item stok menipis
     private ArrayList<StockItem> sepatuItems = new ArrayList<>();
     private ArrayList<StockItem> sandalItems = new ArrayList<>();
     private ArrayList<StockItem> kaosKakiItems = new ArrayList<>();
     private ArrayList<StockItem> lainnyaItems = new ArrayList<>();
-    private ArrayList<StockItem> allItems = new ArrayList<>(); // Untuk menyimpan semua item campuran
+    private ArrayList<StockItem> allItems = new ArrayList<>();
     private ArrayList<StockItem> currentItems = new ArrayList<>();
-    private String currentCategory = "Semua"; // Default adalah semua item
+    private String currentCategory = "Semua";
 
-    // Icon paths - diperbarui untuk menggunakan SourceImage.icon
     private final String WARNING_ICON_PATH = "/SourceImage/icon/icon_up_ijo.png";
     private final String FILTER_ICON_PATH = "/SourceImage/icon/filter.png";
     private final String FILTER_ICON_MINUS_PATH = "/SourceImage/icon/icon_filter_minus.png";
@@ -120,38 +124,73 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
     }
 
     private void initializeData() {
-        // Data Sepatu
-        sepatuItems.add(new StockItem("Adidas Simanjuntak", "37", 10, 10));
-        sepatuItems.add(new StockItem("Nike Air Max", "40", 8, 12));
-        sepatuItems.add(new StockItem("Puma RS-X", "42", 5, 7));
-        sepatuItems.add(new StockItem("Vans Old Skool", "39", 15, 20));
-        sepatuItems.add(new StockItem("Converse Chuck Taylor", "38", 12, 15));
+        sepatuItems.clear();
+        sandalItems.clear();
+        kaosKakiItems.clear();
+        lainnyaItems.clear();
+        allItems.clear();
 
-        // Data Sandal
-        sandalItems.add(new StockItem("Sandal Kulit Hitam", "37", 5, 15));
-        sandalItems.add(new StockItem("Sandal Gunung", "40", 8, 10));
-        sandalItems.add(new StockItem("Sandal Jepit Premium", "41", 20, 25));
-        sandalItems.add(new StockItem("Sandal Selop", "36", 7, 12));
+        try {
+            Connection connection = conn.getConnection();
+                 String query = "SELECT p.id_produk, p.nama_produk, p.jenis_produk, p.size, " +
+            "COALESCE(SUM(dt.jumlah_produk), 0) as total_terjual, " +
+            "(SELECT ks2.produk_sisa FROM kartu_stok ks2 " +
+            " WHERE ks2.id_produk = p.id_produk ORDER BY ks2.tanggal_transaksi DESC LIMIT 1) AS stok " +
+            "FROM produk p " +
+            "LEFT JOIN detail_transaksijual dt ON p.id_produk = dt.id_produk " +
+            "LEFT JOIN transaksi_jual tj ON dt.id_transaksijual = tj.id_transaksijual " +
+            "WHERE (tj.tanggal_transaksi IS NULL OR " +
+            "      (MONTH(tj.tanggal_transaksi) = MONTH(CURRENT_DATE()) " +
+            "       AND YEAR(tj.tanggal_transaksi) = YEAR(CURRENT_DATE()))) " +
+            "AND p.status = 'dijual' " +
+            "GROUP BY p.id_produk, p.nama_produk, p.jenis_produk, p.size " +
+            "HAVING total_terjual > 9 " +
+            "ORDER BY total_terjual DESC";
+   
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
 
-        // Data Kaos Kaki
-        kaosKakiItems.add(new StockItem("Kaos Kaki Hitam", "All Size", 30, 45));
-        kaosKakiItems.add(new StockItem("Kaos Kaki Putih", "All Size", 25, 40));
-        kaosKakiItems.add(new StockItem("Kaos Kaki Sport", "L", 15, 20));
-        kaosKakiItems.add(new StockItem("Kaos Kaki Formal", "M", 12, 18));
+            while (resultSet.next()) {
+                String idProduk = resultSet.getString("id_produk");
+                String namaProduk = resultSet.getString("nama_produk");
+                String jenisProduk = resultSet.getString("jenis_produk");
+                String size = resultSet.getString("size");
+                int terjual = resultSet.getInt("total_terjual");
+                int stok = resultSet.getInt("stok");
 
-        // Data Lainnya
-        lainnyaItems.add(new StockItem("Tali Sepatu Premium", "120 cm", 25, 30));
-        lainnyaItems.add(new StockItem("Sol Dalam", "40", 18, 22));
-        lainnyaItems.add(new StockItem("Semprotan Anti Air", "250 ml", 10, 15));
-        lainnyaItems.add(new StockItem("Sikat Sepatu", "Standard", 8, 12));
+                StockItem item = new StockItem(namaProduk, size, stok, terjual);
 
-        // Gabungkan semua item
-        allItems.addAll(sepatuItems);
-        allItems.addAll(sandalItems);
-        allItems.addAll(kaosKakiItems);
-        allItems.addAll(lainnyaItems);
+                // Kategorikan berdasarkan jenis produk
+                if (jenisProduk != null) {
+                    switch (jenisProduk.toLowerCase()) {
+                        case "sepatu":
+                            sepatuItems.add(item);
+                            break;
+                        case "sandal":
+                            sandalItems.add(item);
+                            break;
+                        case "kaos kaki":
+                            kaosKakiItems.add(item);
+                            break;
+                        default:
+                            lainnyaItems.add(item);
+                            break;
+                    }
+                } else {
+                    lainnyaItems.add(item);
+                }
+                allItems.add(item);
+            }
 
-        // Set default item yang ditampilkan
+//            resultSet.close();
+//            statement.close();
+//            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error mengambil data dari database: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
         currentItems = allItems;
     }
 
@@ -172,13 +211,11 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         warningIcon.setBounds(25, 13, 24, 24);
         headerPanel.add(warningIcon);
 
-        // Title
         JLabel titleLabel = new JLabel("Barang Terlaris");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setBounds(65, 10, 300, 30);
         headerPanel.add(titleLabel);
 
-        // Close button (diubah menjadi JLabel)
         closeButton = new JLabel("x");
         closeButton.setFont(new Font("Arial", Font.BOLD, 20));
         closeButton.setBounds(FINAL_WIDTH - 50, 10, 30, 30);
@@ -210,19 +247,16 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         filterPanel.setBounds(25, 60, FINAL_WIDTH - 50, 50);
         filterPanel.setBackground(Color.WHITE);
 
-        // Filter icon yang bisa di-klik
         filterIcon = new JLabel();
-        updateFilterIcon(false); // Set default icon
+        updateFilterIcon(false);
         filterIcon.setBounds(10, 15, 20, 20);
         filterIcon.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        // Filter text yang bisa di-klik
         filterText = new JLabel("Filter");
         filterText.setFont(new Font("Arial", Font.BOLD, 14));
         filterText.setBounds(35, 15, 50, 20);
         filterText.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        // Menambahkan action listener untuk filterIcon dan filterText
         MouseAdapter filterClickListener = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -236,7 +270,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         filterPanel.add(filterIcon);
         filterPanel.add(filterText);
 
-        // Filter buttons
         int buttonWidth = 100;
         int spacing = 10;
         int startX = 85;
@@ -246,7 +279,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         filterKaosKakiButton = createFilterButton("Kaos Kaki", startX + 2 * (buttonWidth + spacing));
         filterLainnyaButton = createFilterButton("Lainnya", startX + 3 * (buttonWidth + spacing));
 
-        // Add filter buttons to panel
         filterPanel.add(filterSepatuButton);
         filterPanel.add(filterSandalButton);
         filterPanel.add(filterKaosKakiButton);
@@ -257,11 +289,10 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         categoryButtons.put("Kaos Kaki", filterKaosKakiButton);
         categoryButtons.put("Lainnya", filterLainnyaButton);
 
-        updateActiveCategory("Semua"); // Default pilihan adalah Sepatu
+        updateActiveCategory("Semua");
 
         contentPanel.add(filterPanel);
 
-        // Item list panel (scrollable)
         itemListPanel = new JPanel();
         itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
         itemListPanel.setBackground(Color.WHITE);
@@ -277,52 +308,46 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
 
         contentPanel.add(scrollPane);
 
-        // Load initial items
         updateItemList();
     }
 
     private void updateFilterIcon(boolean isMinusIcon) {
-    try {
-        ImageIcon icon;
-        if (isMinusIcon) {
-            icon = new ImageIcon(getClass().getResource(FILTER_ICON_MINUS_PATH));
-            // Ukuran khusus untuk icon minus
-            Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH); // Ukuran lebih besar
-            filterIcon.setIcon(new ImageIcon(img));
-            // Sesuaikan juga bounds-nya jika perlu
-            filterIcon.setBounds(10, 15, 20, 20);
-        } else {
-            icon = new ImageIcon(getClass().getResource(FILTER_ICON_PATH));
-            // Ukuran normal
-            Image img = icon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
-            filterIcon.setIcon(new ImageIcon(img));
-            // Bounds normal
-            filterIcon.setBounds(10, 15, 16, 16);
+        try {
+            ImageIcon icon;
+            if (isMinusIcon) {
+                icon = new ImageIcon(getClass().getResource(FILTER_ICON_MINUS_PATH));
+                Image img = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                filterIcon.setIcon(new ImageIcon(img));
+                filterIcon.setBounds(10, 15, 20, 20);
+            } else {
+                icon = new ImageIcon(getClass().getResource(FILTER_ICON_PATH));
+                Image img = icon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+                filterIcon.setIcon(new ImageIcon(img));
+                filterIcon.setBounds(10, 15, 16, 16);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading filter icon: " + e.getMessage());
         }
-    } catch (Exception e) {
-        System.err.println("Error loading filter icon: " + e.getMessage());
     }
-}
 
     private void toggleFilterMode() {
-         if (!isFilterActive && currentCategory.equals("Semua")) {
-        // Don't allow activating filter mode when "Semua" is selected
-        return;
-    }
+        if (!isFilterActive && currentCategory.equals("Semua")) {
+            return;
+        }
     
-    isFilterActive = !isFilterActive;
+        isFilterActive = !isFilterActive;
     
-    if (isFilterActive) {
-        updateFilterIcon(true);
-        updateActiveCategory(currentCategory);
-    } else {
-        updateFilterIcon(false);
-        resetCategoryButtons();
-        currentItems = allItems;
-        currentCategory = "Semua";
-    }
+        if (isFilterActive) {
+            updateFilterIcon(true);
+            updateActiveCategory(currentCategory);
+        } else {
+            updateFilterIcon(false);
+            resetCategoryButtons();
+            currentItems = allItems;
+            currentCategory = "Semua";
+        }
     
-    updateItemList();
+        updateItemList();
     }
 
     private void resetCategoryButtons() {
@@ -383,7 +408,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
 
         button.addActionListener(e -> {
             if (!isFilterActive) {
-                // Aktifkan mode filter jika belum aktif
                 isFilterActive = true;
                 updateFilterIcon(true);
             }
@@ -395,64 +419,55 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
     }
 
     private void updateActiveCategory(String category) {
-        // Reset semua tombol kategori
         for (Map.Entry<String, JButton> entry : categoryButtons.entrySet()) {
-        entry.getValue().setBackground(Color.WHITE);
-    }
-    
-    currentCategory = category;
-    
-    // Set active button with dark color if not "Semua"
-    if (!category.equals("Semua")) {
-        JButton activeButton = categoryButtons.get(category);
-        if (activeButton != null) {
-            activeButton.setBackground(new Color(64, 64, 64));
+            entry.getValue().setBackground(Color.WHITE);
         }
-        
-        // Enable filter icon interaction
-        filterIcon.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        filterText.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    } else {
-        // Disable filter icon interaction
-        filterIcon.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        filterText.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        isFilterActive = false;
-        updateFilterIcon(false);
-    }
+    
+        currentCategory = category;
+    
+        if (!category.equals("Semua")) {
+            JButton activeButton = categoryButtons.get(category);
+            if (activeButton != null) {
+                activeButton.setBackground(new Color(64, 64, 64));
+            }
+            
+            filterIcon.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            filterText.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        } else {
+            filterIcon.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            filterText.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            isFilterActive = false;
+            updateFilterIcon(false);
+        }
 
-    switch (category) {
-        case "Sepatu":
-            currentItems = sepatuItems;
-            break;
-        case "Sandal":
-            currentItems = sandalItems;
-            break;
-        case "Kaos Kaki":
-            currentItems = kaosKakiItems;
-            break;
-        case "Lainnya":
-            currentItems = lainnyaItems;
-            break;
-        default:
-            currentItems = allItems;
-            break;
+        switch (category) {
+            case "Sepatu":
+                currentItems = sepatuItems;
+                break;
+            case "Sandal":
+                currentItems = sandalItems;
+                break;
+            case "Kaos Kaki":
+                currentItems = kaosKakiItems;
+                break;
+            case "Lainnya":
+                currentItems = lainnyaItems;
+                break;
+            default:
+                currentItems = allItems;
+                break;
+        }
     }
-}
 
     private void updateItemList() {
-        // Clear current items
         itemListPanel.removeAll();
 
-        // Add items based on current category
         for (StockItem item : currentItems) {
             JPanel itemPanel = createItemPanel(item);
             itemListPanel.add(itemPanel);
-
-            // Menambahkan panel kosong untuk jarak antar item
             itemListPanel.add(createSpacingPanel());
         }
 
-        // Add empty panels with gray placeholder lines if needed
         int emptySpacesToAdd = 5 - currentItems.size();
         if (emptySpacesToAdd > 0) {
             for (int i = 0; i < emptySpacesToAdd; i++) {
@@ -463,12 +478,10 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
             }
         }
 
-        // Refresh panel
         itemListPanel.revalidate();
         itemListPanel.repaint();
     }
 
-    // Panel untuk spacing antar item
     private JPanel createSpacingPanel() {
         JPanel panel = new JPanel();
         panel.setMaximumSize(new Dimension(FINAL_WIDTH - 50, 10));
@@ -484,21 +497,18 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         panel.setBackground(Color.WHITE);
         panel.setBorder(new RoundBorder(ITEM_PANEL_RADIUS, Color.LIGHT_GRAY));
 
-        // Nama item
         JLabel nameLabel = new JLabel(item.getName());
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setBounds(20, 15, 400, 20);
         panel.add(nameLabel);
 
-        // UK/Size
-        JLabel ukLabel = new JLabel("UK/Size : " + item.getSize());
+        JLabel ukLabel = new JLabel("Uk/Size : " + item.getSize());
         ukLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         ukLabel.setBounds(20, 45, 100, 20);
         ukLabel.setBorder(new RoundBorder(STOCK_COUNT_RADIUS, Color.LIGHT_GRAY));
         ukLabel.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(ukLabel);
 
-        // Stok
         JLabel stokLabel = new JLabel("Stok : " + item.getStockCount());
         stokLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         stokLabel.setBounds(130, 45, 100, 20);
@@ -506,33 +516,32 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         stokLabel.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(stokLabel);
 
-       // Dijual Bulan Ini - modified to be properly rounded
-    JPanel dijualPanel = new JPanel(new BorderLayout());
-    dijualPanel.setBounds(240, 45, 140, 20);
-    dijualPanel.setOpaque(false);
-    
-    JLabel dijualLabel = new JLabel("Dijual Bulan Ini : " + item.getSoldCount(), SwingConstants.CENTER);
-    dijualLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-    dijualLabel.setForeground(Color.WHITE);
-    dijualLabel.setOpaque(false);
-    
-    JPanel roundedPanel = new JPanel(new BorderLayout()) {
-        final int STOCK_COUNT_RADIUS = 5;
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(46, 204, 113));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), STOCK_COUNT_RADIUS*2, STOCK_COUNT_RADIUS*2);
-            g2.dispose();
-        }
-    };
-    roundedPanel.setOpaque(false);
-    roundedPanel.add(dijualLabel, BorderLayout.CENTER);
-    dijualPanel.add(roundedPanel, BorderLayout.CENTER);
-    
-    panel.add(dijualPanel);
+        JPanel dijualPanel = new JPanel(new BorderLayout());
+        dijualPanel.setBounds(240, 45, 140, 20);
+        dijualPanel.setOpaque(false);
+        
+        JLabel dijualLabel = new JLabel("Dijual Bulan Ini : " + item.getSoldCount(), SwingConstants.CENTER);
+        dijualLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        dijualLabel.setForeground(Color.WHITE);
+        dijualLabel.setOpaque(false);
+        
+        JPanel roundedPanel = new JPanel(new BorderLayout()) {
+            final int STOCK_COUNT_RADIUS = 5;
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(46, 204, 113));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), STOCK_COUNT_RADIUS*2, STOCK_COUNT_RADIUS*2);
+                g2.dispose();
+            }
+        };
+        roundedPanel.setOpaque(false);
+        roundedPanel.add(dijualLabel, BorderLayout.CENTER);
+        dijualPanel.add(roundedPanel, BorderLayout.CENTER);
+        
+        panel.add(dijualPanel);
 
         return panel;
     }
@@ -544,13 +553,11 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         panel.setBackground(Color.WHITE);
         panel.setBorder(new RoundBorder(ITEM_PANEL_RADIUS, Color.LIGHT_GRAY));
         
-        // Membuat garis placeholder abu-abu seperti di screenshot
         JPanel placeholderLine = new JPanel();
         placeholderLine.setBounds(20, 25, 250, 10);
         placeholderLine.setBackground(new Color(230, 230, 230));
         panel.add(placeholderLine);
         
-        // UK/Size placeholder
         JLabel ukLabel = new JLabel("UK/Size : ");
         ukLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         ukLabel.setBounds(20, 45, 100, 20);
@@ -558,7 +565,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         ukLabel.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(ukLabel);
 
-        // Stok placeholder
         JLabel stokLabel = new JLabel("Stok : ");
         stokLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         stokLabel.setBounds(130, 45, 100, 20);
@@ -566,7 +572,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         stokLabel.setHorizontalAlignment(SwingConstants.CENTER);
         panel.add(stokLabel);
 
-        // Dijual Bulan Ini placeholder
         JLabel dijualLabel = new JLabel("Dijual Bulan Ini : ");
         dijualLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         dijualLabel.setBounds(240, 45, 140, 20);
@@ -640,11 +645,8 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
     }
 
     private void cleanupAndClose() {
-        // Reset flag when popup is closed
         isShowingPopup = false;
-        // Remove glassPane
         closePopup();
-        // Close dialog
         dispose();
     }
 
@@ -659,7 +661,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
         return parentFrame.getLayeredPane();
     }
 
-    // Class untuk menyimpan item stok
     private class StockItem {
         private String name;
         private String size;
@@ -746,13 +747,11 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
                 g2.scale(currentScale, currentScale);
                 g2.translate(-centerX, -centerY);
 
-                // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
                 g2.setTransform(originalTransform);
             } else {
-                // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             }
@@ -798,7 +797,6 @@ public class PopUp_DashboardOwnerBarangTerlaris extends JDialog {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Draw background with rounded top corners only
             g2.setColor(getBackground());
             g2.fillRoundRect(0, 0, getWidth(), getHeight() + radius, radius, radius);
 

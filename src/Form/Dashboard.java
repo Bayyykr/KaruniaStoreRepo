@@ -183,31 +183,31 @@ public class Dashboard extends JPanel {
         JPanel stockPanel = createInventoryStockPanel();
         stockPanel.setPreferredSize(new Dimension(400, getHeight()));
 
-// Create a wrapper panel with a 50px left margin
+        // Create a wrapper panel with a 50px left margin
         JPanel stockPanelWrapper = new JPanel(new BorderLayout());
         stockPanelWrapper.setOpaque(false);  // Make it transparent
         stockPanelWrapper.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 0));  // 50px padding on the left
         stockPanelWrapper.add(stockPanel, BorderLayout.CENTER);
 
-// Add the wrapper to the content panel
+        // Add the wrapper to the content panel
         contentPanel.add(stockPanelWrapper, BorderLayout.WEST);
 
         // Chart Panel
         // Chart Panel - using cobadiagram class instead
         cobadiagram chartPanel = new cobadiagram();
-// Add border to match the stock panel
+        // Add border to match the stock panel
         chartPanel.setBorder(BorderFactory.createCompoundBorder(
                 new RoundedBorder(50, new Color(220, 220, 220), 2),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
 
-// Create a wrapper panel with padding
+        // Create a wrapper panel with padding
         JPanel chartPanelWrapper = new JPanel(new BorderLayout());
         chartPanelWrapper.setOpaque(false);  // Make it transparent
         chartPanelWrapper.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 25));  // 25px padding on the right
         chartPanelWrapper.add(chartPanel, BorderLayout.CENTER);
 
-// Add the wrapper to the content panel
+        // Add the wrapper to the content panel
         contentPanel.add(chartPanelWrapper, BorderLayout.CENTER);
         // Add content panel to main panel
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -719,15 +719,8 @@ String sql = "SELECT p.jenis_produk, COALESCE(SUM(ks.produk_sisa), 0) AS total_s
         JLabel errorLabel = new JLabel("Gagal memuat data stok.");
         errorLabel.setForeground(Color.RED);
         itemsContainer.add(errorLabel);
-    } finally {
-        // Jangan menutup koneksi karena di-handle oleh class conn
-        try {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
+    
     stockPanel.add(itemsContainer, BorderLayout.CENTER);
     return stockPanel;
 }

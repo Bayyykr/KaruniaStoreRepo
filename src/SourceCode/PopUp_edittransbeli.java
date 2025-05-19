@@ -9,11 +9,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 
 public class PopUp_edittransbeli extends JDialog {
-
+    
+    private JTable table;
+    private int row;
     private JComponent glassPane;
     private static final int RADIUS = 20;
     private JButton cancelButton, updateButton;
-    private RoundedTextField itemNameField, priceField, quantityField, totalField;
+    private RoundedTextField itemNameField, totalField;
+//    private RoundedTextField priceField, quantityField;
     private JFrame parentFrame;
     private JLabel titleLabel;
 
@@ -25,12 +28,15 @@ public class PopUp_edittransbeli extends JDialog {
     private Timer animationTimer;
     private Timer closeAnimationTimer;
     private final int FINAL_WIDTH = 450;  // Ukuran tetap
-    private final int FINAL_HEIGHT = 300; // Ukuran tetap
+    private final int FINAL_HEIGHT = 230; // Ukuran tetap
     
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
 
-    public PopUp_edittransbeli(JFrame parent) {
+    public PopUp_edittransbeli(JFrame parent, JTable table, int row) {
+        super(parent, true);
+        this.table = table;
+        this.row = row;
         this.parentFrame = parent;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
@@ -75,32 +81,32 @@ public class PopUp_edittransbeli extends JDialog {
         contentPanel.setBackground(Color.WHITE);
         add(contentPanel);
 
-        titleLabel = createTextLabel("Edit Transaksi Beli", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 16), Color.BLACK);
+        titleLabel = createTextLabel("Edit Transaksi Beli", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 20), Color.BLACK);
         titleLabel.setVisible(false);
         contentPanel.add(titleLabel);
 
         itemNameField = new RoundedTextField(5, "Nama Produk");
-        itemNameField.setBounds(105, 50, 226, 31);
+        itemNameField.setBounds(70, 55, 300, 40);
         itemNameField.setVisible(false);
         contentPanel.add(itemNameField);
 
-        priceField = new RoundedTextField(5, "Harga Satuan");
-        priceField.setBounds(105, 90, 226, 31);
-        priceField.setVisible(false);
-        contentPanel.add(priceField);
+//        priceField = new RoundedTextField(5, "Harga Satuan");
+//        priceField.setBounds(105, 90, 226, 31);
+//        priceField.setVisible(false);
+//        contentPanel.add(priceField);
 
-        quantityField = new RoundedTextField(5, "Qty");
-        quantityField.setBounds(105, 130, 226, 31);
-        quantityField.setVisible(false);
-        contentPanel.add(quantityField);
+//        quantityField = new RoundedTextField(5, "Qty");
+//        quantityField.setBounds(105, 130, 226, 31);
+//        quantityField.setVisible(false);
+//        contentPanel.add(quantityField);
 
         totalField = new RoundedTextField(5, "Total");
-        totalField.setBounds(105, 170, 226, 31);
+        totalField.setBounds(70, 120, 300, 40);
         totalField.setVisible(false);
         contentPanel.add(totalField);
 
         // Menginisialisasi tombol Cancel dan Update
-        cancelButton = createRoundedButton("Cancel", 60, 245, 130, 30, new Color(0xEBEBEB), Color.BLACK);
+        cancelButton = createRoundedButton("Cancel", 60, 190, 130, 30, new Color(0xEBEBEB), Color.BLACK);
         cancelButton.setVisible(false);
         cancelButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -111,7 +117,7 @@ public class PopUp_edittransbeli extends JDialog {
         contentPanel.add(cancelButton);
         
         // Tombol Update
-        updateButton = createRoundedButton("Update", 250, 245, 130, 30, new Color(0x34C759), Color.WHITE);
+        updateButton = createRoundedButton("Update", 250, 190, 130, 30, new Color(0x34C759), Color.WHITE);
         updateButton.setVisible(false);
         contentPanel.add(updateButton);
 
@@ -160,8 +166,8 @@ public class PopUp_edittransbeli extends JDialog {
                 if (progress >= 0.3 && !titleLabel.isVisible()) {
                     titleLabel.setVisible(true);
                     itemNameField.setVisible(true);
-                    priceField.setVisible(true);
-                    quantityField.setVisible(true);
+//                    priceField.setVisible(true);
+//                    quantityField.setVisible(true);
                     totalField.setVisible(true);
                     cancelButton.setVisible(true);
                     updateButton.setVisible(true);
@@ -175,8 +181,8 @@ public class PopUp_edittransbeli extends JDialog {
 
                     titleLabel.setVisible(true);
                     itemNameField.setVisible(true);
-                    priceField.setVisible(true);
-                    quantityField.setVisible(true);
+//                    priceField.setVisible(true);
+//                    quantityField.setVisible(true);
                     totalField.setVisible(true);
                     cancelButton.setVisible(true);
                     updateButton.setVisible(true);

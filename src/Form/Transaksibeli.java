@@ -1,6 +1,5 @@
 package Form;
 
-
 import PopUp_all.PindahanAntarPopUp;
 import PopUp_all.PopUp_BayarTransjual;
 import SourceCode.PopUp_edittransbeli;
@@ -22,9 +21,11 @@ import java.awt.geom.Path2D;
 import java.math.BigInteger;
 import db.conn;
 import java.sql.*;
+import java.util.EventObject;
+import javax.swing.table.TableColumnModel;
 
 public class Transaksibeli extends JPanel {
-    
+
     private JFrame parentFrame;
     Component parentComponent = this;
     private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
@@ -129,12 +130,13 @@ public class Transaksibeli extends JPanel {
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         mainPanel.add(scrollPane);
 
-        // Cell renderer - make panels transparent and icons larger
+        // Cell renderer - tetap seperti aslinya, tidak perlu diubah
         table.getColumnModel().getColumn(6).setCellRenderer(new TableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                // Kode renderer tetap sama seperti sebelumnya
                 JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 3));
-                panel.setPreferredSize(new Dimension(80, 30)); // Lebih lebar untuk tombol
+                panel.setPreferredSize(new Dimension(80, 30));
                 panel.setOpaque(false);
                 panel.setBackground(new Color(0, 0, 0, 0));
 
@@ -161,7 +163,7 @@ public class Transaksibeli extends JPanel {
                     }
                 };
                 btnEdit.setIcon(scaledIconEdit);
-                btnEdit.setPreferredSize(new Dimension(30, 26)); // Tombol sedikit lebih besar
+                btnEdit.setPreferredSize(new Dimension(30, 26));
                 btnEdit.setHorizontalAlignment(SwingConstants.CENTER);
                 btnEdit.setVerticalAlignment(SwingConstants.CENTER);
                 btnEdit.setVerticalTextPosition(SwingConstants.CENTER);
@@ -187,7 +189,7 @@ public class Transaksibeli extends JPanel {
                     }
                 };
                 btnDelete.setIcon(scaledIconDelete);
-                btnDelete.setPreferredSize(new Dimension(30, 26)); // Tombol sedikit lebih besar
+                btnDelete.setPreferredSize(new Dimension(30, 26));
                 btnDelete.setHorizontalAlignment(SwingConstants.CENTER);
                 btnDelete.setVerticalAlignment(SwingConstants.CENTER);
                 btnDelete.setVerticalTextPosition(SwingConstants.CENTER);
@@ -206,14 +208,14 @@ public class Transaksibeli extends JPanel {
             }
         });
 
-        // Cell editor - make panels transparent and ensure buttons trigger popups
+// Cell editor - dimodifikasi untuk penanganan event yang lebih baik
         table.getColumnModel().getColumn(6).setCellEditor(new DefaultCellEditor(new JCheckBox()) {
             private JPanel panel;
             private JButton btnEdit;
             private JButton btnDelete;
             private int currentRow;
             private boolean isPushed = false;
-            private final Component parentComponent = thisPanel; // Store a reference to the parent component
+            private final Component parentComponent = thisPanel;
 
             @Override
             public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
@@ -232,6 +234,7 @@ public class Transaksibeli extends JPanel {
                 panel.setOpaque(false);
                 panel.setBackground(new Color(0, 0, 0, 0));
 
+                // Prepare icons
                 ImageIcon originalIconEdit = new ImageIcon(getClass().getResource("/SourceImage/edit_icon.png"));
                 ImageIcon originalIconDelete = new ImageIcon(getClass().getResource("/SourceImage/hapus_icon.png"));
 
@@ -241,6 +244,7 @@ public class Transaksibeli extends JPanel {
                 ImageIcon scaledIconEdit = new ImageIcon(scaledImageEdit);
                 ImageIcon scaledIconDelete = new ImageIcon(scaledImageDelete);
 
+                // Edit button
                 btnEdit = new JButton() {
                     @Override
                     protected void paintComponent(Graphics g) {
@@ -250,24 +254,6 @@ public class Transaksibeli extends JPanel {
                         g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
                         super.paintComponent(g2);
                         g2.dispose();
-                    }
-
-                    @Override
-                    public void setPressedIcon(Icon icon) {
-                        // Do nothing - keep the same appearance
-                    }
-
-                    @Override
-                    public void updateUI() {
-                        super.updateUI();
-                        setContentAreaFilled(false);
-                        setBorderPainted(false);
-                        setFocusPainted(false);
-                    }
-
-                    @Override
-                    public boolean isFocusable() {
-                        return false;
                     }
                 };
                 btnEdit.setIcon(scaledIconEdit);
@@ -282,19 +268,23 @@ public class Transaksibeli extends JPanel {
                 btnEdit.setFocusPainted(false);
                 btnEdit.setRolloverEnabled(false);
                 btnEdit.setMargin(new Insets(0, 0, 0, 0));
-                btnEdit.setName("edit");
                 btnEdit.setBackground(new Color(255, 187, 85));
 
                 btnEdit.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        stopCellEditing();
-                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                        PopUp_edittransbeli dialog = new PopUp_edittransbeli(parentFrame);
-                        dialog.setVisible(true);
+                        fireEditingStopped();
+                        // Gunakan invokeLater untuk menjalankan aksi setelah editing selesai
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleEditTransaksi(currentRow);
+                            }
+                        });
                     }
                 });
 
+                // Delete button
                 btnDelete = new JButton() {
                     @Override
                     protected void paintComponent(Graphics g) {
@@ -304,24 +294,6 @@ public class Transaksibeli extends JPanel {
                         g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
                         super.paintComponent(g2);
                         g2.dispose();
-                    }
-
-                    @Override
-                    public void setPressedIcon(Icon icon) {
-                        // Do nothing - keep the same appearance
-                    }
-
-                    @Override
-                    public void updateUI() {
-                        super.updateUI();
-                        setContentAreaFilled(false);
-                        setBorderPainted(false);
-                        setFocusPainted(false);
-                    }
-
-                    @Override
-                    public boolean isFocusable() {
-                        return false;
                     }
                 };
                 btnDelete.setIcon(scaledIconDelete);
@@ -336,16 +308,19 @@ public class Transaksibeli extends JPanel {
                 btnDelete.setFocusPainted(false);
                 btnDelete.setRolloverEnabled(false);
                 btnDelete.setMargin(new Insets(0, 0, 0, 0));
-                btnDelete.setName("delete");
                 btnDelete.setBackground(new Color(255, 59, 48));
 
                 btnDelete.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        stopCellEditing();
-                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                        PopUp_transbelihapusdata dialog = new PopUp_transbelihapusdata(parentFrame);
-                        dialog.setVisible(true);
+                        fireEditingStopped();
+                        // Gunakan invokeLater untuk menjalankan aksi setelah editing selesai
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleDeleteTransaksi(currentRow);
+                            }
+                        });
                     }
                 });
 
@@ -364,7 +339,41 @@ public class Transaksibeli extends JPanel {
                 isPushed = false;
                 return super.stopCellEditing();
             }
+
+            // Override isCellEditable untuk memastikan sel bisa diedit
+            @Override
+            public boolean isCellEditable(EventObject anEvent) {
+                return true;
+            }
         });
+// Hapus cell editor dan gunakan pendekatan click detection murni
+        table.getColumnModel().getColumn(6).setCellEditor(null);
+
+// Tambahkan listener untuk mendeteksi klik pada area tombol
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int column = table.columnAtPoint(e.getPoint());
+                int row = table.rowAtPoint(e.getPoint());
+
+                if (column == 6 && row >= 0) {
+                    Rectangle cellRect = table.getCellRect(row, column, false);
+                    int relativeX = e.getX() - cellRect.x;
+
+                    // Area tombol edit (sekitar 30px pertama dari kiri)
+                    if (relativeX >= 5 && relativeX < 35) {
+                        handleEditTransaksi(row);
+                    } // Area tombol hapus (35px berikutnya, dengan jarak 2px)
+                    else if (relativeX >= 37 && relativeX < 67) {
+                        handleDeleteTransaksi(row);
+                    }
+                }
+            }
+        });
+
+        // Tentukan bahwa kolom 6 bisa diedit
+        TableColumnModel columnModel = table.getColumnModel();
+        columnModel.getColumn(6).setCellEditor(table.getColumnModel().getColumn(6).getCellEditor());
 
         // Panel Form - diposisikan lebih baik di sisi kanan dengan tinggi yang disesuaikan
         JPanel formPanel = new JPanel(null) {
@@ -499,6 +508,14 @@ public class Transaksibeli extends JPanel {
             sizeProduk.setText("");
             hargaBeliField.setText("Rp. ");
             qtyField.setText("");
+            scanKodeField.setEditable(true);
+            namaProduk.setEditable(true);
+            sizeProduk.setEditable(true);
+            scanKodeField.setFocusable(true);
+            namaProduk.setFocusable(true);
+            sizeProduk.setFocusable(true);
+
+            scanKodeField.requestFocus();
         });
         formPanel.add(btnClear);
 
@@ -749,81 +766,177 @@ public class Transaksibeli extends JPanel {
         try {
             String nama = namaProduk.getText();
             String kode = scanKodeField.getText();
-            int qty = Integer.parseInt(qtyField.getText());
+            String size = currentProductSize;
+            String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+            String qtyText = qtyField.getText().trim();
+
             if (kode.isEmpty()) {
-//                JOptionPane.showMessageDialog(this, "Nama produk tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
-//                PindahanAntarPopUp.showScanProdukTerlebihDahulu(parentFrame);
+                PindahanAntarPopUp.showScanProdukTerlebihDahulu(parentFrame);
+                scanKodeField.requestFocus();
                 return;
             }
 
-            // Get price from hargaBeliField
-            String hargaText = hargaBeliField.getText().replace("Rp. ", "").replace(".", "").trim();
+            if (!isKodeProdukValid(kode)) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Kode produk tidak ditemukan di database!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                scanKodeField.setText("");
+                namaProduk.setText("");
+                sizeProduk.setText("");
+                hargaBeliField.setText("");
+                qtyField.setText("");
+                scanKodeField.requestFocus();
+                return;
+            }
+
+            if (nama.isEmpty()) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Nama produk tidak boleh kosong!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                namaProduk.requestFocus();
+                return;
+            }
+
+            if (size.isEmpty()) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Size produk tidak boleh kosong!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                sizeProduk.requestFocus();
+                return;
+            }
+
+            if (hargaText.isEmpty() || hargaText.equals("0")) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Harga beli tidak boleh kosong atau nol!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                hargaBeliField.requestFocus();
+                return;
+            }
+
+            if (qtyText.isEmpty()) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Quantity tidak boleh kosong!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                qtyField.requestFocus();
+                return;
+            }
+
+            int qty = Integer.parseInt(qtyText);
             int harga = Integer.parseInt(hargaText);
+
+            if (qty <= 0) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Quantity harus lebih dari 0!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                qtyField.requestFocus();
+                return;
+            }
+
+            if (harga <= 0) {
+                JOptionPane.showMessageDialog(parentFrame,
+                        "Harga beli harus lebih dari 0!",
+                        "Peringatan",
+                        JOptionPane.WARNING_MESSAGE);
+                hargaBeliField.requestFocus();
+                return;
+            }
 
             double totalawal = harga * qty;
 
-            // Check if the item already exists in the table with the same discount
             DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
             boolean itemFound = false;
-
             double rowTotal;
 
             for (int i = 0; i < model.getRowCount(); i++) {
                 String existingName = model.getValueAt(i, 1).toString();
                 String existingSize = model.getValueAt(i, 2).toString();
                 String existingHarga = model.getValueAt(i, 3).toString();
-                String hargaForm = hargaBeliField.getText();
+                String hargaForm = "Rp. " + formatter.format(harga); 
 
-                // Compare name, size and discount
                 if (existingName.equals(nama)
                         && existingSize.equals(currentProductSize)
                         && existingHarga.equals(hargaForm)) {
-
-                    // Update quantity
                     int currentQty = Integer.parseInt(model.getValueAt(i, 4).toString());
                     int newQty = currentQty + qty;
                     model.setValueAt(newQty, i, 4);
 
-                    // Update total price for this row
                     rowTotal = harga * qty;
                     double currentTotal = Double.parseDouble(model.getValueAt(i, 5).toString().replace("Rp. ", "").replace(".", "").trim());
                     double total = currentTotal + rowTotal;
                     model.setValueAt("Rp. " + formatter.format(total), i, 5);
-
                     itemFound = true;
                     break;
                 }
             }
 
-            // If item not found with same discount, add as new row
             if (!itemFound) {
                 int rowCount = model.getRowCount() + 1;
-
                 model.addRow(new Object[]{
                     rowCount,
                     nama,
                     currentProductSize,
                     "Rp. " + formatter.format(harga),
-                    qty, // Default quantity
+                    qty,
                     "Rp. " + formatter.format(totalawal),
-                    "" // Action column
+                    ""
                 });
             }
-
-            // Clear fields
             scanKodeField.setText("");
             namaProduk.setText("");
-            hargaBeliField.setText("Rp. ");
             sizeProduk.setText("");
+            hargaBeliField.setText("Rp. ");
             qtyField.setText("");
+            
+            scanKodeField.setFocusable(true);
+            namaProduk.setFocusable(true);
+            sizeProduk.setFocusable(true);
+            scanKodeField.setEditable(true);
+            namaProduk.setEditable(true);
+            sizeProduk.setEditable(true);
+            scanKodeField.setEnabled(true);
+            namaProduk.setEnabled(true);
+            sizeProduk.setEnabled(true);
+            
             updateTotalAmount();
 
-            // Set focus back to scan field for next item
             scanKodeField.requestFocus();
 
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Produk berhasil ditambahkan ke keranjang!",
+                    "Informasi",
+                    JOptionPane.INFORMATION_MESSAGE);
         } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(parentFrame,
+                    "Format angka tidak valid! Pastikan quantity dan harga berupa angka.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    private boolean isKodeProdukValid(String kodeProduk) {
+        boolean isValid = false;
+        try {
+            Connection conn = db.conn.getConnection();
+            String sql = "SELECT COUNT(*) FROM produk WHERE id_produk = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, kodeProduk);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                isValid = rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return isValid;
     }
 
     private void updateTotalAmount() {
@@ -856,6 +969,17 @@ public class Transaksibeli extends JPanel {
                     sizeProduk.setText(ukuran);
 
                     currentProductSize = ukuran != null ? ukuran : "";
+                    scanKodeField.setFocusable(false);
+                    namaProduk.setFocusable(false);
+                    sizeProduk.setFocusable(false);
+                    hargaBeliField.requestFocus();
+                }else{
+                    JOptionPane.showMessageDialog(parentFrame,
+                    "Kode produk tidak ditemukan!",
+                    "Peringatan",
+                    JOptionPane.WARNING_MESSAGE);
+                    scanKodeField.setText("");
+                    scanKodeField.requestFocus();
                 }
             }
         } catch (Exception e) {
@@ -953,7 +1077,7 @@ public class Transaksibeli extends JPanel {
                 // Dapatkan ID produk dari nama dan ukuran
                 String productId = getProductIdFromNameAndSize(productName, productSize);
                 System.out.println(productId);
-                
+
                 String updateHargaProduk = "UPDATE produk SET harga_beli = ? WHERE id_produk = ?";
                 PreparedStatement psUpdate = con.prepareStatement(updateHargaProduk);
                 psUpdate.setDouble(1, price);
@@ -996,6 +1120,52 @@ public class Transaksibeli extends JPanel {
 
             return false; // Transaksi gagal
         }
+    }
+
+    //INI FUNGSI HUBUNG UNTUK EDIT DAN HAPUS BUTTON WOI
+    private void handleEditTransaksi(int rowIndex) {
+        if (rowIndex < 0 || rowIndex >= roundedTable.getTable().getRowCount()) {
+            return;
+        }
+
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+        PopUp_edittransbeli editPopup = new PopUp_edittransbeli(parentFrame, roundedTable.getTable(), rowIndex);
+        editPopup.setVisible(true);
+
+        refreshAfterEdit();
+    }
+
+    private void handleDeleteTransaksi(int rowIndex) {
+        if (rowIndex < 0 || rowIndex >= roundedTable.getTable().getRowCount()) {
+            return;
+        }
+
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+        PopUp_transbelihapusdata deletePopup = new PopUp_transbelihapusdata(parentFrame);
+
+        deletePopup.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if (deletePopup.isDeleteConfirmed()) {
+                    DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+                    model.removeRow(rowIndex);
+
+                    // Renumber rows
+                    for (int i = 0; i < model.getRowCount(); i++) {
+                        model.setValueAt(i + 1, i, 0);
+                    }
+
+                    updateTotalAmount();
+                    PindahanAntarPopUp.showProdukBerhasilDihapus(parentFrame);
+                }
+            }
+        });
+
+        deletePopup.setVisible(true);
+    }
+
+    private void refreshAfterEdit() {
+        updateTotalAmount();
     }
 
     private void clearTransactionTable() {

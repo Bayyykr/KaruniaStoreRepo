@@ -1,5 +1,6 @@
 package SourceCode;
 
+import PopUp_all.PindahanAntarPopUp;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -8,7 +9,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 
 public class PopUp_transbelihapusdata extends JDialog {
-
+    private boolean deleteConfirmed = false;
+     public boolean isDeleteConfirmed() {
+        return deleteConfirmed;
+    }
+     
     private JComponent glassPane;
     private JFrame parentFrame;
     private static final int RADIUS = 20;
@@ -112,15 +117,14 @@ public class PopUp_transbelihapusdata extends JDialog {
                 Timer successTimer = new Timer(ANIMATION_DURATION + 100, new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        // Pastikan popup saat ini benar-benar tertutup sebelum membuka yang baru
                         isShowingPopup = false;
-
-                        // Tampilkan popup sukses
-                        SwingUtilities.invokeLater(() -> {
-                            PopUp_transbelihapusdatasucces successPopup
-                                    = new PopUp_transbelihapusdatasucces(parentFrame);
-                            successPopup.setVisible(true);
-                        });
+                        PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
+//                        // Tampilkan popup sukses
+//                        SwingUtilities.invokeLater(() -> {
+//                            PopUp_transbelihapusdatasucces successPopup
+//                                    = new PopUp_transbelihapusdatasucces(parentFrame);
+//                            successPopup.setVisible(true);
+//                        });
                     }
                 });
                 successTimer.setRepeats(false);

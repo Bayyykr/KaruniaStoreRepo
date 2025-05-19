@@ -18,6 +18,7 @@ import db.conn;
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 
 public class Popup_edittransjual extends JDialog {
 
@@ -40,7 +41,7 @@ public class Popup_edittransjual extends JDialog {
     private final int FINAL_HEIGHT = 230; // Ukuran tetap
 
     private Connection con;
-    private DecimalFormat formatter = new DecimalFormat("#,###");
+    private DecimalFormat formatter;
 
     // Variables to store original table data
     private JTable table;
@@ -61,6 +62,11 @@ public class Popup_edittransjual extends JDialog {
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
         con = conn.getConnection();
+        
+        // Menggunakan titik sebagai pemisah ribuan, bukan koma
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setGroupingSeparator('.');
+        formatter = new DecimalFormat("#,###", symbols);
 
         // Store original values
         DefaultTableModel model = (DefaultTableModel) table.getModel();
