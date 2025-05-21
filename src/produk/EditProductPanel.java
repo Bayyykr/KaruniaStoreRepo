@@ -827,6 +827,84 @@ public class EditProductPanel extends JPanel {
         }
     }
 
+    private void createCategoryPanel() {
+        panelCategory = new RoundedPanelProduk();
+        panelCategory.setBackground(new Color(240, 240, 240));
+        panelCategory.setBounds(770, 450, 280, 180);
+        add(panelCategory);
+        panelCategory.setLayout(null);
+
+        JLabel lblCategory = new JLabel("Kategori");
+        lblCategory.setFont(new Font("Arial", Font.BOLD, 14));
+        lblCategory.setBounds(20, 15, 200, 20);
+        panelCategory.add(lblCategory);
+
+        JLabel lblProductCategory = new JLabel("Kategori Produk");
+        lblProductCategory.setFont(new Font("Arial", Font.PLAIN, 10));
+        lblProductCategory.setBounds(20, 35, 100, 15);
+        panelCategory.add(lblProductCategory);
+
+        // Combobox Kategori with placeholder
+        String[] categoryOptions = {"Pilih Kategori", "Sepatu", "Sandal", "Kaos Kaki", "Lainnya"};
+        cbCategory = new ComboboxCustom(categoryOptions);
+        cbCategory.setBounds(20, 55, 240, 35);
+        panelCategory.add(cbCategory);
+
+        setupCategoryListener();
+
+        // Panel untuk Style dengan Label dan Button
+        JPanel stylePanel = new RoundedPanelProduk(5);
+        stylePanel.setLayout(null);
+        stylePanel.setBounds(20, 110, 240, 35);
+        stylePanel.setBackground(new Color(255, 255, 255));
+        stylePanel.setVisible(false); // Initially hidden
+        stylePanel.setBorder(new RoundedBorder(5, Color.LIGHT_GRAY, 1)); // Add rounded border
+        panelCategory.add(stylePanel);
+
+        // Style value label
+        lblStyle = new JLabel("Jaket");
+        lblStyle.setFont(new Font("Arial", Font.BOLD, 12));
+        lblStyle.setHorizontalAlignment(JLabel.LEFT);
+        lblStyle.setBounds(30, 10, 160, 15); // Moved further to the left
+        stylePanel.add(lblStyle);
+
+        // Navigation buttons with circular shape
+        btnNextStyle = new RoundedCircularButton(">");
+        btnNextStyle.setBounds(210, 5, 25, 25); // Smaller and slightly adjusted position
+        stylePanel.add(btnNextStyle);
+
+        btnPrevStyle = new RoundedCircularButton("<");
+        btnPrevStyle.setBounds(180, 5, 25, 25); // Smaller and slightly adjusted position
+        stylePanel.add(btnPrevStyle);
+
+        cbCategory.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selected = (String) cbCategory.getSelectedItem();
+                if (selected != null && !selected.equals("Pilih Kategori")) {
+                    // Mengubah opsi style berdasarkan kategori
+                    updateStyleOptions(selected);
+
+                    // Tampilkan style panel
+                    Component[] components = panelCategory.getComponents();
+                    for (Component c : components) {
+                        if (c instanceof JPanel && c != cbCategory) {
+                            c.setVisible(true);
+                        }
+                    }
+                } else {
+                    // Sembunyikan style panel
+                    Component[] components = panelCategory.getComponents();
+                    for (Component c : components) {
+                        if (c instanceof JPanel && c != cbCategory) {
+                            c.setVisible(false);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     private void initEventListeners() {
         // Modify the existing category combobox item listener
         cbCategory.addItemListener(new ItemListener() {
@@ -895,131 +973,14 @@ public class EditProductPanel extends JPanel {
         });
     }
 
-    private void createCategoryPanel() {
-        panelCategory = new RoundedPanelProduk();
-        panelCategory.setBackground(new Color(240, 240, 240));
-        panelCategory.setBounds(770, 450, 280, 180);
-        add(panelCategory);
-        panelCategory.setLayout(null);
-
-        JLabel lblCategory = new JLabel("Kategori");
-        lblCategory.setFont(new Font("Arial", Font.BOLD, 14));
-        lblCategory.setBounds(20, 15, 200, 20);
-        panelCategory.add(lblCategory);
-
-        JLabel lblProductCategory = new JLabel("Kategori Produk");
-        lblProductCategory.setFont(new Font("Arial", Font.PLAIN, 10));
-        lblProductCategory.setBounds(20, 35, 100, 15);
-        panelCategory.add(lblProductCategory);
-
-        // Combobox Kategori with placeholder
-        String[] categoryOptions = {"Pilih Kategori", "Sepatu", "Sandal", "Kaos Kaki", "Lainnya"};
-        cbCategory = new ComboboxCustom(categoryOptions);
-        cbCategory.setBounds(20, 55, 240, 35);
-        panelCategory.add(cbCategory);
-
-        // Panel untuk Style dengan Label dan Button
-        JPanel stylePanel = new RoundedPanelProduk(5);
-        stylePanel.setLayout(null);
-        stylePanel.setBounds(20, 110, 240, 35);
-        stylePanel.setBackground(new Color(255, 255, 255));
-        stylePanel.setVisible(false); // Initially hidden
-        stylePanel.setBorder(new RoundedBorder(5, Color.LIGHT_GRAY, 1)); // Add rounded border
-        panelCategory.add(stylePanel);
-
-        // Style value label
-        lblStyle = new JLabel(""); // Initial empty label
-        lblStyle.setFont(new Font("Arial", Font.BOLD, 12));
-        lblStyle.setHorizontalAlignment(JLabel.LEFT);
-        lblStyle.setBounds(30, 10, 160, 15); // Moved further to the left
-        stylePanel.add(lblStyle);
-
-        // Navigation buttons with circular shape
-        btnNextStyle = new RoundedCircularButton(">");
-        btnNextStyle.setBounds(210, 5, 25, 25); // Smaller and slightly adjusted position
-        stylePanel.add(btnNextStyle);
-
-        btnPrevStyle = new RoundedCircularButton("<");
-        btnPrevStyle.setBounds(180, 5, 25, 25); // Smaller and slightly adjusted position
-        stylePanel.add(btnPrevStyle);
-
-        // Set up navigation button actions
-        btnNextStyle.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentStyleIndex < currentStyleOptions.length - 1) {
-                    currentStyleIndex++;
-                    updateStyleLabel();
-                    updateStyleNavigationButtons();
-                }
-            }
-        });
-
-        btnPrevStyle.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentStyleIndex > 0) {
-                    currentStyleIndex--;
-                    updateStyleLabel();
-                    updateStyleNavigationButtons();
-                }
-            }
-        });
-
-        // Call setupCategoryListener after all UI components are initialized
-        setupCategoryListener();
-    }
-
     private void setupCategoryListener() {
-        // Remove any existing listeners to avoid duplicates
-        ActionListener[] listeners = cbCategory.getActionListeners();
-        for (ActionListener listener : listeners) {
-            cbCategory.removeActionListener(listener);
-        }
-
-        // Add a new listener outside of the loop
         cbCategory.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selectedCategory = (String) cbCategory.getSelectedItem();
-                System.out.println("\n--- Category Selection Changed ---");
-                System.out.println("Selected category: " + selectedCategory);
-
-                // Find the style panel - it should be the third component (index 2) in panelCategory
-                Component[] components = panelCategory.getComponents();
-                JPanel stylePanel = null;
-                if (components.length > 2 && components[2] instanceof JPanel) {
-                    stylePanel = (JPanel) components[2];
-                }
-
                 // Only update style options if an actual category is selected (not "Pilih Kategori")
                 if (selectedCategory != null && !selectedCategory.equals("Pilih Kategori")) {
-                    // First set default styles based on category to ensure something is always displayed
-                    setDefaultStylesForCategory(selectedCategory);
-                    System.out.println("Default styles set");
-                    
-                    // Then try to load from database
                     updateStyleOptions(selectedCategory);
-                    System.out.println("Styles updated from database (or kept defaults)");
-
-                    // Make sure style panel is visible
-                    if (stylePanel != null) {
-                        stylePanel.setVisible(true);
-                        System.out.println("Style panel made visible");
-                    }
-
-                    // Reset to first style to ensure we always see all options
-                    currentStyleIndex = 0;
-                    
-                    // Force update of style label and buttons
-                    updateStyleLabel();
-                    updateStyleNavigationButtons();
-
-                    System.out.println("Current styles: " + String.join(", ", currentStyleOptions));
-                    System.out.println("Total styles: " + currentStyleOptions.length);
-                    System.out.println("Current index: " + currentStyleIndex);
-                    System.out.println("Current style: " + (currentStyleIndex < currentStyleOptions.length
-                            ? currentStyleOptions[currentStyleIndex] : "none"));
                 } else {
                     // Clear style if no valid category is selected
                     currentStyleOptions = new String[]{""};
@@ -1027,42 +988,34 @@ public class EditProductPanel extends JPanel {
                     currentStyleIndex = 0;
                     updateStyleLabel();
                     updateStyleNavigationButtons();
-
-                    // Hide style panel
-                    if (stylePanel != null) {
-                        stylePanel.setVisible(false);
-                        System.out.println("Style panel hidden");
-                    }
                 }
             }
         });
     }
-    
-    private void updateStyleOptions(String category) {
-        // Ensure we have default styles
-        setDefaultStylesForCategory(category);
 
+    private void updateStyleOptions(String category) {
         try {
             // Map category name to style IDs for database query
             String categoryStyleFilter = "";
             // Based on the product database, it seems styles are assigned based on category
-            switch (category.toLowerCase()) {  // Ensure case-insensitive comparison
+            switch (category.toLowerCase()) {  // Gunakan toLowerCase() untuk konsistensi
                 case "sepatu":
-                    categoryStyleFilter = "00001, 00002, 00003, 00004"; // Running, Casual, Formal, Sport
+                    categoryStyleFilter = "'00001', '00002', '00003', '00004'"; // Running, Casual, Formal, Sport
                     break;
                 case "sandal":
-                    categoryStyleFilter = "00002, 00003, 00005, 00006"; // Casual, Formal, Outdoor, Pantai
+                    categoryStyleFilter = "'00002', '00003', '00005', '00006'"; // Casual, Formal, Outdoor, Pantai
                     break;
                 case "kaos kaki":
-                    categoryStyleFilter = "00007, 00003, 00002, 00008"; // Olahraga, Formal, Casual, Ankle
+                    categoryStyleFilter = "'00007', '00003', '00002', '00008'"; // Olahraga, Formal, Casual, Ankle
                     break;
                 case "lainnya":
-                    categoryStyleFilter = "00009, 00010, 00011, 00012"; // Vintage, Modern, Klasik, Trendy
+                    categoryStyleFilter = "'00009', '00010', '00011', '00012'"; // Vintage, Modern, Klasik, Trendy
                     break;
                 default:
                     categoryStyleFilter = "";
                     break;
             }
+
             if (!categoryStyleFilter.isEmpty()) {
                 // Query to get styles for the selected category
                 String sql = "SELECT id_style, nama_style FROM style WHERE id_style IN (" + categoryStyleFilter + ") ORDER BY id_style ASC";
@@ -1081,49 +1034,42 @@ public class EditProductPanel extends JPanel {
                     if (!styleIdsList.isEmpty()) {
                         currentStyleIds = styleIdsList.toArray(new String[0]);
                         currentStyleOptions = styleNamesList.toArray(new String[0]);
+
+                        // Debug: Print jumlah style yang ditemukan
+                        System.out.println("Found " + currentStyleOptions.length + " styles for category: " + category);
+                    } else {
+                        // Fallback if no styles found
+                        setDefaultStylesForCategory(category);
                     }
-                    // No else here - we keep the default styles if no database results
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error loading style options: " + e.getMessage());
             e.printStackTrace();
-            // We already set default styles at the beginning, so no need to do it again
+            setDefaultStylesForCategory(category);
         }
-
-        // Ensure we have a valid index
-        if (currentStyleOptions.length > 0) {
-            // Reset index to first item
-            currentStyleIndex = 0;
-            System.out.println("Style options loaded: " + String.join(", ", currentStyleOptions));
-        } else {
-            // Handle the edge case where we still have no styles
-            currentStyleOptions = new String[]{"Default"};
-            currentStyleIds = new String[]{"00000"};
-            currentStyleIndex = 0;
-            System.out.println("No style options found, using default");
-        }
-
-        // Update UI
+        // Reset index to first item
+        currentStyleIndex = 0;
         updateStyleLabel();
         updateStyleNavigationButtons();
     }
 
     private void setDefaultStylesForCategory(String category) {
-        switch (category) {
-            case "Sepatu":
+        // Gunakan toLowerCase() untuk konsistensi
+        switch (category.toLowerCase()) {
+            case "sepatu":
                 currentStyleOptions = new String[]{"Running", "Casual", "Formal", "Sport"};
                 currentStyleIds = new String[]{"00001", "00002", "00003", "00004"};
                 break;
-            case "Sandal":
+            case "sandal":
                 currentStyleOptions = new String[]{"Casual", "Formal", "Outdoor", "Pantai"};
                 currentStyleIds = new String[]{"00002", "00003", "00005", "00006"};
                 break;
-            case "Kaos Kaki":
+            case "kaos kaki":
                 currentStyleOptions = new String[]{"Olahraga", "Formal", "Casual", "Ankle"};
                 currentStyleIds = new String[]{"00007", "00003", "00002", "00008"};
                 break;
-            case "Lainnya":
+            case "lainnya":
                 currentStyleOptions = new String[]{"Vintage", "Modern", "Klasik", "Trendy"};
                 currentStyleIds = new String[]{"00009", "00010", "00011", "00012"};
                 break;
@@ -1132,6 +1078,9 @@ public class EditProductPanel extends JPanel {
                 currentStyleIds = new String[]{""};
                 break;
         }
+
+        // Debug: Print default styles
+        System.out.println("Using default styles for category: " + category);
     }
 
     private void updateStyleLabel() {
@@ -1140,22 +1089,6 @@ public class EditProductPanel extends JPanel {
         } else {
             lblStyle.setText("");
         }
-    }
-
-    private void updateStyleNavigationButtons() {
-        // Reset button state each time this is called
-        if (currentStyleOptions.length <= 1) {
-            // If only one or no style, disable both buttons
-            btnPrevStyle.setEnabled(false);
-            btnNextStyle.setEnabled(false);
-        } else {
-            // Set button status based on current index
-            btnPrevStyle.setEnabled(currentStyleIndex > 0);
-            btnNextStyle.setEnabled(currentStyleIndex < currentStyleOptions.length - 1);
-        }
-        // Set button text color based on status
-        btnPrevStyle.setForeground(btnPrevStyle.isEnabled() ? Color.BLACK : Color.GRAY);
-        btnNextStyle.setForeground(btnNextStyle.isEnabled() ? Color.BLACK : Color.GRAY);
     }
 
     private void clearForm() {
@@ -1356,6 +1289,22 @@ public class EditProductPanel extends JPanel {
         public boolean isOpaque() {
             return false;
         }
+    }
+
+    private void updateStyleNavigationButtons() {
+        // Reset button state each time this is called
+        if (currentStyleOptions.length <= 1) {
+            // If only one or no style, disable both buttons
+            btnPrevStyle.setEnabled(false);
+            btnNextStyle.setEnabled(false);
+        } else {
+            // Set button status based on current index
+            btnPrevStyle.setEnabled(currentStyleIndex > 0);
+            btnNextStyle.setEnabled(currentStyleIndex < currentStyleOptions.length - 1);
+        }
+        // Set button text color based on status
+        btnPrevStyle.setForeground(btnPrevStyle.isEnabled() ? Color.BLACK : Color.GRAY);
+        btnNextStyle.setForeground(btnNextStyle.isEnabled() ? Color.BLACK : Color.GRAY);
     }
 
     private void playButtonClickEffect(JButton button) {

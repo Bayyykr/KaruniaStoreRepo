@@ -95,24 +95,28 @@ public class ProductDisplayy extends javax.swing.JPanel {
 
     private void initializeCategoryPanels() {
         // Inisialisasi panel untuk Sepatu (termasuk filter)
-        sepatuPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        sepatuPanel = new JPanel(new BorderLayout());
+        sepatuPanel.add(createFilterPanel("Sepatu"), BorderLayout.NORTH);
         JPanel sepatuProductsGrid = createProductsGrid("Sepatu");
         sepatuScrollPane = createScrollPaneForProducts(sepatuProductsGrid);
         sepatuPanel.add(sepatuScrollPane, BorderLayout.CENTER);
 
         // Inisialisasi panel untuk Sandal (termasuk filter)
-        sandalPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        sandalPanel = new JPanel(new BorderLayout());
+        sandalPanel.add(createFilterPanel("Sandal"), BorderLayout.NORTH);
         JPanel sandalProductsGrid = createProductsGrid("Sandal");
         sandalScrollPane = createScrollPaneForProducts(sandalProductsGrid);
         sandalPanel.add(sandalScrollPane, BorderLayout.CENTER);
 
         // Inisialisasi panel untuk Kaos Kaki (termasuk filter)
-        kaosKakiPanel.add(createFilterPanel(), BorderLayout.NORTH);
+        kaosKakiPanel = new JPanel(new BorderLayout());
+        kaosKakiPanel.add(createFilterPanel("Kaos Kaki"), BorderLayout.NORTH);
         JPanel kaosKakiProductsGrid = createProductsGrid("Kaos Kaki");
         kaosKakiScrollPane = createScrollPaneForProducts(kaosKakiProductsGrid);
         kaosKakiPanel.add(kaosKakiScrollPane, BorderLayout.CENTER);
 
         // Inisialisasi panel untuk Lainnya (tanpa filter)
+        lainnyaPanel = new JPanel(new BorderLayout());
         JPanel lainnyaProductsGrid = createProductsGrid("Lainnya");
         lainnyaScrollPane = createScrollPaneForProducts(lainnyaProductsGrid);
         lainnyaPanel.add(lainnyaScrollPane, BorderLayout.CENTER);
@@ -122,10 +126,6 @@ public class ProductDisplayy extends javax.swing.JPanel {
         mainContentPanel.add(sandalPanel, "Sandal");
         mainContentPanel.add(kaosKakiPanel, "Kaos Kaki");
         mainContentPanel.add(lainnyaPanel, "Lainnya");
-
-        // Tampilkan panel Sepatu sebagai default
-        CardLayout cl = (CardLayout) mainContentPanel.getLayout();
-        cl.show(mainContentPanel, "Sepatu");
     }
 
     private ScrollPane createScrollPaneForProducts(JPanel productsPanel) {
@@ -365,7 +365,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
                 if (activeTab != currentTab) {
                     // Hapus underline dari tab aktif sebelumnya
                     if (activeTab != null) {
-                        activeTab.remove(activeTab.getComponent(1)); // Hapus garis
+                        activeTab.remove(activeTab.getComponent(1));
                         activeTab.revalidate();
                         activeTab.repaint();
                     }
@@ -381,11 +381,8 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     // Update tab yang aktif
                     activeTab = currentTab;
 
-                    // Tampilkan panel yang sesuai dengan tab yang dipilih
-                    CardLayout cl = (CardLayout) (mainContentPanel.getLayout());
-                    cl.show(mainContentPanel, tabName);
-
-                    System.out.println("Tab " + tabName + " dipilih");
+                    // Panggil method switchCategory untuk berpindah kategori
+                    switchCategory(tabName);
                 }
             }
         });
@@ -393,7 +390,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return tabContainer;
     }
 
-    private JPanel createFilterPanel() {
+    private JPanel createFilterPanel(String category) {
         JPanel panel = new JPanel(new BorderLayout(0, 0));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
@@ -425,10 +422,10 @@ public class ProductDisplayy extends javax.swing.JPanel {
         dropdownsPanel.setBackground(Color.WHITE);
 
         // Ambil data filter dari database untuk dropdown
-        List<String> merkList = getMerkListFromDatabase();
+        List<String> merkList = getMerkListFromDatabase(category);
         List<String> ukuranList = getSizeListFromDatabase();
         List<String> hargaList = getPriceRangesFromDatabase();
-        List<String> styleList = getStyleListFromDatabase();
+        List<String> styleList = getStyleListFromDatabase(category);
         List<String> genderList = getGenderListFromDatabase();
 
         // Konversi list ke array untuk dropdown
@@ -551,12 +548,25 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return panel;
     }
 
-// Metode untuk mengambil data merk dari database
-    private List<String> getMerkListFromDatabase() {
+    private List<String> getMerkListFromDatabase(String category) {
         List<String> merkList = new ArrayList<>();
 
         try {
-            String query = "SELECT DISTINCT merk FROM produk ORDER BY merk";
+            String query = "SELECT DISTINCT merk FROM produk WHERE status = 'dijual'";
+
+            // Filter by category
+            if (category.equals("Sepatu")) {
+                query += " AND jenis_produk = 'sepatu'";
+            } else if (category.equals("Sandal")) {
+                query += " AND jenis_produk = 'sandal'";
+            } else if (category.equals("Kaos Kaki")) {
+                query += " AND jenis_produk = 'kaos kaki'";
+            } else if (category.equals("Lainnya")) {
+                query += " AND jenis_produk NOT IN ('sepatu', 'sndal', 'kaos kaki')";
+            }
+
+            query += " ORDER BY merk";
+
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 ResultSet rs = stmt.executeQuery();
 
@@ -604,13 +614,64 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return priceRanges;
     }
 
-// Metode untuk mendapatkan data jenis/style dari database
-    private List<String> getStyleListFromDatabase() {
+    private List<String> getStyleListFromDatabase(String category) {
         List<String> styleList = new ArrayList<>();
 
+        // Determine which styles to show based on category
+        String[] styleOptions;
+        String[] styleIds;
+
+        switch (category.toLowerCase()) {
+            case "sepatu":
+                styleOptions = new String[]{"Running", "Casual", "Formal", "Sport"};
+                styleIds = new String[]{"00001", "00002", "00003", "00004"};
+                break;
+            case "sandal":
+                styleOptions = new String[]{"Casual", "Formal", "Outdoor", "Pantai"};
+                styleIds = new String[]{"00002", "00003", "00005", "00006"};
+                break;
+            case "kaos kaki":
+                styleOptions = new String[]{"Olahraga", "Formal", "Casual", "Ankle"};
+                styleIds = new String[]{"00007", "00003", "00002", "00008"};
+                break;
+            case "lainnya":
+                styleOptions = new String[]{"Vintage", "Modern", "Klasik", "Trendy"};
+                styleIds = new String[]{"00009", "00010", "00011", "00012"};
+                break;
+            default:
+                styleOptions = new String[]{""};
+                styleIds = new String[]{""};
+                break;
+        }
+
         try {
-            String query = "SELECT nama_style FROM style ORDER BY id_style";
+            // Query to get style names for the specified IDs
+            String query = "SELECT nama_style FROM style WHERE id_style IN (";
+            for (int i = 0; i < styleIds.length; i++) {
+                if (i > 0) {
+                    query += ",";
+                }
+                query += "?";
+            }
+            query += ") ORDER BY FIELD(id_style, ";
+            for (int i = 0; i < styleIds.length; i++) {
+                if (i > 0) {
+                    query += ",";
+                }
+                query += "?";
+            }
+            query += ")";
+
             try (PreparedStatement stmt = con.prepareStatement(query)) {
+                // Set parameters for both IN and FIELD clauses
+                int paramIndex = 1;
+                for (String id : styleIds) {
+                    stmt.setString(paramIndex++, id);
+                }
+                for (String id : styleIds) {
+                    stmt.setString(paramIndex++, id);
+                }
+
                 ResultSet rs = stmt.executeQuery();
 
                 while (rs.next()) {
@@ -634,7 +695,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
         List<String> genderList = new ArrayList<>();
 
         try {
-            String query = "SELECT DISTINCT gender FROM produk ORDER BY gender";
+            String query = "SELECT DISTINCT gender FROM produk WHERE id_produk = 'dijual' ORDER BY gender";
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 ResultSet rs = stmt.executeQuery();
 
@@ -654,7 +715,6 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return genderList;
     }
 
-// Metode untuk menerapkan filter
     private void applyFilters(ComboboxCustomKhususProduk merkDropdown, ComboboxCustomKhususProduk ukuranDropdown,
             ComboboxCustomKhususProduk hargaDropdown, ComboboxCustomKhususProduk styleDropdown,
             ComboboxCustomKhususProduk genderDropdown) {
@@ -665,92 +725,144 @@ public class ProductDisplayy extends javax.swing.JPanel {
         String selectedStyle = styleDropdown.getSelectedIndex() > 0 ? (String) styleDropdown.getSelectedItem() : null;
         String selectedGender = genderDropdown.getSelectedIndex() > 0 ? (String) genderDropdown.getSelectedItem() : null;
 
+        // Dapatkan panel aktif saat ini
+        JPanel activePanel;
+        String activeCategory = "";
+
+        if (activeTab.getComponent(0) instanceof JButton) {
+            activeCategory = ((JButton) activeTab.getComponent(0)).getText();
+        }
+
+        switch (activeCategory) {
+            case "Sepatu":
+                activePanel = sepatuPanel;
+                break;
+            case "Sandal":
+                activePanel = sandalPanel;
+                break;
+            case "Kaos Kaki":
+                activePanel = kaosKakiPanel;
+                break;
+            case "Lainnya":
+                activePanel = lainnyaPanel;
+                break;
+            default:
+                activePanel = sepatuPanel;
+        }
+
         // Panggil metode untuk memuat produk dengan filter
-        loadFilteredProducts(selectedMerk, selectedUkuran, selectedHarga, selectedStyle, selectedGender);
+        loadFilteredProducts(activePanel, activeCategory, selectedMerk, selectedUkuran, selectedHarga, selectedStyle, selectedGender);
     }
 
-// Metode untuk memuat produk dengan filter yang dipilih
-    private void loadFilteredProducts(String merk, String ukuran, String harga, String style, String gender) {
-        // Hapus semua produk yang ada di container
-        mainContentPanel.removeAll();
+    private JPanel createProductsGridWithFilters(String category, String merk, String ukuran,
+            String harga, String style, String gender) {
+        // Gunakan JPanel dengan FlowLayout sebagai wadah utama
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT, 20, 25)); // Left aligned with spacing
+        panel.setBackground(Color.white);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         try {
-            // Buat list untuk menyimpan produk hasil filter beserta stoknya
-            List<Map<String, Object>> filteredProductsWithStock = new ArrayList<>();
+            // Create a list to store products with their stock info
+            List<Map<String, Object>> productsWithStock = new ArrayList<>();
 
-            // Buat query dasar
-            StringBuilder productSqlBuilder = new StringBuilder(
-                    "SELECT id_produk, nama_produk, harga_jual, size, gambar, merk, jenis_produk, gender "
-                    + "FROM produk WHERE 1=1 AND status = 'dijual'"
-            );
+            // Build the base SQL query
+            StringBuilder productSql = new StringBuilder(
+                    "SELECT p.id_produk, p.nama_produk, p.harga_jual, p.size, p.gambar, p.merk, p.jenis_produk, p.gender "
+                    + "FROM produk p WHERE p.status = 'dijual'");
 
-            // Tambahkan kondisi filter
-            List<Object> parameters = new ArrayList<>();
-
-            if (merk != null) {
-                productSqlBuilder.append(" AND merk = ?");
-                parameters.add(merk);
+            // Filter by category
+            if (category.equals("Sepatu")) {
+                productSql.append(" AND p.jenis_produk = 'Sepatu'");
+            } else if (category.equals("Sandal")) {
+                productSql.append(" AND p.jenis_produk = 'Sandal'");
+            } else if (category.equals("Kaos Kaki")) {
+                productSql.append(" AND p.jenis_produk = 'Kaos Kaki'");
+            } else if (category.equals("Lainnya")) {
+                productSql.append(" AND p.jenis_produk NOT IN ('Sepatu', 'Sandal', 'Kaos Kaki')");
             }
 
-            // Filter ukuran dengan range
-            if (ukuran != null) {
+            // Apply additional filters
+            if (merk != null && !merk.isEmpty()) {
+                productSql.append(" AND p.merk = ?");
+            }
+
+            if (ukuran != null && !ukuran.isEmpty()) {
+                // Handle size ranges
                 if (ukuran.equals("< 25")) {
-                    productSqlBuilder.append(" AND size < 25");
+                    productSql.append(" AND p.size < 25");
                 } else if (ukuran.equals("25 - 30")) {
-                    productSqlBuilder.append(" AND size >= 25 AND size <= 30");
+                    productSql.append(" AND p.size >= 25 AND p.size <= 30");
                 } else if (ukuran.equals("30 - 35")) {
-                    productSqlBuilder.append(" AND size > 30 AND size <= 35");
+                    productSql.append(" AND p.size > 30 AND p.size <= 35");
                 } else if (ukuran.equals("35 - 40")) {
-                    productSqlBuilder.append(" AND size > 35 AND size <= 40");
+                    productSql.append(" AND p.size > 35 AND p.size <= 40");
                 } else if (ukuran.equals("> 40")) {
-                    productSqlBuilder.append(" AND size > 40");
+                    productSql.append(" AND p.size > 40");
                 }
             }
 
-            // Filter harga dengan range
-            if (harga != null) {
+            if (harga != null && !harga.isEmpty()) {
+                // Handle price ranges
                 if (harga.equals("< 50.000")) {
-                    productSqlBuilder.append(" AND harga_jual < 50000");
+                    productSql.append(" AND p.harga_jual < 50000");
                 } else if (harga.equals("50.000 - 150.000")) {
-                    productSqlBuilder.append(" AND harga_jual >= 50000 AND harga_jual <= 150000");
+                    productSql.append(" AND p.harga_jual >= 50000 AND p.harga_jual <= 150000");
                 } else if (harga.equals("151.000 - 300.000")) {
-                    productSqlBuilder.append(" AND harga_jual > 150000 AND harga_jual <= 300000");
+                    productSql.append(" AND p.harga_jual > 150000 AND p.harga_jual <= 300000");
                 } else if (harga.equals("301.000 - 450.000")) {
-                    productSqlBuilder.append(" AND harga_jual > 300000 AND harga_jual <= 450000");
+                    productSql.append(" AND p.harga_jual > 300000 AND p.harga_jual <= 450000");
                 } else if (harga.equals("> 450.000")) {
-                    productSqlBuilder.append(" AND harga_jual > 450000");
+                    productSql.append(" AND p.harga_jual > 450000");
                 }
             }
 
-            try {
-                String idStyle = "SELECT id_style FROM style WHERE nama_style = ?";
-                try (PreparedStatement st = con.prepareStatement(idStyle)) {
-                    st.setString(1, style);
-                    ResultSet rs = st.executeQuery();
-                    if (rs.next()) {
-                        style = rs.getString("id_style");
+            if (style != null && !style.isEmpty()) {
+                // First get style ID from style name
+                String styleId = null;
+                String styleQuery = "SELECT id_style FROM style WHERE nama_style = ?";
+                try (PreparedStatement styleStmt = con.prepareStatement(styleQuery)) {
+                    styleStmt.setString(1, style);
+                    ResultSet styleRs = styleStmt.executeQuery();
+                    if (styleRs.next()) {
+                        styleId = styleRs.getString("id_style");
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                if (styleId != null) {
+                    productSql.append(" AND p.id_style = ?");
+                }
             }
 
-            if (style != null) {
-                productSqlBuilder.append(" AND id_style = ?");
-                parameters.add(style);
+            if (gender != null && !gender.isEmpty()) {
+                productSql.append(" AND p.gender = ?");
             }
 
-            if (gender != null) {
-                productSqlBuilder.append(" AND gender = ?");
-                parameters.add(gender);
-            }
+            // Prepare and execute the query
+            try (PreparedStatement st = con.prepareStatement(productSql.toString())) {
+                int paramIndex = 1;
 
-            String productSql = productSqlBuilder.toString();
+                // Set parameters for the prepared statement
+                if (merk != null && !merk.isEmpty()) {
+                    st.setString(paramIndex++, merk);
+                }
 
-            try (PreparedStatement st = con.prepareStatement(productSql)) {
-                // Set parameter values
-                for (int i = 0; i < parameters.size(); i++) {
-                    st.setObject(i + 1, parameters.get(i));
+                if (style != null && !style.isEmpty()) {
+                    // Get style ID again to ensure it's fresh
+                    String styleId = null;
+                    String styleQuery = "SELECT id_style FROM style WHERE nama_style = ?";
+                    try (PreparedStatement styleStmt = con.prepareStatement(styleQuery)) {
+                        styleStmt.setString(1, style);
+                        ResultSet styleRs = styleStmt.executeQuery();
+                        if (styleRs.next()) {
+                            styleId = styleRs.getString("id_style");
+                            st.setString(paramIndex++, styleId);
+                        }
+                    }
+                }
+
+                if (gender != null && !gender.isEmpty()) {
+                    st.setString(paramIndex++, gender);
                 }
 
                 ResultSet rs = st.executeQuery();
@@ -758,7 +870,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     String productId = rs.getString("id_produk");
                     int stock = 0;
 
-                    // Dapatkan stok terbaru untuk setiap produk
+                    // Get the latest stock for each product
                     String stokSql = "SELECT produk_sisa FROM kartu_stok WHERE id_produk = ? ORDER BY tanggal_transaksi DESC LIMIT 1";
                     try (PreparedStatement stockStmt = con.prepareStatement(stokSql)) {
                         stockStmt.setString(1, productId);
@@ -768,7 +880,7 @@ public class ProductDisplayy extends javax.swing.JPanel {
                         }
                     }
 
-                    // Simpan data produk dan stok dalam Map
+                    // Store product data and stock in a Map
                     Map<String, Object> productData = new HashMap<>();
                     productData.put("id_produk", productId);
                     productData.put("nama_produk", rs.getString("nama_produk"));
@@ -776,53 +888,53 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     productData.put("size", rs.getInt("size"));
                     productData.put("stock", stock);
 
-                    // Menangani data gambar BLOB
+                    // Properly handle BLOB image data
                     byte[] imageData = null;
                     Blob blob = rs.getBlob("gambar");
                     if (blob != null) {
                         imageData = blob.getBytes(1, (int) blob.length());
                     }
-
                     productData.put("gambar", imageData);
                     productData.put("merk", rs.getString("merk"));
                     productData.put("jenis_produk", rs.getString("jenis_produk"));
                     productData.put("gender", rs.getString("gender"));
 
-                    filteredProductsWithStock.add(productData);
+                    productsWithStock.add(productData);
                 }
             }
 
-            // Urutkan produk berdasarkan stok (ascending)
-            filteredProductsWithStock.sort((p1, p2)
+            // Sort the products by stock (ascending)
+            productsWithStock.sort((p1, p2)
                     -> Integer.compare((Integer) p1.get("stock"), (Integer) p2.get("stock")));
 
-            // Buat panel grid dengan ukuran tetap menggunakan JPanel yang berisi 4 kolom
+            // Create grid panel with fixed size (4 columns)
             JPanel gridPanel = new JPanel(new GridLayout(0, 4, 20, 25));
             gridPanel.setBackground(Color.WHITE);
+            gridPanel.setPreferredSize(new Dimension(980, 0));
+            gridPanel.setMinimumSize(new Dimension(980, 0));
 
-            // Set ukuran tetap untuk grid panel
-            // Asumsi lebar: (230px card * 4) + (20px gap * 3) + 20px padding kiri kanan = 980px
-            Dimension gridSize = new Dimension(980, 0);
-            gridPanel.setPreferredSize(gridSize);
-            gridPanel.setMinimumSize(gridSize);
+            // Add products to the grid panel
+            for (Map<String, Object> product : productsWithStock) {
+                JPanel productCard = createProductCard(
+                        (String) product.get("id_produk"),
+                        (String) product.get("nama_produk"),
+                        (Double) product.get("harga_jual"),
+                        (Integer) product.get("size"),
+                        (Integer) product.get("stock"),
+                        (byte[]) product.get("gambar"),
+                        (String) product.get("merk"),
+                        (String) product.get("jenis_produk"),
+                        (String) product.get("gender")
+                );
+                gridPanel.add(productCard);
+            }
 
-            // Jika tidak ada produk yang ditemukan, tampilkan pesan
-            if (filteredProductsWithStock.isEmpty()) {
-                JLabel noProductsLabel = new JLabel("Tidak ada produk yang sesuai dengan filter yang dipilih");
-                noProductsLabel.setFont(new Font("Arial", Font.BOLD, 14));
-                noProductsLabel.setHorizontalAlignment(JLabel.CENTER);
-
-                // Create an empty panel with fixed size to maintain consistent layout
-                JPanel emptyCardPanel = new JPanel();
-                emptyCardPanel.setPreferredSize(new Dimension(230, 350));
-                emptyCardPanel.setLayout(new BorderLayout());
-                emptyCardPanel.add(noProductsLabel, BorderLayout.CENTER);
-                emptyCardPanel.setBackground(Color.WHITE);
-
-                gridPanel.add(emptyCardPanel);
-
-                // Tambahkan 3 panel kosong lainnya untuk mengisi baris
-                for (int i = 0; i < 3; i++) {
+            // Add empty panels if needed to maintain grid layout
+            int productsCount = productsWithStock.size();
+            int remainder = productsCount % 4;
+            if (remainder > 0) {
+                int emptyPanelsNeeded = 4 - remainder;
+                for (int i = 0; i < emptyPanelsNeeded; i++) {
                     JPanel emptyPanel = new JPanel();
                     emptyPanel.setPreferredSize(new Dimension(230, 350));
                     emptyPanel.setMinimumSize(new Dimension(230, 350));
@@ -830,59 +942,60 @@ public class ProductDisplayy extends javax.swing.JPanel {
                     emptyPanel.setBackground(Color.WHITE);
                     gridPanel.add(emptyPanel);
                 }
-
-                // Set tinggi tetap untuk 1 baris
-                gridPanel.setPreferredSize(new Dimension(980, 375)); // 350px + 25px padding
-            } else {
-                // Tambahkan produk yang sudah difilter dan diurutkan ke panel
-                for (Map<String, Object> product : filteredProductsWithStock) {
-                    JPanel productCard = createProductCard(
-                            (String) product.get("id_produk"),
-                            (String) product.get("nama_produk"),
-                            (Double) product.get("harga_jual"),
-                            (Integer) product.get("size"),
-                            (Integer) product.get("stock"),
-                            (byte[]) product.get("gambar"),
-                            (String) product.get("merk"),
-                            (String) product.get("jenis_produk"),
-                            (String) product.get("gender")
-                    );
-                    gridPanel.add(productCard);
-                }
-
-                // Tambahkan panel kosong jika jumlah produk kurang dari 4
-                int productsCount = filteredProductsWithStock.size();
-                int remainder = productsCount % 4;
-                if (remainder > 0) {
-                    int emptyPanelsNeeded = 4 - remainder;
-                    for (int i = 0; i < emptyPanelsNeeded; i++) {
-                        JPanel emptyPanel = new JPanel();
-                        emptyPanel.setPreferredSize(new Dimension(230, 350));
-                        emptyPanel.setMinimumSize(new Dimension(230, 350));
-                        emptyPanel.setMaximumSize(new Dimension(230, 350));
-                        emptyPanel.setBackground(Color.WHITE);
-                        gridPanel.add(emptyPanel);
-                    }
-                }
-
-                // Hitung jumlah baris yang dibutuhkan
-                int rowCount = (int) Math.ceil(productsCount / 4.0);
-                // Set tinggi tetap untuk grid panel: (350px tinggi card * rowCount) + (25px gap * (rowCount-1)) + padding
-                int gridHeight = (rowCount * 350) + ((rowCount - 1) * 25) + 5;
-                gridPanel.setPreferredSize(new Dimension(950, gridHeight));
             }
 
-            // Tambahkan grid panel ke panel utama
-            mainContentPanel.add(gridPanel);
+            // Calculate and set the preferred height based on number of rows
+            int rowCount = (int) Math.ceil(productsCount / 4.0);
+            int gridHeight = (rowCount * 350) + ((rowCount - 1) * 25) + 5;
+            gridPanel.setPreferredSize(new Dimension(950, gridHeight));
 
-            // Update UI
-            mainContentPanel.revalidate();
-            mainContentPanel.repaint();
+            // Add grid panel to the main panel
+            panel.add(gridPanel);
 
-        } catch (SQLException e) {
+            // Show message if no products found
+            if (productsWithStock.isEmpty()) {
+                JLabel noProductsLabel = new JLabel("Tidak ada produk yang sesuai dengan filter");
+                noProductsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+                noProductsLabel.setHorizontalAlignment(JLabel.CENTER);
+                panel.add(noProductsLabel);
+            }
+
+        } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saat memuat produk: " + e.getMessage(),
+            JOptionPane.showMessageDialog(null, "Error connecting to database: " + e.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+        return panel;
+    }
+
+// Perbaiki metode loadFilteredProducts:
+    private void loadFilteredProducts(JPanel targetPanel, String category, String merk, String ukuran,
+            String harga, String style, String gender) {
+
+        // Hapus komponen yang ada di panel target
+        Component[] components = targetPanel.getComponents();
+        for (Component comp : components) {
+            if (comp instanceof ScrollPane) {
+                targetPanel.remove(comp);
+            }
+        }
+
+        try {
+            // Buat produk grid baru dengan filter
+            JPanel productsGrid = createProductsGridWithFilters(category, merk, ukuran, harga, style, gender);
+            ScrollPane newScrollPane = createScrollPaneForProducts(productsGrid);
+
+            // Tambahkan scroll pane baru ke panel target
+            targetPanel.add(newScrollPane, BorderLayout.CENTER);
+
+            // Refresh tampilan
+            targetPanel.revalidate();
+            targetPanel.repaint();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error saat memfilter produk: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -1086,12 +1199,12 @@ public class ProductDisplayy extends javax.swing.JPanel {
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) label.getClientProperty("productId");
                 if (productId != null) {
-                selectedProductId = productId; // Store the selected product ID
-                System.out.println("Product ID clicked: " + selectedProductId);
-                if (addLabelClickListener != null) {
-                    // Now run the listener which will call switchToEditProductPanel
-                    addLabelClickListener.run();
-                }
+                    selectedProductId = productId; // Store the selected product ID
+                    System.out.println("Product ID clicked: " + selectedProductId);
+                    if (addLabelClickListener != null) {
+                        // Now run the listener which will call switchToEditProductPanel
+                        addLabelClickListener.run();
+                    }
                 }
             }
 
@@ -1112,13 +1225,13 @@ public class ProductDisplayy extends javax.swing.JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 String productId = (String) panel.getClientProperty("productId");
-                 if (productId != null) {
-                selectedProductId = productId; // Store the selected product ID
-                System.out.println("Product ID clicked: " + selectedProductId);
-                if (addPanelClickListener != null) {
-                    // Now run the listener which will call switchToEditProductPanel
-                    addPanelClickListener.run();
-                }
+                if (productId != null) {
+                    selectedProductId = productId; // Store the selected product ID
+                    System.out.println("Product ID clicked: " + selectedProductId);
+                    if (addPanelClickListener != null) {
+                        // Now run the listener which will call switchToEditProductPanel
+                        addPanelClickListener.run();
+                    }
                 }
             }
 
@@ -1214,10 +1327,10 @@ public class ProductDisplayy extends javax.swing.JPanel {
         this.addLabelClickListener = listener;
         this.addPanelClickListener = listener;
     }
-    
+
     public String getSelectedProductId() {
-    return selectedProductId;
-}
+        return selectedProductId;
+    }
 
     private void animateHideTooltip() {
         if (tooltipWindow != null && tooltipWindow.isVisible()) {
@@ -1419,6 +1532,71 @@ public class ProductDisplayy extends javax.swing.JPanel {
         });
 
         return button;
+    }
+
+    private void switchCategory(String category) {
+        // Reset semua filter sebelum berpindah kategori
+        resetAllFilters();
+
+        // Tampilkan panel yang sesuai
+        CardLayout cl = (CardLayout) mainContentPanel.getLayout();
+        cl.show(mainContentPanel, category);
+
+        // Refresh tampilan
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
+    }
+
+    private void resetAllFilters() {
+        // Reset semua dropdown filter ke nilai default
+        Component[] components = sepatuPanel.getComponents();
+        for (Component comp : components) {
+            if (comp instanceof JPanel) {
+                Component[] subComps = ((JPanel) comp).getComponents();
+                for (Component subComp : subComps) {
+                    if (subComp instanceof ComboboxCustomKhususProduk) {
+                        ((ComboboxCustomKhususProduk) subComp).setSelectedIndex(0);
+                    }
+                }
+            }
+        }
+
+        Component[] componentss = sandalPanel.getComponents();
+        for (Component comp : componentss) {
+            if (comp instanceof JPanel) {
+                Component[] subComps = ((JPanel) comp).getComponents();
+                for (Component subComp : subComps) {
+                    if (subComp instanceof ComboboxCustomKhususProduk) {
+                        ((ComboboxCustomKhususProduk) subComp).setSelectedIndex(0);
+                    }
+                }
+            }
+        }
+
+        Component[] componentsk = kaosKakiPanel.getComponents();
+        for (Component comp : componentsk) {
+            if (comp instanceof JPanel) {
+                Component[] subComps = ((JPanel) comp).getComponents();
+                for (Component subComp : subComps) {
+                    if (subComp instanceof ComboboxCustomKhususProduk) {
+                        ((ComboboxCustomKhususProduk) subComp).setSelectedIndex(0);
+                    }
+                }
+            }
+        }
+
+        Component[] componentsl = lainnyaPanel.getComponents();
+        for (Component comp : componentsl) {
+            if (comp instanceof JPanel) {
+                Component[] subComps = ((JPanel) comp).getComponents();
+                for (Component subComp : subComps) {
+                    if (subComp instanceof ComboboxCustomKhususProduk) {
+                        ((ComboboxCustomKhususProduk) subComp).setSelectedIndex(0);
+                    }
+                }
+            }
+        }
+
     }
 
 }
