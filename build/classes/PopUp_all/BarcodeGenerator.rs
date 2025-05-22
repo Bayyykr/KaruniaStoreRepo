@@ -1,0 +1,4 @@
+BarcodeGenerator$1
+BarcodeGenerator$2
+BarcodeGenerator$3
+BarcodeGenerator

@@ -129,13 +129,16 @@ public class ProductDisplayy extends javax.swing.JPanel {
     }
 
     private ScrollPane createScrollPaneForProducts(JPanel productsPanel) {
-        // Create a custom scroll pane with fixed height
-        ScrollPane scrollPane = new ScrollPane(productsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
+        ScrollPane scrollPane = new ScrollPane(productsPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Set preferred size to show only 2 rows of products
-        int preferredHeight = 250 * 2 + 40; // Adjust this value according to your card height
-        scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
+        // Hilangkan border dan atur viewport border menjadi null
+        scrollPane.setBorder(null);
+        scrollPane.setViewportBorder(null);
+
+        // Atur viewport background ke putih
+        scrollPane.getViewport().setBackground(Color.WHITE);
 
         return scrollPane;
     }
@@ -690,27 +693,13 @@ public class ProductDisplayy extends javax.swing.JPanel {
         return styleList;
     }
 
-// Metode untuk mendapatkan data gender dari database
     private List<String> getGenderListFromDatabase() {
         List<String> genderList = new ArrayList<>();
 
-        try {
-            String query = "SELECT DISTINCT gender FROM produk WHERE id_produk = 'dijual' ORDER BY gender";
-            try (PreparedStatement stmt = con.prepareStatement(query)) {
-                ResultSet rs = stmt.executeQuery();
-
-                while (rs.next()) {
-                    String gender = rs.getString("gender");
-                    if (gender != null && !gender.trim().isEmpty()) {
-                        genderList.add(gender);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saat mengambil data gender: " + e.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // Instead of querying from database, we'll use predefined values
+        genderList.add("Cowok");
+        genderList.add("Cewek");
+        genderList.add("Unisex");
 
         return genderList;
     }
@@ -835,6 +824,21 @@ public class ProductDisplayy extends javax.swing.JPanel {
             }
 
             if (gender != null && !gender.isEmpty()) {
+                // Convert the display text to database values
+                String dbGenderValue;
+                switch (gender) {
+                    case "Cowok":
+                        dbGenderValue = "cowok";
+                        break;
+                    case "Cewek":
+                        dbGenderValue = "cewek";
+                        break;
+                    case "Unisex":
+                        dbGenderValue = "unisex";
+                        break;
+                    default:
+                        dbGenderValue = gender; // fallback
+                }
                 productSql.append(" AND p.gender = ?");
             }
 
@@ -954,12 +958,26 @@ public class ProductDisplayy extends javax.swing.JPanel {
 
             // Show message if no products found
             if (productsWithStock.isEmpty()) {
+                // Hapus gridPanel yang ada
+                panel.removeAll();
+
+                // Buat panel khusus untuk pesan "tidak ada produk"
+                JPanel noProductsPanel = new JPanel(new BorderLayout());
+                noProductsPanel.setBackground(Color.WHITE);
+
                 JLabel noProductsLabel = new JLabel("Tidak ada produk yang sesuai dengan filter");
                 noProductsLabel.setFont(new Font("Arial", Font.BOLD, 14));
                 noProductsLabel.setHorizontalAlignment(JLabel.CENTER);
-                panel.add(noProductsLabel);
-            }
+                noProductsPanel.add(noProductsLabel, BorderLayout.CENTER);
 
+                // Tambahkan panel kosong di sebelah kanan untuk menghilangkan garis
+                noProductsPanel.add(Box.createHorizontalGlue(), BorderLayout.EAST);
+
+                panel.add(noProductsPanel);
+
+                // Atur ukuran preferred untuk menghindari garis
+                panel.setPreferredSize(new Dimension(980, 100));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Error connecting to database: " + e.getMessage(),
