@@ -7,6 +7,14 @@ import javax.swing.border.AbstractBorder;
 import javax.swing.border.EmptyBorder;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
+import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.AttributeSet;
 
 public class PopUp_edittransbeli extends JDialog {
     
@@ -18,7 +26,7 @@ public class PopUp_edittransbeli extends JDialog {
     private RoundedTextField itemNameField, totalField;
 //    private RoundedTextField priceField, quantityField;
     private JFrame parentFrame;
-    private JLabel titleLabel;
+    private JLabel titleLabel,hargaproduklabel;
 
     private int xMouse, yMouse;
     private final int ANIMATION_DURATION = 300; // ms
@@ -84,9 +92,14 @@ public class PopUp_edittransbeli extends JDialog {
         titleLabel = createTextLabel("Edit Restok", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 20), Color.BLACK);
         titleLabel.setVisible(false);
         contentPanel.add(titleLabel);
+        
+        hargaproduklabel = createTextLabel("Harga produk", -33, 40, 300, 30, new Font("Poppins", Font.BOLD, 14), Color.BLACK);
+        hargaproduklabel.setVisible(true);
+        contentPanel.add(hargaproduklabel);
 
-        itemNameField = new RoundedTextField(5, "Nama Produk");
-        itemNameField.setBounds(70, 55, 300, 40);
+        itemNameField = new RoundedTextField(5, "Harga Produk");
+        setRpField(itemNameField);
+        itemNameField.setBounds(70, 70, 300, 40);
         itemNameField.setVisible(false);
         contentPanel.add(itemNameField);
 
@@ -101,7 +114,7 @@ public class PopUp_edittransbeli extends JDialog {
 //        contentPanel.add(quantityField);
 
         totalField = new RoundedTextField(5, "Total");
-        totalField.setBounds(70, 120, 300, 40);
+        totalField.setBounds(70, 125, 300, 40);
         totalField.setVisible(false);
         contentPanel.add(totalField);
 
@@ -272,6 +285,158 @@ public class PopUp_edittransbeli extends JDialog {
         button.setRolloverEnabled(false);
         return button;
     }
+    
+    private void setRpField(final JTextField textField) {
+    final String PREFIX = "Rp. ";
+    final NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
+    if (formatter instanceof DecimalFormat) {
+        ((DecimalFormat) formatter).applyPattern("#,###");
+    }
+
+    // Inisialisasi dengan prefix
+    if (!textField.getText().startsWith(PREFIX)) {
+        textField.setText(PREFIX);
+    }
+
+    ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                throws BadLocationException {
+
+            // Blok edit pada prefix
+            if (offset < PREFIX.length()) {
+                return;
+            }
+
+            // Hanya izinkan digit
+            if (!text.matches("\\d*")) {
+                return;
+            }
+
+            Document doc = fb.getDocument();
+            StringBuilder sb = new StringBuilder(doc.getText(0, doc.getLength()));
+            sb.replace(offset, offset + length, text);
+
+            // Ekstrak hanya angka (hapus prefix dan format)
+            String numericText = sb.toString().substring(PREFIX.length()).replaceAll("[.,]", "");
+
+            // Batasi maksimal 10 digit (maksimal 2.147.483.647 untuk INT)
+            if (numericText.length() > 10) {
+                Toolkit.getDefaultToolkit().beep(); // Beri feedback
+                return;
+            }
+
+            try {
+                if (numericText.isEmpty()) {
+                    super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+                    return;
+                }
+
+                // Parse sebagai long untuk validasi
+                long value = Long.parseLong(numericText);
+                
+                // Batasi nilai maksimal INT (2.147.483.647)
+                if (value > Integer.MAX_VALUE) {
+                    Toolkit.getDefaultToolkit().beep();
+                    return;
+                }
+
+                // Format teks
+                String formattedText = PREFIX + formatter.format(value);
+                super.replace(fb, 0, doc.getLength(), formattedText, attrs);
+
+                // Hitung posisi kursor
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        int newPos = Math.min(offset + text.length(), formattedText.length());
+                        // Sesuaikan untuk karakter pemisah
+                        int addedSeparators = countSeparators(formattedText, offset + text.length());
+                        textField.setCaretPosition(Math.min(newPos + addedSeparators, formattedText.length()));
+                    } catch (Exception e) {
+                        textField.setCaretPosition(formattedText.length());
+                    }
+                });
+            } catch (NumberFormatException e) {
+                super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+            }
+        }
+
+        private int countSeparators(String text, int position) {
+            int count = 0;
+            for (int i = PREFIX.length(); i < Math.min(position, text.length()); i++) {
+                if (text.charAt(i) == '.' || text.charAt(i) == ',') {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                throws BadLocationException {
+            replace(fb, offset, 0, string, attr);
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            // Blok penghapusan prefix
+            if (offset < PREFIX.length()) {
+                if (offset + length > PREFIX.length()) {
+                    length = (offset + length) - PREFIX.length();
+                    offset = PREFIX.length();
+                } else {
+                    return;
+                }
+            }
+            replace(fb, offset, length, "", null);
+        }
+    });
+
+    // Handle focus dan navigasi
+    textField.addFocusListener(new FocusAdapter() {
+        @Override
+        public void focusGained(FocusEvent e) {
+            if (textField.getText().equals(PREFIX)) {
+                textField.setCaretPosition(PREFIX.length());
+            }
+        }
+    });
+
+    textField.addKeyListener(new KeyAdapter() {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            int caretPos = textField.getCaretPosition();
+            if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) 
+                    && caretPos <= PREFIX.length()) {
+                textField.setCaretPosition(PREFIX.length());
+                e.consume();
+            }
+            if (e.getKeyCode() == KeyEvent.VK_HOME) {
+                textField.setCaretPosition(PREFIX.length());
+                e.consume();
+            }
+        }
+    });
+}
+ 
+private int getNumericValue(JTextField textField, String prefix) {
+    String text = textField.getText().substring(prefix.length()).replaceAll("[.,]", "");
+    return Integer.parseInt(text); // Akan throw exception jika melebihi INT.MAX_VALUE
+}
+
+// Method utility untuk mengatur nilai numerik ke textfield
+    private void setNumericValue(JTextField textField, long value, String prefix) {
+        String ValueStr = String.valueOf(value);
+        if (ValueStr.length() > 12) {
+            value = Long.parseLong(ValueStr.substring(0, 12));
+        }
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
+        if (formatter instanceof DecimalFormat) {
+            ((DecimalFormat) formatter).applyPattern("#,###");
+        }
+        textField.setText(prefix + formatter.format(value));
+    }
+
 
     // Fungsi untuk membuat label teks
     private JLabel createTextLabel(String text, int x, int y, int width, int height, Font font, Color color) {
