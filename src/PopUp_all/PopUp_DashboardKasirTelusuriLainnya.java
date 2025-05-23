@@ -138,18 +138,18 @@ public class PopUp_DashboardKasirTelusuriLainnya extends JDialog {
             connection = conn.getConnection();
             
             String sql = "SELECT p.jenis_produk, p.nama_produk, ks.produk_sisa " +
-                         "FROM produk p " +
-                         "LEFT JOIN ( " +
-                         "    SELECT ks1.id_produk, ks1.produk_sisa " +
-                         "    FROM kartu_stok ks1 " +
-                         "    INNER JOIN ( " +
-                         "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
-                         "        FROM kartu_stok " +
-                         "        GROUP BY id_produk " +
-                         "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
-                         ") ks ON p.id_produk = ks.id_produk " +
-                         "WHERE ks.produk_sisa < 10 " +
-                         "ORDER BY ks.produk_sisa ASC";
+             "FROM (SELECT * FROM produk WHERE status = 'dijual') p " +
+             "LEFT JOIN ( " +
+             "    SELECT ks1.id_produk, ks1.produk_sisa " +
+             "    FROM kartu_stok ks1 " +
+             "    INNER JOIN ( " +
+             "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+             "        FROM kartu_stok " +
+             "        GROUP BY id_produk " +
+             "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+             ") ks ON p.id_produk = ks.id_produk " +
+             "WHERE ks.produk_sisa < 10 " +
+             "ORDER BY ks.produk_sisa DESC";
             
             stmt = connection.prepareStatement(sql);
             rs = stmt.executeQuery();

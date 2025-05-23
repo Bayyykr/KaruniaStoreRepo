@@ -12,9 +12,11 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
+import java.sql.*;
+import db.conn;
 
 public class ScanBarcodeDialogKasir extends JDialog {
-    
+
     private JPanel contentPanel;
     private Timer animationTimer, closeAnimationTimer;
     private final int ANIMATION_DURATION = 300, ANIMATION_DELAY = 10, FINAL_WIDTH = 500, FINAL_HEIGHT = 400;
@@ -25,24 +27,27 @@ public class ScanBarcodeDialogKasir extends JDialog {
     private JTextField codeField;
     private static boolean isShowingPopup = false;
     private String scannedBarcode = "";
-    
+    private Connection con;
+
     public ScanBarcodeDialogKasir(JFrame parent) {
         super(parent, true);
         this.parentFrame = parent;
         setUndecorated(true);
         setSize(FINAL_WIDTH, FINAL_HEIGHT);
-        
+
+        con = conn.getConnection();
+
         if (isShowingPopup) {
             dispose();
             return;
         }
         isShowingPopup = true;
-        
+
         setupGlassPane();
         setupContentPanel();
         initComponents();
         setLocationRelativeTo(parent);
-        
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -50,7 +55,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
             }
         });
     }
-    
+
     private void setupGlassPane() {
         glassPane = new JComponent() {
             @Override
@@ -64,11 +69,11 @@ public class ScanBarcodeDialogKasir extends JDialog {
         };
         glassPane.setOpaque(false);
         glassPane.setBounds(0, 0, parentFrame.getWidth(), parentFrame.getHeight());
-        
+
         cleanupExistingGlassPane();
         parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
     }
-    
+
     private void setupContentPanel() {
         contentPanel = new RoundedPanel(20);
         contentPanel.setLayout(new BorderLayout());
@@ -78,11 +83,11 @@ public class ScanBarcodeDialogKasir extends JDialog {
         add(contentPanel);
         setBackground(new Color(0, 0, 0, 0));
     }
-    
+
     private JLayeredPane parentLayeredPane() {
         return parentFrame.getLayeredPane();
     }
-    
+
     private void cleanupExistingGlassPane() {
         for (Component comp : parentLayeredPane().getComponentsInLayer(JLayeredPane.POPUP_LAYER)) {
             if (comp instanceof JComponent) {
@@ -91,23 +96,23 @@ public class ScanBarcodeDialogKasir extends JDialog {
         }
         parentLayeredPane().repaint();
     }
-    
+
     private void initComponents() {
         contentPanel.add(createHeaderPanel(), BorderLayout.NORTH);
         contentPanel.add(createScanPanel(), BorderLayout.CENTER);
     }
-    
+
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(null);
         headerPanel.setOpaque(false);
         headerPanel.setPreferredSize(new Dimension(FINAL_WIDTH, 60));
-        
+
         JLabel titleLabel = new JLabel("Scan Product Barcode");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titleLabel.setBounds(100, 15, 300, 30);
         headerPanel.add(titleLabel);
-        
+
         JButton closeButton = new JButton("×");
         closeButton.setFont(new Font("Poppins", Font.PLAIN, 30));
         closeButton.setForeground(Color.BLACK);
@@ -121,80 +126,104 @@ public class ScanBarcodeDialogKasir extends JDialog {
         closeButton.setVerticalAlignment(SwingConstants.TOP);
         closeButton.setHorizontalAlignment(SwingConstants.CENTER);
         closeButton.addActionListener(e -> startCloseAnimation());
-        
+
         headerPanel.add(closeButton);
         startScaleAnimation();
-        
+
         return headerPanel;
     }
-   
+
     private JPanel createScanPanel() {
         JPanel scanPanel = new JPanel();
         scanPanel.setOpaque(false);
         scanPanel.setLayout(new BoxLayout(scanPanel, BoxLayout.Y_AXIS));
         scanPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
-        
+
         scanPanel.add(createScannerBox());
         scanPanel.add(Box.createVerticalStrut(20));
-        
+
         JLabel orLabel = new JLabel("-OR-");
         orLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         orLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         scanPanel.add(orLabel);
         scanPanel.add(Box.createVerticalStrut(20));
-        
+
         JLabel codeLabel = new JLabel("Enter Code Number / Masukkan Nomor Code");
         codeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         codeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         scanPanel.add(codeLabel);
         scanPanel.add(Box.createVerticalStrut(10));
-        
+
         codeField = createRoundedTextField("Enter barcode number", 20);
-        
+
         ((AbstractDocument) codeField.getDocument()).setDocumentFilter(new DocumentFilter() {
             @Override
             public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
-                if (string.matches("\\d+")) super.insertString(fb, offset, string, attr);
+                if (string.matches("\\d+")) {
+                    super.insertString(fb, offset, string, attr);
+                }
             }
 
             @Override
             public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
-                if (text.matches("\\d*")) super.replace(fb, offset, length, text, attrs);
+                if (text.matches("\\d*")) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
             }
         });
-        
+
         codeField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) processBarcode();
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    processBarcode();
+                }
             }
         });
-        
+
         scanPanel.add(codeField);
         return scanPanel;
     }
-    
-   private void processBarcode() {
-    String barcode = codeField.getText();
-    if (!barcode.isEmpty() && !barcode.equals("Enter barcode number")) {
-        scannedBarcode = barcode;
-        System.out.println(barcode);
 
-        // Tutup dialog ScanBarcodeDialog ini dulu
-        this.dispose();
-
-        // Baru munculkan AfterScanBarcodeDialog
-        AfterScanBarcodeDialogKasir dialog = new AfterScanBarcodeDialogKasir(parentFrame);
-        dialog.setVisible(true);
-
-        startCloseAnimation();
+    private void processBarcode() {
+        String barcode = codeField.getText();
+        try {
+            if (!barcode.isEmpty() && !barcode.equals("Enter barcode number")) {
+                String sql = "SELECT id_produk FROM produk WHERE id_produk = ?";
+                try (PreparedStatement st = con.prepareStatement(sql)) {
+                    st.setString(1, barcode);
+                    ResultSet rs = st.executeQuery();
+                    if (rs.next()) {
+                        scannedBarcode = barcode;
+                        System.out.println("BERHASIL MENCOCOKAN " + scannedBarcode);
+                        startCloseAnimation();
+                        AfterScanBarcodeDialogKasir dialog = new AfterScanBarcodeDialogKasir(parentFrame, scannedBarcode);
+                        dialog.setVisible(true);
+                    }else{
+                        System.out.println("DATA PRODUK TIDAK ADA");
+                    }
+                }
+            } else {
+                System.out.println("harap scan terlebih dahulu");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-}
-    
+
     public String getScannedBarcode() {
         return scannedBarcode;
     }
+    public void showScanBarcodeDialog() {
+    // Pastikan tidak ada dialog yang sedang aktif
+    if (ScanBarcodeDialogKasir.isShowingPopup) {
+        return;
+    }
     
+    ScanBarcodeDialogKasir dialog = new ScanBarcodeDialogKasir(parentFrame);
+    System.out.println("ini scan barcode dialog kasir");
+    dialog.showDialog();
+}
     private JPanel createScannerBox() {
         JPanel scannerBox = new JPanel(new BorderLayout()) {
             @Override
@@ -207,7 +236,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
                 g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 20, 20);
                 g2.dispose();
             }
-            
+
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -222,18 +251,18 @@ public class ScanBarcodeDialogKasir extends JDialog {
         scannerBox.setMaximumSize(new Dimension(400, 150));
         scannerBox.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         scannerBox.setOpaque(false);
-        
+
         JPanel scannerContentPanel = new JPanel();
         scannerContentPanel.setLayout(new BoxLayout(scannerContentPanel, BoxLayout.X_AXIS));
         scannerContentPanel.setOpaque(false);
-        
+
         scannerContentPanel.add(createScannerImagePanel());
         scannerContentPanel.add(createBarcodePanel());
-        
+
         scannerBox.add(scannerContentPanel, BorderLayout.CENTER);
         return scannerBox;
     }
-    
+
     private JPanel createScannerImagePanel() {
         JPanel scannerImagePanel = new RoundedImagePanel(15) {
             @Override
@@ -254,7 +283,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
                     drawHandheldScanner(g);
                 }
             }
-            
+
             private void drawHandheldScanner(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -271,7 +300,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
         scannerImagePanel.setPreferredSize(new Dimension(120, 150));
         return scannerImagePanel;
     }
-    
+
     private JPanel createBarcodePanel() {
         JPanel barcodePanel = new RoundedImagePanel(15) {
             @Override
@@ -295,7 +324,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
         barcodePanel.setPreferredSize(new Dimension(280, 150));
         return barcodePanel;
     }
-    
+
     private JTextField createRoundedTextField(String placeholder, int radius) {
         RoundedTextField field = new RoundedTextField(radius, placeholder);
         field.setOpaque(false);
@@ -305,14 +334,16 @@ public class ScanBarcodeDialogKasir extends JDialog {
         field.setAlignmentX(Component.CENTER_ALIGNMENT);
         return field;
     }
-    
+
     public void showDialog() {
         setVisible(true);
         startScaleAnimation();
     }
-    
+
     private void startScaleAnimation() {
-        if (animationStarted || (animationTimer != null && animationTimer.isRunning())) return;
+        if (animationStarted || (animationTimer != null && animationTimer.isRunning())) {
+            return;
+        }
 
         animationStarted = true;
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
@@ -334,13 +365,15 @@ public class ScanBarcodeDialogKasir extends JDialog {
 
         animationTimer.start();
     }
-    
+
     private void startCloseAnimation() {
-        if (closeAnimationTimer != null && closeAnimationTimer.isRunning()) closeAnimationTimer.stop();
+        if (closeAnimationTimer != null && closeAnimationTimer.isRunning()) {
+            closeAnimationTimer.stop();
+        }
 
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
-        
+
         closeAnimationTimer = new Timer(ANIMATION_DELAY, e -> {
             currentFrame[0]++;
             float progress = (float) currentFrame[0] / totalFrames;
@@ -356,20 +389,21 @@ public class ScanBarcodeDialogKasir extends JDialog {
 
         closeAnimationTimer.start();
     }
-    
+
     private void cleanupAndClose() {
         isShowingPopup = false;
         closePopup();
         dispose();
     }
-    
+
     private void closePopup() {
         parentLayeredPane().remove(glassPane);
         parentLayeredPane().repaint();
     }
-    
+
     // Kelas pendukung
     class RoundedPanel extends JPanel {
+
         private int radius;
 
         public RoundedPanel(int radius) {
@@ -381,7 +415,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+
             if (animationStarted) {
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
@@ -398,11 +432,13 @@ public class ScanBarcodeDialogKasir extends JDialog {
             }
             g2.dispose();
         }
-        
+
         @Override
         protected void paintChildren(Graphics g) {
-            if (animationStarted && currentScale < 0.3) return;
-            
+            if (animationStarted && currentScale < 0.3) {
+                return;
+            }
+
             if (animationStarted) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -413,20 +449,21 @@ public class ScanBarcodeDialogKasir extends JDialog {
                 g2d.translate(-centerX, -centerY);
                 super.paintChildren(g2d);
                 g2d.dispose();
-            } else {    
+            } else {
                 super.paintChildren(g);
             }
         }
     }
-    
+
     class RoundedImagePanel extends JPanel {
+
         private int radius;
-        
+
         public RoundedImagePanel(int radius) {
             this.radius = radius;
             setOpaque(false);
         }
-        
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -436,8 +473,9 @@ public class ScanBarcodeDialogKasir extends JDialog {
             g2.dispose();
         }
     }
-    
+
     static class RoundedTextField extends JTextField {
+
         private int radius;
         private String placeholder;
         private boolean isPlaceholderActive;

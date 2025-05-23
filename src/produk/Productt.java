@@ -1,11 +1,14 @@
 package Form;
 
+import PopUp_all.*;
 import SourceCode.NavBarAtas;
 import SourceCode.SidebarCustom.EventMenu;
 import SourceCode.SidebarCustom.Menu;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -18,6 +21,7 @@ import produk.EditProductPanel;
 public class Productt extends JFrame {
 
     // Define panel references as class members
+    private LoginForm LoginPanel;
     private Dashboard dashboardPanel;
     private DashboardKasir dashboardPanelKasir;
     private ProductDisplayyKasir produkPanelkasir;
@@ -128,45 +132,43 @@ public class Productt extends JFrame {
         sidebar.addEventMenu(new EventMenu() {
             @Override
             public void menuIndexChange(int index) {
-                // Remove current panel if exists   
+                if (index == 5) { 
+                    Popup_LogOutOwner dialog = new Popup_LogOutOwner(Productt.this);
+                    dialog.setVisible(true);
+                    return;
+                }
+
                 if (currentPanel != null) {
                     remove(currentPanel);
                 }
 
-                // Show the appropriate panel based on menu index
                 switch (index) {
-                    case 0: // Dashboard
+                    case 0:
                         currentPanel = dashboardPanel;
                         break;
-                    case 1: // Produk
+                    case 1:
                         currentPanel = produkPanel;
-                        System.out.println("ini produk");
                         break;
-                    case 2: // Karyawan
+                    case 2:
                         currentPanel = karyawanPanel;
                         break;
-                    case 3: // Laporan
+                    case 3:
                         currentPanel = laporanPanel;
                         break;
-                    case 4: // Transaksi Beli
+                    case 4:
                         currentPanel = transaksiBeli;
-                        break;
-                    case 5: // Keluar
-                        System.exit(0);
                         break;
                     default:
                         currentPanel = dashboardPanel;
                         break;
                 }
 
-                // Add and show the new panel
                 add(currentPanel);
                 currentPanel.setVisible(true);
-
-                // Repaint to show changes
                 revalidate();
                 repaint();
             }
+
         });
 
         // Add fixed components
@@ -212,7 +214,7 @@ public class Productt extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         currentPanel = addProductPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
@@ -294,7 +296,13 @@ public class Productt extends JFrame {
         revalidate();
         repaint();
     }
-
+    public void switchBackToLoginPanel() {
+        this.dispose();
+        LoginForm loginForm = LoginForm.getInstance();
+        loginForm.resetForm();
+        loginForm.setVisible(true);
+        loginForm.setLocationRelativeTo(null);
+    }
     // Method untuk kembali ke panel produk
     public void switchBackToProductPanelKasir() {
         if (currentPanel != null) {

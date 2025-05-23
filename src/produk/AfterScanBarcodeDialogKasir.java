@@ -9,6 +9,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.EmptyBorder;
 import Form.Productt;
+import db.conn;
+import java.sql.*;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 public class AfterScanBarcodeDialogKasir extends JDialog {
 
@@ -24,28 +28,32 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
     private String scannedBarcode = "";
 
     // Data produk
-    private String productCategory = "Sepatu";
-    private String productName = "JORDAN STAY LOYAL 3 SNEAKERS 'BLACK'";
-    private String brand = "JORDAN";
-    private String size = "40";
-    private String price = "1.924.000";
-    private String stock = "2";
-    private String discount = "0 %";
-    private String style = "Olahraga";
-    private String gender = "Unisex";
+    private String productCategory = "";
+    private String productName = "";
+    private String brand = "";
+    private String size = "";
+    private String price = "";
+    private String stock = "";
+    private String style = "";
+    private String gender = "";
+    private byte[] productImage;
+    private Connection con;
 
-    public AfterScanBarcodeDialogKasir(JFrame parent) {
+    public AfterScanBarcodeDialogKasir(JFrame parent, String barcode) {
         super(parent, true);
         this.parentFrame = parent;
         setUndecorated(true);
         setSize(FINAL_WIDTH, FINAL_HEIGHT);
+        con = conn.getConnection();
+        this.scannedBarcode = barcode;
 
-        if (isShowingPopup) {
-            dispose();
-            return;
-        }
-        isShowingPopup = true;
+//        if (isShowingPopup) {
+//            dispose();
+//            return;
+//        }
+//        isShowingPopup = true;
 
+        fetchProductData();
         setupGlassPane();
         setupContentPanel();
         initComponents();
@@ -112,7 +120,7 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
         JLabel titleLabel = new JLabel("Scan a New Barcode to Replace the Product");
-        titleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         headerPanel.add(titleLabel, BorderLayout.CENTER);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -143,6 +151,63 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         return headerContainer;
     }
 
+    private void fetchProductData() {
+        try {
+            String query = "SELECT p.jenis_produk, p.nama_produk, p.merk, p.size, "
+                    + "p.harga_jual, s.nama_style, p.gender, p.gambar "
+                    + "FROM produk p "
+                    + "JOIN style s ON p.id_style = s.id_style "
+                    + "WHERE p.id_produk = ?";
+
+            try (PreparedStatement stmt = con.prepareStatement(query)) {
+                stmt.setString(1, scannedBarcode);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        // Get data from result set
+                        productCategory = rs.getString("jenis_produk");
+                        productName = rs.getString("nama_produk");
+                        brand = rs.getString("merk");
+                        size = rs.getString("size");
+
+                        // Format price with thousand separator
+                        double priceValue = rs.getDouble("harga_jual");
+                        NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("id", "ID"));
+                        price = currencyFormat.format(priceValue);
+
+                        stock = String.valueOf(1);
+                        style = rs.getString("nama_style");
+                        gender = rs.getString("gender");
+
+                        // Langsung ambil data BLOB
+                        try {
+                            Blob imageBlob = rs.getBlob("gambar");
+                            if (imageBlob != null) {
+                                int blobLength = (int) imageBlob.length();
+
+                                // Cek ukuran BLOB - jika terlalu kecil (di bawah 1KB), anggap tidak valid
+                                if (blobLength < 1024) {
+                                    System.out.println("Gambar produk terlalu kecil (" + blobLength + " bytes), menggunakan gambar default");
+                                    productImage = null;
+                                } else {
+                                    productImage = imageBlob.getBytes(1, blobLength);
+                                }
+                                imageBlob.free(); // Penting untuk membebaskan resource BLOB
+                            } else {
+                                productImage = null;
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error saat membaca BLOB gambar: " + e.getMessage());
+                            productImage = null;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private JPanel createProductPanel() {
         JPanel productPanel = new JPanel(new BorderLayout());
         productPanel.setOpaque(false);
@@ -158,19 +223,29 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         imagePanel.setBounds(20, 30, 250, 250); // Posisi kiri atas dengan ukuran lebih kecil
         imagePanel.setLayout(new BorderLayout());
 
-        // Tambahkan gambar sepatu
+        // Tambahkan gambar produk dari data BLOB
         try {
-            ImageIcon imageIcon = new ImageIcon("src/SourceImage/gambar_sepatu.png");
-            Image image = imageIcon.getImage().getScaledInstance(300, 250, Image.SCALE_SMOOTH); // Ukuran disesuaikan
-            JLabel imageLabel = new JLabel(new ImageIcon(image));
-            imageLabel.setHorizontalAlignment(JLabel.CENTER);
-            imagePanel.add(imageLabel, BorderLayout.CENTER);
+            if (productImage != null) {
+                // Konversi byte array dari BLOB menjadi ImageIcon
+                ImageIcon imageIcon = new ImageIcon(productImage);
+                Image image = imageIcon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
+                JLabel imageLabel = new JLabel(new ImageIcon(image));
+                imageLabel.setHorizontalAlignment(JLabel.CENTER);
+                imagePanel.add(imageLabel, BorderLayout.CENTER);
+            } else {
+                ImageIcon defaultIcon = new ImageIcon("src/SourceImage/gambar_sepatu.png");
+                Image defaultImage = defaultIcon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
+                JLabel defaultLabel = new JLabel(new ImageIcon(defaultImage));
+                defaultLabel.setHorizontalAlignment(JLabel.CENTER);
+                imagePanel.add(defaultLabel, BorderLayout.CENTER);
+            }
         } catch (Exception e) {
-            // Jika gambar tidak ditemukan, buat placeholder
+            // Jika ada error, buat placeholder
             JLabel placeholderLabel = new JLabel("Product Image");
             placeholderLabel.setHorizontalAlignment(JLabel.CENTER);
             placeholderLabel.setVerticalAlignment(JLabel.CENTER);
             imagePanel.add(placeholderLabel, BorderLayout.CENTER);
+            System.err.println("Error menampilkan gambar: " + e.getMessage());
         }
 
         // Label kategori produk
@@ -220,23 +295,14 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         stockValue.setFont(new Font("Arial", Font.BOLD, 14));
         stockValue.setBounds(400, 155, 240, 20);
 
-        // Diskon
-        JLabel discountLabel = new JLabel("Discount:");
-        discountLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        discountLabel.setBounds(290, 180, 100, 20);
-
-        JLabel discountValue = new JLabel(discount);
-        discountValue.setFont(new Font("Arial", Font.BOLD, 14));
-        discountValue.setBounds(400, 180, 240, 20);
-
         // Style dan Gender dalam satu baris
         JLabel styleLabel = new JLabel("Style: " + style);
         styleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        styleLabel.setBounds(290, 205, 120, 20);
+        styleLabel.setBounds(290, 180, 120, 20);
 
         JLabel genderLabel = new JLabel("Gender: " + gender);
         genderLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        genderLabel.setBounds(290, 205, 120, 70);
+        genderLabel.setBounds(430, 180, 120, 20);
 
         // Tambahkan semua komponen ke panel konten
         contentPanel.add(imagePanel);
@@ -250,8 +316,6 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         contentPanel.add(priceValue);
         contentPanel.add(stockLabel);
         contentPanel.add(stockValue);
-        contentPanel.add(discountLabel);
-        contentPanel.add(discountValue);
         contentPanel.add(styleLabel);
         contentPanel.add(genderLabel);
 
@@ -265,49 +329,49 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
 
         return productPanel;
     }
-
-  private JPanel createFooterPanel() {
-    JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
-    footerPanel.setOpaque(false);
-
-    editButton = new JButton("Jual");
     
-    // Load gambar, resize, lalu pasang ke button
-    ImageIcon originalIcon = new ImageIcon("src/SourceImage/icon/keranjang.png");
-    Image resizedImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
-    ImageIcon resizedIcon = new ImageIcon(resizedImage);
-    editButton.setIcon(resizedIcon);
-
-    editButton.setPreferredSize(new Dimension(120, 40));
-    editButton.setFocusPainted(false);
-    editButton.setBorderPainted(false);
-    editButton.setContentAreaFilled(false);
-    editButton.setBackground(new Color(60, 63, 65));
-    editButton.setForeground(Color.WHITE);
-    editButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    editButton.addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            startCloseAnimation();
-            FormKasir.getMainFrame().switchToTransJualPanel();
-        }
-    });
-
-    // Buat dan atur UI rounded dengan border hitam
-    RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();
-    roundedUI.setBorderColor(Color.BLACK);  // Atur warna border hitam
-    roundedUI.setBorderRadius(40);
-    editButton.setUI(roundedUI);
-
-    footerPanel.add(editButton);
-
-    return footerPanel;
-}
-
-
     public String getScannedBarcode() {
         return scannedBarcode;
     }
+
+    private JPanel createFooterPanel() {
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
+        footerPanel.setOpaque(false);
+        editButton = new JButton("Jual Produk");
+        ImageIcon originalIcon = new ImageIcon("src/SourceImage/icon/keranjang.png");
+        Image scaledImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+        ImageIcon scaledIcon = new ImageIcon(scaledImage);
+        editButton.setIcon(scaledIcon);
+        editButton.setPreferredSize(new Dimension(150, 40));
+        editButton.setFocusPainted(false);
+        editButton.setBorderPainted(false);
+        editButton.setContentAreaFilled(false);
+        editButton.setBackground(new Color(60, 63, 65));
+        editButton.setForeground(Color.WHITE);
+        editButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                editButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
+                        startCloseAnimation();
+                        FormKasir.getMainFrame().switchToTransJualPanel(scannedBarcode);
+                        System.out.println("ini jual kasir");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Barcode kosong atau tidak valid.");
+                    }
+                }
+            });
+
+        // Buat dan atur UI rounded dengan border hitam
+        RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();
+        roundedUI.setBorderColor(Color.BLACK);  // Atur warna border hitam
+        roundedUI.setBorderRadius(40);
+        editButton.setUI(roundedUI);
+
+        footerPanel.add(editButton);
+
+        return footerPanel;
+    };
 
     public void showDialog() {
         setVisible(true);
@@ -365,7 +429,7 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
     }
 
     private void cleanupAndClose() {
-        isShowingPopup = false;
+//        isShowingPopup = false;
         closePopup();
         dispose();
     }

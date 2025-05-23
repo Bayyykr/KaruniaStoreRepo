@@ -68,8 +68,8 @@ public class Transaksibeli extends JPanel {
         add(mainPanel);
 
         // Label Transaksi Beli - posisi tetap
-        JLabel transaksiLabel = new JLabel("Transaksi Beli");
-        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        JLabel transaksiLabel = new JLabel("Restok");
+        transaksiLabel.setFont(new Font("Arial", Font.BOLD, 35));
         transaksiLabel.setBounds(30, 50, 250, 30);
         mainPanel.add(transaksiLabel);
 
@@ -652,7 +652,7 @@ public class Transaksibeli extends JPanel {
         btnCheckout.addActionListener(e -> {
             DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
             if (model.getRowCount() == 0) {
-//                PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
+               PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
                 System.out.println("tidak ada produk dibeli");
                 return;
             }
@@ -777,10 +777,7 @@ public class Transaksibeli extends JPanel {
             }
 
             if (!isKodeProdukValid(kode)) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Kode produk tidak ditemukan di database!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliKodeProdukTidakDitemukan(parentFrame);
                 scanKodeField.setText("");
                 namaProduk.setText("");
                 sizeProduk.setText("");
@@ -791,37 +788,25 @@ public class Transaksibeli extends JPanel {
             }
 
             if (nama.isEmpty()) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Nama produk tidak boleh kosong!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliNamaProdukTidakBolehKosong(parentFrame);
                 namaProduk.requestFocus();
                 return;
             }
 
             if (size.isEmpty()) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Size produk tidak boleh kosong!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliSizeProdukTidakBolehKosong(parentFrame);
                 sizeProduk.requestFocus();
                 return;
             }
 
             if (hargaText.isEmpty() || hargaText.equals("0")) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Harga beli tidak boleh kosong atau nol!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliHargaBeliTidakBolehKosongAtauNol(parentFrame);
                 hargaBeliField.requestFocus();
                 return;
             }
 
             if (qtyText.isEmpty()) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Quantity tidak boleh kosong!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliQuantityTidakBolehKosong(parentFrame);
                 qtyField.requestFocus();
                 return;
             }
@@ -830,19 +815,13 @@ public class Transaksibeli extends JPanel {
             int harga = Integer.parseInt(hargaText);
 
             if (qty <= 0) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Quantity harus lebih dari 0!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliQuantityHarusLebihDari0(parentFrame);
                 qtyField.requestFocus();
                 return;
             }
 
             if (harga <= 0) {
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Harga beli harus lebih dari 0!",
-                        "Peringatan",
-                        JOptionPane.WARNING_MESSAGE);
+                PindahanAntarPopUp.showTransBeliHargaBeliHarusLebihDari0(parentFrame);
                 hargaBeliField.requestFocus();
                 return;
             }
@@ -907,15 +886,9 @@ public class Transaksibeli extends JPanel {
 
             scanKodeField.requestFocus();
 
-            JOptionPane.showMessageDialog(parentFrame,
-                    "Produk berhasil ditambahkan ke keranjang!",
-                    "Informasi",
-                    JOptionPane.INFORMATION_MESSAGE);
+            PindahanAntarPopUp.showTransBeliProdukBerhasilDitambahkanKeKeranjang(parentFrame);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(parentFrame,
-                    "Format angka tidak valid! Pastikan quantity dan harga berupa angka.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            PindahanAntarPopUp.showTransBeliFormatQtyDanHargaHarusAngka(parentFrame);
             ex.printStackTrace();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -974,10 +947,7 @@ public class Transaksibeli extends JPanel {
                     sizeProduk.setFocusable(false);
                     hargaBeliField.requestFocus();
                 }else{
-                    JOptionPane.showMessageDialog(parentFrame,
-                    "Kode produk tidak ditemukan!",
-                    "Peringatan",
-                    JOptionPane.WARNING_MESSAGE);
+                    PindahanAntarPopUp.showTransBeliKodeProdukTidakDitemukan(parentFrame);
                     scanKodeField.setText("");
                     scanKodeField.requestFocus();
                 }

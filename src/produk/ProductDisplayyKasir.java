@@ -1,5 +1,6 @@
 package produk;
 
+import Form.FormKasir;
 import PopUp_all.*;
 import SourceCode.ScrollPane;
 import javax.swing.*;
@@ -41,8 +42,8 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
     private Timer fadeInTimer;
     private Timer fadeOutTimer;
     private Runnable sellButtonListener;
-    private Runnable addLabelClickListener;
-    private Runnable addPanelClickListener;
+//    private Runnable addLabelClickListener;
+    private Runnable sellPanelClickListener;
     private String selectedProductId;
     private boolean isPressed = false;
     private JButton pressedButton = null;
@@ -1064,7 +1065,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
 
         // Store product ID as a property to use in click listener
         imagePanel.putClientProperty("productId", productId);
-        addPanelClickListener(imagePanel);
+        sellPanelClickListener(imagePanel);
 
         // Menggunakan GridBagLayout untuk lebih presisi dalam pengaturan posisi
         JPanel imageLabelContainer = new JPanel(new GridBagLayout());
@@ -1120,7 +1121,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         nameLabel.putClientProperty("productId", productId);
-        addLabelClickListener(nameLabel);
+//        addLabelClickListener(nameLabel);
 
         // Format the price with proper formatting
         NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
@@ -1130,13 +1131,13 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         priceLabel.setForeground(new Color(0, 102, 204));
         priceLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         priceLabel.putClientProperty("productId", productId);
-        addLabelClickListener(priceLabel);
+//        addLabelClickListener(priceLabel);
 
         JLabel sizeLabel = new JLabel("Uk : " + size);
         sizeLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         sizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         sizeLabel.putClientProperty("productId", productId);
-        addLabelClickListener(sizeLabel);
+//        addLabelClickListener(sizeLabel);
 
         JPanel stockAddPanel = new JPanel(new BorderLayout(5, 0));
         stockAddPanel.setBackground(Color.WHITE);
@@ -1146,7 +1147,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         JLabel stockLabel = new JLabel("Stok : " + stock);
         stockLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         stockLabel.putClientProperty("productId", productId);
-        addLabelClickListener(stockLabel);
+//        addLabelClickListener(stockLabel);
 
         stockAddPanel.add(stockLabel, BorderLayout.WEST);
 
@@ -1211,34 +1212,34 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         imageLabel.add(placeholderPanel, BorderLayout.CENTER);
     }
 
-    private void addLabelClickListener(JLabel label) {
-        label.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                String productId = (String) label.getClientProperty("productId");
-                if (productId != null) {
-                    selectedProductId = productId; // Store the selected product ID
-                    System.out.println("Product ID clicked: " + selectedProductId);
-                    if (addLabelClickListener != null) {
-                        // Now run the listener which will call switchToEditProductPanel
-                        addLabelClickListener.run();
-                    }
-                }
-            }
+//    private void addLabelClickListener(JLabel label) {
+//        label.addMouseListener(new MouseAdapter() {
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                String productId = (String) label.getClientProperty("productId");
+//                if (productId != null) {
+//                    selectedProductId = productId; // Store the selected product ID
+//                    System.out.println("Product ID clicked: " + selectedProductId);
+////                    if (addLabelClickListener != null) {
+////                        // Now run the listener which will call switchToEditProductPanel
+////                        addLabelClickListener.run();
+////                    }
+//                }
+//            }
+//
+//            @Override
+//            public void mouseEntered(MouseEvent e) {
+//                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+//            }
+//
+//            @Override
+//            public void mouseExited(MouseEvent e) {
+//                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+//            }
+//        });
+//    }
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
-    }
-
-    private void addPanelClickListener(JPanel panel) {
+    private void sellPanelClickListener(JPanel panel) {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -1246,9 +1247,11 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
                 if (productId != null) {
                     selectedProductId = productId; // Store the selected product ID
                     System.out.println("Product ID clicked: " + selectedProductId);
-                    if (addPanelClickListener != null) {
+                    FormKasir.getMainFrame().switchToTransJualPanel();
+                    if (sellPanelClickListener != null) {
                         // Now run the listener which will call switchToEditProductPanel
-                        addPanelClickListener.run();
+                        FormKasir.getMainFrame().switchToTransJualPanel();
+                        sellPanelClickListener.run();
                     }
                 }
             }

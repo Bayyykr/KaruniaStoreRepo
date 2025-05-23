@@ -76,6 +76,13 @@ public class LoginForm extends JFrame {
         }
         return instance;
     }
+    
+    public void resetForm() {
+    usernameField.setText("Email");
+    passwordField.setText("Password");
+    passwordField.setEchoChar((char) 0);
+//    rfidField.setText("");
+}
 
     private void initComponents() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

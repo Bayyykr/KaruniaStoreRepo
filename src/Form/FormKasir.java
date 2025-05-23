@@ -1,5 +1,6 @@
 package Form;
 
+import PopUp_all.*;
 import SourceCode.NavBarAtas;
 import SourceCode.SidebarCustom.EventMenu;
 import SourceCode.SidebarCustom.Menu;
@@ -99,7 +100,7 @@ public class FormKasir extends JFrame {
         produkPanel.setPlusButtonListener(() -> {
             switchToAddProductPanel();
         });
-        
+
         produkPanel.setPindahTransJual(() -> {
             switchToEditProductPanel();
         });
@@ -121,13 +122,16 @@ public class FormKasir extends JFrame {
         sidebar.addEventMenu(new EventMenu() {
             @Override
             public void menuIndexChange(int index) {
+                if (index == 2) {
+                    Popup_LogOutKasir dialog = new Popup_LogOutKasir(FormKasir.this);
+                    dialog.setVisible(true);
+                    return;
+                }
+
                 // Remove current panel if exists   
                 if (currentPanel != null) {
                     remove(currentPanel);
                 }
-
-                // Karena menu yang ditampilkan pada kasir hanya 3 item (Dashboard, Produk, Keluar),
-                // maka kita perlu menyesuaikan indeks menu yang dipilih
                 switch (index) {
                     case 0: // Dashboard
                         currentPanel = dashboardPanelKasir;
@@ -137,7 +141,7 @@ public class FormKasir extends JFrame {
                         System.out.println("ini produk");
                         break;
                     case 2: // Keluar (pada kasir, Keluar ada di indeks 2)
-                        System.exit(0);
+//                        System.exit(0);
                         break;
                     default:
                         currentPanel = dashboardPanelKasir;
@@ -200,14 +204,14 @@ public class FormKasir extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
-        
+
         // Get the selected product ID from ProductDisplayy
         String selectedId = produkPanel.getSelectedProductId();
         System.out.println("Switching to edit panel with ID: " + selectedId);
-        
+
         // Create a new EditProductPanel with the correct parameters
         editproductpanel = new EditProductPanel(this, selectedId);
-        
+
         // Set bounds for the new panel (use the same bounds as before)
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int panelX = 280;
@@ -215,7 +219,7 @@ public class FormKasir extends JFrame {
         int panelWidth = screenSize.width - 300;
         int panelHeight = screenSize.height - 110;
         editproductpanel.setBounds(panelX, panelY, panelWidth, panelHeight);
-        
+
         currentPanel = editproductpanel;
         add(currentPanel);
         currentPanel.setVisible(true);
@@ -226,6 +230,19 @@ public class FormKasir extends JFrame {
 
     // Tambahkan method untuk beralih ke panel Transjual
     public void switchToTransJualPanel() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+
+        currentPanel = transaksiJual;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
+    }
+
+    public void switchToTransJualPanel(String scannedBarcode) {
         if (currentPanel != null) {
             remove(currentPanel);
         }
@@ -290,6 +307,14 @@ public class FormKasir extends JFrame {
 
         revalidate();
         repaint();
+    }
+
+    public void switchBackToLoginPanel() {
+        this.dispose();
+        LoginForm loginForm = LoginForm.getInstance();
+        loginForm.resetForm();
+        loginForm.setVisible(true);
+        loginForm.setLocationRelativeTo(null);
     }
 
     public static void main(String args[]) {

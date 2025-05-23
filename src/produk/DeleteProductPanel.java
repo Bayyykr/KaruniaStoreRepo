@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import SourceCode.ButtonLingkaran;
+import SourceCode.ScrollPane;
 import PopUp_all.*;
 import db.conn;
 import SourceCode.RoundedBorder;
@@ -404,34 +405,29 @@ public class DeleteProductPanel extends JPanel {
         return searchPanel;
     }
 
-    private JScrollPane createProductListPanel() {
-        // Panel daftar produk dengan BoxLayout
-        productListPanel = new JPanel();
-        productListPanel.setLayout(new BoxLayout(productListPanel, BoxLayout.Y_AXIS));
-        productListPanel.setBackground(Color.WHITE); // Set background to white
-        productListPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0)); // Add some vertical padding
+   private JScrollPane createProductListPanel() {
+    // Panel daftar produk dengan BoxLayout
+    productListPanel = new JPanel();
+    productListPanel.setLayout(new BoxLayout(productListPanel, BoxLayout.Y_AXIS));
+    productListPanel.setBackground(Color.WHITE); // Set background to white
+    productListPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0)); 
 
-        // Load products from database
-        loadProductsFromDatabase("");
+    loadProductsFromDatabase("");
 
-        // Scroll pane dengan border transparan
-        JScrollPane scrollPane = new JScrollPane(productListPanel);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Remove border
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setBackground(Color.WHITE); // Set viewport background to white
+    ScrollPane scrollPane = new ScrollPane(productListPanel);
 
-        // Hide vertical scrollbar by default
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    
+    scrollPane.setThumbColor(new Color(100, 100, 100, 150));
+    scrollPane.setTrackColor(new Color(240, 240, 240, 100));
+    scrollPane.setThumbThickness(8);
+    scrollPane.setThumbRadius(8);
+    
+    scrollPane.getViewport().setBackground(Color.WHITE);
 
-        // Add listener to show scrollbar only when needed
-        SwingUtilities.invokeLater(() -> {
-            JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
-            verticalScrollBar.setPreferredSize(new Dimension(8, 0)); // Make scrollbar thin but visible
-        });
-
-        return scrollPane;
-    }
+    return scrollPane;
+}
 
     // New method to load products from the database
     private void loadProductsFromDatabase(String searchTerm) {

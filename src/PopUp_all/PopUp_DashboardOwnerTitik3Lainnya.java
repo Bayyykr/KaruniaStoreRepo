@@ -108,19 +108,19 @@ public class PopUp_DashboardOwnerTitik3Lainnya extends JDialog {
     }
 
     private void loadDataFromDatabase() {
-        String sql = "SELECT p.id_produk, p.nama_produk, p.size, ks.produk_sisa " +
-                     "FROM produk p " +
-                     "LEFT JOIN ( " +
-                     "    SELECT ks1.id_produk, ks1.produk_sisa " +
-                     "    FROM kartu_stok ks1 " +
-                     "    INNER JOIN ( " +
-                     "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
-                     "        FROM kartu_stok " +
-                     "        GROUP BY id_produk " +
-                     "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
-                     ") ks ON p.id_produk = ks.id_produk " +
-                     "WHERE p.jenis_produk = 'lainnya' " +
-                     "ORDER BY p.nama_produk, p.size";
+    String sql = "SELECT p.id_produk, p.nama_produk, p.size, ks.produk_sisa " +
+                "FROM produk p " +
+                "LEFT JOIN ( " +
+                "    SELECT ks1.id_produk, ks1.produk_sisa " +
+                "    FROM kartu_stok ks1 " +
+                "    INNER JOIN ( " +
+                "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+                "        FROM kartu_stok " +
+                "        GROUP BY id_produk " +
+                "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+                ") ks ON p.id_produk = ks.id_produk " +
+                "WHERE p.jenis_produk = 'lainnya' AND p.status = 'dijual' " +
+                "ORDER BY COALESCE(ks.produk_sisa, 0) DESC, p.nama_produk, p.size";
 
         Connection connection = conn.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(sql);

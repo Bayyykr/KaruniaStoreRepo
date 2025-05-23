@@ -1,9 +1,12 @@
 package SourceCode.SidebarCustom;
 
+import PopUp_all.*;
+import SourceCode.PopUpRFID;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import static java.awt.SystemColor.menu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -11,6 +14,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Path2D;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 public class Menu extends javax.swing.JPanel {
@@ -118,7 +122,7 @@ public class Menu extends javax.swing.JPanel {
         if (!isKasir) {
             listMenu.addItem(new Model_Menu("karyawan", "Karyawan", Model_Menu.MenuType.MENU));
             listMenu.addItem(new Model_Menu("laporan", "Laporan", Model_Menu.MenuType.MENU));
-            listMenu.addItem(new Model_Menu("transaksibeli", "Transaksi Beli", Model_Menu.MenuType.MENU));
+            listMenu.addItem(new Model_Menu("restock", "Restok", Model_Menu.MenuType.MENU));
         }
         
         // Menu keluar untuk semua pengguna

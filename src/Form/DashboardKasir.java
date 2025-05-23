@@ -600,18 +600,19 @@ public class DashboardKasir extends JPanel {
     itemsContainer.setBackground(Color.WHITE);
     itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
-    String sql = "SELECT p.jenis_produk, COALESCE(SUM(ks.produk_sisa), 0) AS total_stok " +
-                 "FROM produk p " +
-                 "LEFT JOIN ( " +
-                 "    SELECT ks1.id_produk, ks1.produk_sisa " +
-                 "    FROM kartu_stok ks1 " +
-                 "    INNER JOIN ( " +
-                 "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
-                 "        FROM kartu_stok " +
-                 "        GROUP BY id_produk " +
-                 "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
-                 ") ks ON p.id_produk = ks.id_produk " +
-                 "GROUP BY p.jenis_produk";
+String sql = "SELECT p.jenis_produk, COALESCE(SUM(ks.produk_sisa), 0) AS total_stok " +
+             "FROM produk p " +
+             "LEFT JOIN ( " +
+             "    SELECT ks1.id_produk, ks1.produk_sisa " +
+             "    FROM kartu_stok ks1 " +
+             "    INNER JOIN ( " +
+             "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+             "        FROM kartu_stok " +
+             "        GROUP BY id_produk " +
+             "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+             ") ks ON p.id_produk = ks.id_produk " +
+             "WHERE p.status = 'dijual' " +
+             "GROUP BY p.jenis_produk";
 
     Connection connection = null;
     PreparedStatement stmt = null;
@@ -806,19 +807,19 @@ private JPanel createProductRow(String productName, String quantity, String icon
     itemsContainer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
     String sql = "SELECT p.jenis_produk, p.nama_produk, ks.produk_sisa " +
-                 "FROM produk p " +
-                 "LEFT JOIN ( " +
-                 "    SELECT ks1.id_produk, ks1.produk_sisa " +
-                 "    FROM kartu_stok ks1 " +
-                 "    INNER JOIN ( " +
-                 "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
-                 "        FROM kartu_stok " +
-                 "        GROUP BY id_produk " +
-                 "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
-                 ") ks ON p.id_produk = ks.id_produk " +
-                 "WHERE ks.produk_sisa < 10 " +
-                 "ORDER BY ks.produk_sisa ASC " +
-                 "LIMIT 4";
+             "FROM (SELECT * FROM produk WHERE status = 'dijual') p " +
+             "LEFT JOIN ( " +
+             "    SELECT ks1.id_produk, ks1.produk_sisa " +
+             "    FROM kartu_stok ks1 " +
+             "    INNER JOIN ( " +
+             "        SELECT id_produk, MAX(tanggal_transaksi) AS max_tanggal " +
+             "        FROM kartu_stok " +
+             "        GROUP BY id_produk " +
+             "    ) ks2 ON ks1.id_produk = ks2.id_produk AND ks1.tanggal_transaksi = ks2.max_tanggal " +
+             ") ks ON p.id_produk = ks.id_produk " +
+             "WHERE ks.produk_sisa < 10 " +
+             "ORDER BY ks.produk_sisa DESC " +
+             "LIMIT 4";
 
     Connection connection = null;
     PreparedStatement stmt = null;
