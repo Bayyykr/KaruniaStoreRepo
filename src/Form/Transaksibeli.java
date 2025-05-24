@@ -17,6 +17,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import SourceCode.PopUp_transbelihapusdata;
 import SourceCode.JTableRounded;
+import SourceCode.PopUp_transbelihapusdata.DeleteCallback;
 import java.awt.geom.Path2D;
 import java.math.BigInteger;
 import db.conn;
@@ -652,7 +653,7 @@ public class Transaksibeli extends JPanel {
         btnCheckout.addActionListener(e -> {
             DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
             if (model.getRowCount() == 0) {
-               PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
+                PindahanAntarPopUp.showTidakAdaItemYangDibeli(parentFrame);
                 System.out.println("tidak ada produk dibeli");
                 return;
             }
@@ -836,7 +837,7 @@ public class Transaksibeli extends JPanel {
                 String existingName = model.getValueAt(i, 1).toString();
                 String existingSize = model.getValueAt(i, 2).toString();
                 String existingHarga = model.getValueAt(i, 3).toString();
-                String hargaForm = "Rp. " + formatter.format(harga); 
+                String hargaForm = "Rp. " + formatter.format(harga);
 
                 if (existingName.equals(nama)
                         && existingSize.equals(currentProductSize)
@@ -871,7 +872,7 @@ public class Transaksibeli extends JPanel {
             sizeProduk.setText("");
             hargaBeliField.setText("Rp. ");
             qtyField.setText("");
-            
+
             scanKodeField.setFocusable(true);
             namaProduk.setFocusable(true);
             sizeProduk.setFocusable(true);
@@ -881,7 +882,7 @@ public class Transaksibeli extends JPanel {
             scanKodeField.setEnabled(true);
             namaProduk.setEnabled(true);
             sizeProduk.setEnabled(true);
-            
+
             updateTotalAmount();
 
             scanKodeField.requestFocus();
@@ -946,7 +947,7 @@ public class Transaksibeli extends JPanel {
                     namaProduk.setFocusable(false);
                     sizeProduk.setFocusable(false);
                     hargaBeliField.requestFocus();
-                }else{
+                } else {
                     PindahanAntarPopUp.showTransBeliKodeProdukTidakDitemukan(parentFrame);
                     scanKodeField.setText("");
                     scanKodeField.requestFocus();
@@ -1102,7 +1103,7 @@ public class Transaksibeli extends JPanel {
         PopUp_edittransbeli editPopup = new PopUp_edittransbeli(parentFrame, roundedTable.getTable(), rowIndex);
         editPopup.setVisible(true);
 
-        refreshAfterEdit();
+        updateTotalAmount();
     }
 
     private void handleDeleteTransaksi(int rowIndex) {
@@ -1111,31 +1112,25 @@ public class Transaksibeli extends JPanel {
         }
 
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-        PopUp_transbelihapusdata deletePopup = new PopUp_transbelihapusdata(parentFrame);
+        PopUp_transbelihapusdata deletePopup = new PopUp_transbelihapusdata(parentFrame, rowIndex);
 
-        deletePopup.addWindowListener(new WindowAdapter() {
+        deletePopup.setDeleteCallback(new DeleteCallback() {
             @Override
-            public void windowClosed(WindowEvent e) {
-                if (deletePopup.isDeleteConfirmed()) {
-                    DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
-                    model.removeRow(rowIndex);
+            public void onDeleteConfirmed(int rowToDelete) {
+                DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+                model.removeRow(rowToDelete);
 
-                    // Renumber rows
-                    for (int i = 0; i < model.getRowCount(); i++) {
-                        model.setValueAt(i + 1, i, 0);
-                    }
-
-                    updateTotalAmount();
-                    PindahanAntarPopUp.showProdukBerhasilDihapus(parentFrame);
+                // Renumber rows
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    model.setValueAt(i + 1, i, 0);
                 }
+
+                updateTotalAmount();
+                PindahanAntarPopUp.showProdukBerhasilDihapus(parentFrame);
             }
         });
 
         deletePopup.setVisible(true);
-    }
-
-    private void refreshAfterEdit() {
-        updateTotalAmount();
     }
 
     private void clearTransactionTable() {

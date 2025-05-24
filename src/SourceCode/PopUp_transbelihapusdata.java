@@ -9,11 +9,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 
 public class PopUp_transbelihapusdata extends JDialog {
-    private boolean deleteConfirmed = false;
-     public boolean isDeleteConfirmed() {
-        return deleteConfirmed;
+    public interface DeleteCallback {
+        void onDeleteConfirmed(int rowToDelete);
     }
-     
+    
+    private DeleteCallback deleteCallback;
+    private int rowToDelete;
+    private boolean deleteConfirmed = false;
     private JComponent glassPane;
     private JFrame parentFrame;
     private static final int RADIUS = 20;
@@ -30,23 +32,21 @@ public class PopUp_transbelihapusdata extends JDialog {
     private final int FINAL_WIDTH = 450;  // Ukuran tetap
     private final int FINAL_HEIGHT = 250; // Ukuran tetap
 
-    // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
 
-    public PopUp_transbelihapusdata(JFrame parent) {
+    public PopUp_transbelihapusdata(JFrame parent, int rowToDelete) {
         this.parentFrame = parent;
+        this.rowToDelete = rowToDelete;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
 
-        // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
             dispose();
             return;
         }
         isShowingPopup = true;
 
-        // Buat overlay transparan dengan warna hitam semi transparan
         glassPane = new JComponent() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -61,9 +61,7 @@ public class PopUp_transbelihapusdata extends JDialog {
         glassPane.setOpaque(false);
         glassPane.setBounds(0, 0, parent.getWidth(), parent.getHeight());
 
-        // Menghapus glassPane yang mungkin sudah ada sebelumnya
         cleanupExistingGlassPane();
-
         parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
 
         setUndecorated(true);
@@ -92,7 +90,6 @@ public class PopUp_transbelihapusdata extends JDialog {
         confirmTextLabel.setVisible(false);
         contentPanel.add(confirmTextLabel);
 
-        // Menginisialisasi tombol Cancel dan Delete
         cancelButton = createRoundedButton("Cancel", 60, 190, 130, 30, new Color(0xEBEBEB), Color.BLACK);
         cancelButton.setVisible(false);
         cancelButton.addMouseListener(new MouseAdapter() {
@@ -108,32 +105,16 @@ public class PopUp_transbelihapusdata extends JDialog {
         deleteButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Tambahkan logika untuk menghapus data di sini
-
-                // Ubah untuk menambahkan popup sukses
+                deleteConfirmed = true;
                 startCloseAnimation();
-
-                // Gunakan Timer untuk menampilkan popup sukses setelah animasi selesai
-                Timer successTimer = new Timer(ANIMATION_DURATION + 100, new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        isShowingPopup = false;
-                        PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
-//                        // Tampilkan popup sukses
-//                        SwingUtilities.invokeLater(() -> {
-//                            PopUp_transbelihapusdatasucces successPopup
-//                                    = new PopUp_transbelihapusdatasucces(parentFrame);
-//                            successPopup.setVisible(true);
-//                        });
-                    }
-                });
-                successTimer.setRepeats(false);
-                successTimer.start();
+                
+                if (deleteCallback != null) {
+                    deleteCallback.onDeleteConfirmed(rowToDelete);
+                }
             }
         });
         contentPanel.add(deleteButton);
 
-        // Tambahkan WindowListener untuk membersihkan saat popup ditutup
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -141,11 +122,17 @@ public class PopUp_transbelihapusdata extends JDialog {
             }
         });
 
-        // Memulai animasi setelah pop-up muncul
         startScaleAnimation();
     }
 
-    // Metode untuk membersihkan glassPane yang mungkin sudah ada
+    public boolean isDeleteConfirmed() {
+        return deleteConfirmed;
+    }
+     
+    public void setDeleteCallback(DeleteCallback callback) {
+        this.deleteCallback = callback;
+    }
+
     private void cleanupExistingGlassPane() {
         Component[] components = parentLayeredPane().getComponentsInLayer(JLayeredPane.POPUP_LAYER);
         for (Component comp : components) {
@@ -165,38 +152,35 @@ public class PopUp_transbelihapusdata extends JDialog {
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
 
-        animationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+        animationTimer = new Timer(ANIMATION_DELAY, e -> {
+            currentFrame[0]++;
 
-                float progress = (float) currentFrame[0] / totalFrames;
-                float easedProgress = 1 - (1 - progress) * (1 - progress) * (1 - progress);
+            float progress = (float) currentFrame[0] / totalFrames;
+            float easedProgress = 1 - (1 - progress) * (1 - progress) * (1 - progress);
 
-                currentScale = 0.01f + 0.99f * easedProgress;
+            currentScale = 0.01f + 0.99f * easedProgress;
 
-                if (progress >= 0.3 && !warningIconLabel.isVisible()) {
-                    warningIconLabel.setVisible(true);
-                    warningTextLabel.setVisible(true);
-                    confirmTextLabel.setVisible(true);
-                    cancelButton.setVisible(true);
-                    deleteButton.setVisible(true);
-                }
+            if (progress >= 0.3 && !warningIconLabel.isVisible()) {
+                warningIconLabel.setVisible(true);
+                warningTextLabel.setVisible(true);
+                confirmTextLabel.setVisible(true);
+                cancelButton.setVisible(true);
+                deleteButton.setVisible(true);
+            }
+
+            repaint();
+
+            if (currentFrame[0] >= totalFrames) {
+                animationTimer.stop();
+                currentScale = 1.0f;
+
+                warningIconLabel.setVisible(true);
+                warningTextLabel.setVisible(true);
+                confirmTextLabel.setVisible(true);
+                cancelButton.setVisible(true);
+                deleteButton.setVisible(true);
 
                 repaint();
-
-                if (currentFrame[0] >= totalFrames) {
-                    animationTimer.stop();
-                    currentScale = 1.0f;
-
-                    warningIconLabel.setVisible(true);
-                    warningTextLabel.setVisible(true);
-                    confirmTextLabel.setVisible(true);
-                    cancelButton.setVisible(true);
-                    deleteButton.setVisible(true);
-
-                    repaint();
-                }
             }
         });
 
@@ -211,22 +195,19 @@ public class PopUp_transbelihapusdata extends JDialog {
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
 
-        closeAnimationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+        closeAnimationTimer = new Timer(ANIMATION_DELAY, e -> {
+            currentFrame[0]++;
 
-                float progress = (float) currentFrame[0] / totalFrames;
-                float easedProgress = progress * progress;
+            float progress = (float) currentFrame[0] / totalFrames;
+            float easedProgress = progress * progress;
 
-                currentScale = 1.0f - 0.99f * easedProgress;
+            currentScale = 1.0f - 0.99f * easedProgress;
 
-                repaint();
+            repaint();
 
-                if (currentFrame[0] >= totalFrames) {
-                    closeAnimationTimer.stop();
-                    cleanupAndClose();
-                }
+            if (currentFrame[0] >= totalFrames) {
+                closeAnimationTimer.stop();
+                cleanupAndClose();
             }
         });
 
@@ -234,13 +215,8 @@ public class PopUp_transbelihapusdata extends JDialog {
     }
 
     private void cleanupAndClose() {
-        // Reset flag saat popup ditutup
         isShowingPopup = false;
-
-        // Hapus glassPane
         closePopup();
-
-        // Tutup dialog
         dispose();
     }
 
@@ -294,14 +270,12 @@ public class PopUp_transbelihapusdata extends JDialog {
         button.setForeground(textColor);
         button.setFont(new Font("Arial", Font.BOLD, 12));
         button.setFocusPainted(false);
-        // Pastikan tidak ada efek tekan pada tombol
         button.setPressedIcon(button.getIcon());
         button.setRolloverEnabled(false);
         return button;
     }
 
     class RoundedPanel extends JPanel {
-
         private int radius;
 
         public RoundedPanel(int radius) {
@@ -313,50 +287,48 @@ public class PopUp_transbelihapusdata extends JDialog {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+            
             if (animationStarted) {
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-
+                
                 AffineTransform originalTransform = g2.getTransform();
                 g2.translate(centerX, centerY);
                 g2.scale(currentScale, currentScale);
                 g2.translate(-centerX, -centerY);
-
-                // Draw background with rounded corners
+                
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-
+                
                 g2.setTransform(originalTransform);
             } else {
-                // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             }
-
+            
             g2.dispose();
         }
-
+        
         @Override
         protected void paintChildren(Graphics g) {
             if (animationStarted && currentScale < 0.3) {
                 return;
             }
-
+            
             if (animationStarted) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+                
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-
+                
                 g2d.translate(centerX, centerY);
                 g2d.scale(currentScale, currentScale);
                 g2d.translate(-centerX, -centerY);
-
+                
                 super.paintChildren(g2d);
                 g2d.dispose();
-            } else {
+            } else {    
                 super.paintChildren(g);
             }
         }

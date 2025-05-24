@@ -55,6 +55,7 @@ public class DashboardKasir extends JPanel {
     private Timer buttonAnimationTimer;
     private float buttonAnimationProgress = 0.0f;
     private boolean isButtonAnimating = false;
+    private String namaUser = "";
 
     private Connection con;
 
@@ -72,8 +73,8 @@ public class DashboardKasir extends JPanel {
         setLayout(new BorderLayout());
         setOpaque(true);
         con = conn.getConnection();
-        initComponents();
         setNamaUser();
+        initComponents();
     }
 
     private void initComponents() {
@@ -287,7 +288,7 @@ public class DashboardKasir extends JPanel {
         headerPanel.setLayout(null);
         headerPanel.setPreferredSize(new Dimension(800, 233));
 
-        JLabel welcomeLabel = new JLabel("Welcome Sy.syluss");
+        JLabel welcomeLabel = new JLabel("Welcome " + namaUser);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 30));
         welcomeLabel.setForeground(Color.white);
         welcomeLabel.setBounds(80, 50, 400, 40);
@@ -343,7 +344,7 @@ public class DashboardKasir extends JPanel {
             animateTransition(false);
         });
 
-        JLabel titleLabel = new JLabel("Welcome Sy.syluss");
+        JLabel titleLabel = new JLabel("Welcome " + namaUser);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
         titleLabel.setForeground(Color.white);
         titleLabel.setBounds(80, 50, 400, 40);
@@ -411,7 +412,7 @@ public class DashboardKasir extends JPanel {
             animateTransition(false);
         });
 
-        JLabel titleLabel = new JLabel("Welcome Sy.syluss");
+        JLabel titleLabel = new JLabel("Welcome " + namaUser);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
         titleLabel.setForeground(Color.white);
         titleLabel.setBounds(80, 50, 400, 40);
@@ -977,8 +978,7 @@ private JPanel createStokRow(String namaBarang, String jumlah, String iconFile) 
             st.setString(2, norfid);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
-//                txt_namakaryawn.setText(rs.getString("nama_karyawan"));
-                System.out.println(rs.getString("nama_user"));
+                namaUser = rs.getString("nama_user");
             } else {
                 System.out.println("No karyawan found ");
             }

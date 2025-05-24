@@ -27,17 +27,24 @@ import javax.swing.JLayeredPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicButtonUI;
+import db.conn;
+import java.sql.*;
+import Form.LoginForm;
 
 public class NavBarAtas extends JPanel {
 
-    private JLabel notificationLabel,profileLabel;
-    private JPopupMenu userMenu,detailMenu;
+    private JLabel notificationLabel, profileLabel;
+    private JPopupMenu userMenu, detailMenu;
     private JPasswordField passwordField;
+    private JTextField emailField, usernameField;
     private boolean passwordVisible = false;
+    private Connection con;
+    private String NoRFID, namaUser;
 
     private class RoundedButton extends BasicButtonUI {
-        private static final int ARC_SIZE = 10; 
-        
+
+        private static final int ARC_SIZE = 10;
+
         @Override
         public void installUI(javax.swing.JComponent c) {
             super.installUI(c);
@@ -47,7 +54,7 @@ public class NavBarAtas extends JPanel {
             button.setFocusPainted(false);
             button.setContentAreaFilled(false);
         }
-        
+
         @Override
         protected void paintButtonPressed(Graphics g, javax.swing.AbstractButton b) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -61,12 +68,12 @@ public class NavBarAtas extends JPanel {
         public void paint(Graphics g, javax.swing.JComponent c) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+
             JButton button = (JButton) c;
             g2.setColor(button.getBackground());
             g2.fill(new RoundRectangle2D.Double(0, 0, c.getWidth(), c.getHeight(), ARC_SIZE, ARC_SIZE));
             g2.dispose();
-            
+
             super.paint(g, c);
         }
     }
@@ -79,6 +86,9 @@ public class NavBarAtas extends JPanel {
         setPreferredSize(new Dimension(800, 40));
         setBackground(new Color(0, 0, 0));
         setLayout(new FlowLayout(FlowLayout.RIGHT, 30, 10));
+        con = conn.getConnection();
+
+        setNamaUser();
 
         notificationLabel = new JLabel();
         try {
@@ -97,8 +107,8 @@ public class NavBarAtas extends JPanel {
         }
 
         createUserMenu();
-
         createDetailMenu();
+        loadUser();
 
         profileLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -119,7 +129,7 @@ public class NavBarAtas extends JPanel {
             throw new RuntimeException("Could not find image: " + path);
         }
     }
-    
+
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {
         java.awt.Image img = icon.getImage();
         java.awt.Image resizedImage = img.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
@@ -133,7 +143,7 @@ public class NavBarAtas extends JPanel {
 
         JLabel detailLabel = new JLabel("Detail Akun");
         detailLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        detailLabel.setBorder(new EmptyBorder(5, 10, 5, 50)); 
+        detailLabel.setBorder(new EmptyBorder(5, 10, 5, 50));
 
         detailLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -144,7 +154,7 @@ public class NavBarAtas extends JPanel {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                detailLabel.setForeground(new Color(0, 123, 255)); 
+                detailLabel.setForeground(new Color(0, 123, 255));
             }
 
             @Override
@@ -185,10 +195,10 @@ public class NavBarAtas extends JPanel {
         });
 
         headerPanel.add(titleLabel);
-        headerPanel.add(Box.createHorizontalStrut(220)); 
+        headerPanel.add(Box.createHorizontalStrut(220));
         headerPanel.add(closeLabel);
         formPanel.add(headerPanel);
-        formPanel.add(Box.createVerticalStrut(10)); 
+        formPanel.add(Box.createVerticalStrut(10));
 
         // Username field
         JPanel usernamePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
@@ -196,7 +206,8 @@ public class NavBarAtas extends JPanel {
 
         JLabel usernameLabel = new JLabel("Username");
         usernameLabel.setPreferredSize(new Dimension(70, 20));
-        JTextField usernameField = new JTextField("Sy.syluss");
+        usernameField = new JTextField();
+        usernameField.setText("");
         usernameField.setPreferredSize(new Dimension(220, 25));
 
         usernamePanel.add(usernameLabel);
@@ -210,7 +221,7 @@ public class NavBarAtas extends JPanel {
 
         JLabel emailLabel = new JLabel("E-mail");
         emailLabel.setPreferredSize(new Dimension(70, 20));
-        JTextField emailField = new JTextField("sy.syluss@gmail.com");
+        emailField = new JTextField();
         emailField.setPreferredSize(new Dimension(220, 25));
 
         emailPanel.add(emailLabel);
@@ -230,7 +241,7 @@ public class NavBarAtas extends JPanel {
 
         // Create password field
         passwordField = new JPasswordField();
-        passwordField.setEchoChar('*'); 
+        passwordField.setEchoChar('*');
         passwordField.setBorder(BorderFactory.createCompoundBorder(
                 passwordField.getBorder(),
                 BorderFactory.createEmptyBorder(0, 5, 0, 30)));
@@ -247,9 +258,9 @@ public class NavBarAtas extends JPanel {
         try {
             ImageIcon originalLockIcon = loadImage("/SourceImage/lock.png");
             ImageIcon originalUnlockIcon = loadImage("/SourceImage/unlock.png");
-            
-             lockIcon = resizeIcon(originalLockIcon, 16, 16);
-             unlockIcon = resizeIcon(originalUnlockIcon, 16, 16);
+
+            lockIcon = resizeIcon(originalLockIcon, 16, 16);
+            unlockIcon = resizeIcon(originalUnlockIcon, 16, 16);
 
             toggleButton.setIcon(lockIcon);
 
@@ -258,17 +269,17 @@ public class NavBarAtas extends JPanel {
                 public void actionPerformed(ActionEvent e) {
                     passwordVisible = !passwordVisible;
                     if (passwordVisible) {
-                        passwordField.setEchoChar((char) 0); 
+                        passwordField.setEchoChar((char) 0);
                         toggleButton.setIcon(unlockIcon);
                     } else {
-                        passwordField.setEchoChar('*'); 
+                        passwordField.setEchoChar('*');
                         toggleButton.setIcon(lockIcon);
                     }
                 }
             });
 
             passwordFieldPanel.add(passwordField, BorderLayout.CENTER);
-            
+
             JPanel overlayPanel = new JPanel(new BorderLayout());
             overlayPanel.setOpaque(false);
             overlayPanel.add(toggleButton, BorderLayout.EAST);
@@ -299,23 +310,27 @@ public class NavBarAtas extends JPanel {
         // Buttons panel
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
         buttonsPanel.setBackground(Color.WHITE);
-        
+
         // Create Cancel button with rounded corners
         JButton CancelButton = new JButton("Cancel");
         CancelButton.setUI(new RoundedButton());
-        CancelButton.setBackground(new Color(108, 117, 125)); 
+        CancelButton.setBackground(new Color(108, 117, 125));
         CancelButton.setForeground(Color.WHITE);
         CancelButton.setPreferredSize(new Dimension(90, 30));
-        
+        CancelButton.addActionListener(e ->{
+            detailMenu.setVisible(false);
+            clear();
+        });
+
         // Create Change button with rounded corners
         JButton ChangeButton = new JButton("Change");
         ChangeButton.setUI(new RoundedButton());
-        ChangeButton.setBackground(new Color(52, 58, 64)); 
+        ChangeButton.setBackground(new Color(52, 58, 64));
         ChangeButton.setForeground(Color.WHITE);
         ChangeButton.setPreferredSize(new Dimension(90, 30));
-
-        // Add action listeners to buttons
-        CancelButton.addActionListener(e -> detailMenu.setVisible(false));
+        ChangeButton.addActionListener(e -> {
+            updateUser();
+        });
 
         buttonsPanel.add(CancelButton);
         buttonsPanel.add(Box.createHorizontalStrut(20));
@@ -332,7 +347,71 @@ public class NavBarAtas extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     }
 
-    public void setNotificationStatus(boolean hasNotification) {
-        // Implementation for notification status (if needed)
+    private void setNamaUser() {
+        String email = LoginForm.getNamaUser();
+        String norfid = LoginForm.getNoRFID();
+
+        String sql = "SELECT nama_user, norfid FROM user WHERE email = ? OR norfid = ?";
+        try (PreparedStatement st = con.prepareStatement(sql)) {
+            st.setString(1, email);
+            st.setString(2, norfid);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                NoRFID = rs.getString("norfid");
+                namaUser = rs.getString("nama_user");
+            } else {
+                System.out.println("No karyawan found ");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadUser() {
+        try {
+            String nama = "", email = "", password = "";
+            String sql = "SELECT * FROM user WHERE norfid = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, NoRFID);
+                ResultSet rs = st.executeQuery();
+
+                if (rs.next()) {
+                    nama = rs.getString("nama_user");
+                    email = rs.getString("email");
+                    password = rs.getString("password");
+                }
+            }
+            usernameField.setText(nama);
+            emailField.setText(email);
+            passwordField.setText(password);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void clear(){
+        loadUser();
+    }
+    
+    private void updateUser(){
+        String nama = usernameField.getText();
+        String email = emailField.getText();
+        String pw = passwordField.getText();
+        
+        try {
+            String sql = "UPDATE user SET nama_user = ?, email = ?, password = ? WHERE norfid = ?";
+            try(PreparedStatement st = con.prepareStatement(sql)){
+                st.setString(1, nama);
+                st.setString(2, email);
+                st.setString(3, pw);
+                st.setString(4, NoRFID);
+                
+                int rowUpdated = st.executeUpdate();
+                if(rowUpdated > 0){
+                    System.out.println("user berhasil diupdate");
+                }
+            }
+        } catch (Exception e) {
+        }
     }
 }

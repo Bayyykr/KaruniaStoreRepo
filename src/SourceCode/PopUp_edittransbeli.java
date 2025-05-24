@@ -23,10 +23,10 @@ public class PopUp_edittransbeli extends JDialog {
     private JComponent glassPane;
     private static final int RADIUS = 20;
     private JButton cancelButton, updateButton;
-    private RoundedTextField itemNameField, totalField;
-//    private RoundedTextField priceField, quantityField;
+    private RoundedTextField priceField, quantityField;
     private JFrame parentFrame;
-    private JLabel titleLabel,hargaproduklabel;
+    private JLabel titleLabel, priceLabel, quantityLabel;
+    private final DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("id", "ID"));
 
     private int xMouse, yMouse;
     private final int ANIMATION_DURATION = 300; // ms
@@ -38,7 +38,6 @@ public class PopUp_edittransbeli extends JDialog {
     private final int FINAL_WIDTH = 450;  // Ukuran tetap
     private final int FINAL_HEIGHT = 230; // Ukuran tetap
     
-    // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
 
     public PopUp_edittransbeli(JFrame parent, JTable table, int row) {
@@ -50,21 +49,19 @@ public class PopUp_edittransbeli extends JDialog {
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
 
-        // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
             dispose();
             return;
         }
         isShowingPopup = true;
 
-        // Buat overlay transparan dengan warna hitam semi transparan
         glassPane = new JComponent() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 180)); // Transparansi lebih tinggi
+                g2.setColor(new Color(0, 0, 0, 180));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
             }
@@ -72,16 +69,14 @@ public class PopUp_edittransbeli extends JDialog {
         glassPane.setOpaque(false);
         glassPane.setBounds(0, 0, parent.getWidth(), parent.getHeight());
         
-        // Menghapus glassPane yang mungkin sudah ada sebelumnya
         cleanupExistingGlassPane();
-        
         parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
 
-        setUndecorated(true); // Menghilangkan border default
+        setUndecorated(true);
         setSize(FINAL_WIDTH, FINAL_HEIGHT);
         setLocationRelativeTo(parent);
         setLayout(null);
-        setBackground(new Color(0, 0, 0, 0)); // Membuat background transparan
+        setBackground(new Color(0, 0, 0, 0));
 
         JPanel contentPanel = new RoundedPanel(RADIUS);
         contentPanel.setLayout(null);
@@ -93,48 +88,38 @@ public class PopUp_edittransbeli extends JDialog {
         titleLabel.setVisible(false);
         contentPanel.add(titleLabel);
         
-        hargaproduklabel = createTextLabel("Harga produk", -33, 40, 300, 30, new Font("Poppins", Font.BOLD, 14), Color.BLACK);
-        hargaproduklabel.setVisible(true);
-        contentPanel.add(hargaproduklabel);
+        priceLabel = createTextLabel("Harga Satuan", 70, 40, 300, 20, new Font("Poppins", Font.BOLD, 14), Color.BLACK);
+        priceLabel.setVisible(true);
+        contentPanel.add(priceLabel);
 
-        itemNameField = new RoundedTextField(5, "Harga Produk");
-        setRpField(itemNameField);
-        itemNameField.setBounds(70, 70, 300, 40);
-        itemNameField.setVisible(false);
-        contentPanel.add(itemNameField);
+        priceField = new RoundedTextField(5, "Harga Satuan");
+        setRpField(priceField);
+        priceField.setBounds(70, 65, 300, 40);
+        contentPanel.add(priceField);
 
-//        priceField = new RoundedTextField(5, "Harga Satuan");
-//        priceField.setBounds(105, 90, 226, 31);
-//        priceField.setVisible(false);
-//        contentPanel.add(priceField);
+        quantityLabel = createTextLabel("Quantity", 70, 110, 300, 20, new Font("Poppins", Font.BOLD, 14), Color.BLACK);
+        quantityLabel.setVisible(true);
+        contentPanel.add(quantityLabel);
 
-//        quantityField = new RoundedTextField(5, "Qty");
-//        quantityField.setBounds(105, 130, 226, 31);
-//        quantityField.setVisible(false);
-//        contentPanel.add(quantityField);
+        quantityField = new RoundedTextField(5, "Quantity");
+        quantityField.setBounds(70, 135, 300, 40);
+        contentPanel.add(quantityField);
 
-        totalField = new RoundedTextField(5, "Total");
-        totalField.setBounds(70, 125, 300, 40);
-        totalField.setVisible(false);
-        contentPanel.add(totalField);
-
-        // Menginisialisasi tombol Cancel dan Update
         cancelButton = createRoundedButton("Cancel", 60, 190, 130, 30, new Color(0xEBEBEB), Color.BLACK);
         cancelButton.setVisible(false);
         cancelButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                startCloseAnimation();  // Memulai animasi penutupan saat tombol cancel diklik
+                startCloseAnimation();
             }
         });
         contentPanel.add(cancelButton);
         
-        // Tombol Update
         updateButton = createRoundedButton("Update", 250, 190, 130, 30, new Color(0x34C759), Color.WHITE);
         updateButton.setVisible(false);
+        updateButton.addActionListener(e -> updateRowData());
         contentPanel.add(updateButton);
 
-        // Tambahkan WindowListener untuk membersihkan saat popup ditutup
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -142,11 +127,48 @@ public class PopUp_edittransbeli extends JDialog {
             }
         });
 
-        // Memulai animasi setelah pop-up muncul
-        startScaleAnimation();  // Memulai animasi
+        loadRowData();
+        startScaleAnimation();
     }
 
-    // Metode untuk membersihkan glassPane yang mungkin sudah ada
+    private void loadRowData() {
+        String priceStr = table.getValueAt(row, 3).toString().replace("Rp. ", "").replace(".", "").trim();
+        String qtyStr = table.getValueAt(row, 4).toString();
+        
+        priceField.setText("Rp. " + formatter.format(Integer.parseInt(priceStr)));
+        quantityField.setText(qtyStr);
+    }
+
+    private void updateRowData() {
+        try {
+            String priceText = priceField.getText().replace("Rp. ", "").replace(".", "").trim();
+            String qtyText = quantityField.getText().trim();
+            
+            if (priceText.isEmpty() || qtyText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Harga dan quantity tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int price = Integer.parseInt(priceText);
+            int qty = Integer.parseInt(qtyText);
+            
+            if (price <= 0 || qty <= 0) {
+                JOptionPane.showMessageDialog(this, "Harga dan quantity harus lebih dari 0", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int total = price * qty;
+
+            table.setValueAt("Rp. " + formatter.format(price), row, 3);
+            table.setValueAt(qty, row, 4);
+            table.setValueAt("Rp. " + formatter.format(total), row, 5);
+
+            startCloseAnimation();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Format harga dan quantity harus angka", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void cleanupExistingGlassPane() {
         Component[] components = parentLayeredPane().getComponentsInLayer(JLayeredPane.POPUP_LAYER);
         for (Component comp : components) {
@@ -166,46 +188,39 @@ public class PopUp_edittransbeli extends JDialog {
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
 
-        animationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+        animationTimer = new Timer(ANIMATION_DELAY, e -> {
+            currentFrame[0]++;
 
-                float progress = (float) currentFrame[0] / totalFrames;
-                float easedProgress = 1 - (1 - progress) * (1 - progress) * (1 - progress);  // Easing untuk efek zoom-in
+            float progress = (float) currentFrame[0] / totalFrames;
+            float easedProgress = 1 - (1 - progress) * (1 - progress) * (1 - progress);
 
-                currentScale = 0.01f + 0.99f * easedProgress;
+            currentScale = 0.01f + 0.99f * easedProgress;
 
-                if (progress >= 0.3 && !titleLabel.isVisible()) {
-                    titleLabel.setVisible(true);
-                    itemNameField.setVisible(true);
-//                    priceField.setVisible(true);
-//                    quantityField.setVisible(true);
-                    totalField.setVisible(true);
-                    cancelButton.setVisible(true);
-                    updateButton.setVisible(true);
-                }
+            if (progress >= 0.3 && !titleLabel.isVisible()) {
+                titleLabel.setVisible(true);
+                priceField.setVisible(true);
+                quantityField.setVisible(true);
+                cancelButton.setVisible(true);
+                updateButton.setVisible(true);
+            }
+
+            repaint();
+
+            if (currentFrame[0] >= totalFrames) {
+                animationTimer.stop();
+                currentScale = 1.0f;
+
+                titleLabel.setVisible(true);
+                priceField.setVisible(true);
+                quantityField.setVisible(true);
+                cancelButton.setVisible(true);
+                updateButton.setVisible(true);
 
                 repaint();
-
-                if (currentFrame[0] >= totalFrames) {
-                    animationTimer.stop();
-                    currentScale = 1.0f;
-
-                    titleLabel.setVisible(true);
-                    itemNameField.setVisible(true);
-//                    priceField.setVisible(true);
-//                    quantityField.setVisible(true);
-                    totalField.setVisible(true);
-                    cancelButton.setVisible(true);
-                    updateButton.setVisible(true);
-
-                    repaint();
-                }
             }
         });
 
-        animationTimer.start();  // Memulai animasi zoom-in
+        animationTimer.start();
     }
 
     private void startCloseAnimation() {
@@ -216,36 +231,28 @@ public class PopUp_edittransbeli extends JDialog {
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
 
-        closeAnimationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentFrame[0]++;
+        closeAnimationTimer = new Timer(ANIMATION_DELAY, e -> {
+            currentFrame[0]++;
 
-                float progress = (float) currentFrame[0] / totalFrames;
-                float easedProgress = progress * progress;  // Easing untuk animasi halus
+            float progress = (float) currentFrame[0] / totalFrames;
+            float easedProgress = progress * progress;
 
-                currentScale = 1.0f - 0.99f * easedProgress;  // Zoom-out dari tengah
+            currentScale = 1.0f - 0.99f * easedProgress;
 
-                repaint();
+            repaint();
 
-                if (currentFrame[0] >= totalFrames) {
-                    closeAnimationTimer.stop();  // Menghentikan timer animasi
-                    cleanupAndClose();
-                }
+            if (currentFrame[0] >= totalFrames) {
+                closeAnimationTimer.stop();
+                cleanupAndClose();
             }
         });
 
-        closeAnimationTimer.start();  // Memulai animasi zoom-out
+        closeAnimationTimer.start();
     }
 
     private void cleanupAndClose() {
-        // Reset flag saat popup ditutup
         isShowingPopup = false;
-        
-        // Hapus glassPane
         closePopup();
-        
-        // Tutup dialog
         dispose();
     }
 
@@ -280,174 +287,140 @@ public class PopUp_edittransbeli extends JDialog {
         button.setForeground(textColor);
         button.setFont(new Font("Arial", Font.BOLD, 12));
         button.setFocusPainted(false);
-        // Pastikan tidak ada efek tekan pada tombol
         button.setPressedIcon(button.getIcon());
         button.setRolloverEnabled(false);
         return button;
     }
     
     private void setRpField(final JTextField textField) {
-    final String PREFIX = "Rp. ";
-    final NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
-    if (formatter instanceof DecimalFormat) {
-        ((DecimalFormat) formatter).applyPattern("#,###");
-    }
+        final String PREFIX = "Rp. ";
+        final NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
+        if (formatter instanceof DecimalFormat) {
+            ((DecimalFormat) formatter).applyPattern("#,###");
+        }
 
-    // Inisialisasi dengan prefix
-    if (!textField.getText().startsWith(PREFIX)) {
-        textField.setText(PREFIX);
-    }
+        if (!textField.getText().startsWith(PREFIX)) {
+            textField.setText(PREFIX);
+        }
 
-    ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
-        @Override
-        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
-                throws BadLocationException {
+        ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
 
-            // Blok edit pada prefix
-            if (offset < PREFIX.length()) {
-                return;
-            }
-
-            // Hanya izinkan digit
-            if (!text.matches("\\d*")) {
-                return;
-            }
-
-            Document doc = fb.getDocument();
-            StringBuilder sb = new StringBuilder(doc.getText(0, doc.getLength()));
-            sb.replace(offset, offset + length, text);
-
-            // Ekstrak hanya angka (hapus prefix dan format)
-            String numericText = sb.toString().substring(PREFIX.length()).replaceAll("[.,]", "");
-
-            // Batasi maksimal 10 digit (maksimal 2.147.483.647 untuk INT)
-            if (numericText.length() > 10) {
-                Toolkit.getDefaultToolkit().beep(); // Beri feedback
-                return;
-            }
-
-            try {
-                if (numericText.isEmpty()) {
-                    super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+                if (offset < PREFIX.length()) {
                     return;
                 }
 
-                // Parse sebagai long untuk validasi
-                long value = Long.parseLong(numericText);
-                
-                // Batasi nilai maksimal INT (2.147.483.647)
-                if (value > Integer.MAX_VALUE) {
+                if (!text.matches("\\d*")) {
+                    return;
+                }
+
+                Document doc = fb.getDocument();
+                StringBuilder sb = new StringBuilder(doc.getText(0, doc.getLength()));
+                sb.replace(offset, offset + length, text);
+
+                String numericText = sb.toString().substring(PREFIX.length()).replaceAll("[.,]", "");
+
+                if (numericText.length() > 10) {
                     Toolkit.getDefaultToolkit().beep();
                     return;
                 }
 
-                // Format teks
-                String formattedText = PREFIX + formatter.format(value);
-                super.replace(fb, 0, doc.getLength(), formattedText, attrs);
-
-                // Hitung posisi kursor
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        int newPos = Math.min(offset + text.length(), formattedText.length());
-                        // Sesuaikan untuk karakter pemisah
-                        int addedSeparators = countSeparators(formattedText, offset + text.length());
-                        textField.setCaretPosition(Math.min(newPos + addedSeparators, formattedText.length()));
-                    } catch (Exception e) {
-                        textField.setCaretPosition(formattedText.length());
+                try {
+                    if (numericText.isEmpty()) {
+                        super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
+                        return;
                     }
-                });
-            } catch (NumberFormatException e) {
-                super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
-            }
-        }
 
-        private int countSeparators(String text, int position) {
-            int count = 0;
-            for (int i = PREFIX.length(); i < Math.min(position, text.length()); i++) {
-                if (text.charAt(i) == '.' || text.charAt(i) == ',') {
-                    count++;
+                    long value = Long.parseLong(numericText);
+                    
+                    if (value > Integer.MAX_VALUE) {
+                        Toolkit.getDefaultToolkit().beep();
+                        return;
+                    }
+
+                    String formattedText = PREFIX + formatter.format(value);
+                    super.replace(fb, 0, doc.getLength(), formattedText, attrs);
+
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            int newPos = Math.min(offset + text.length(), formattedText.length());
+                            int addedSeparators = countSeparators(formattedText, offset + text.length());
+                            textField.setCaretPosition(Math.min(newPos + addedSeparators, formattedText.length()));
+                        } catch (Exception e) {
+                            textField.setCaretPosition(formattedText.length());
+                        }
+                    });
+                } catch (NumberFormatException e) {
+                    super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
                 }
             }
-            return count;
-        }
 
-        @Override
-        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
-                throws BadLocationException {
-            replace(fb, offset, 0, string, attr);
-        }
+            private int countSeparators(String text, int position) {
+                int count = 0;
+                for (int i = PREFIX.length(); i < Math.min(position, text.length()); i++) {
+                    if (text.charAt(i) == '.' || text.charAt(i) == ',') {
+                        count++;
+                    }
+                }
+                return count;
+            }
 
-        @Override
-        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-            // Blok penghapusan prefix
-            if (offset < PREFIX.length()) {
-                if (offset + length > PREFIX.length()) {
-                    length = (offset + length) - PREFIX.length();
-                    offset = PREFIX.length();
-                } else {
-                    return;
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws BadLocationException {
+                replace(fb, offset, 0, string, attr);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                if (offset < PREFIX.length()) {
+                    if (offset + length > PREFIX.length()) {
+                        length = (offset + length) - PREFIX.length();
+                        offset = PREFIX.length();
+                    } else {
+                        return;
+                    }
+                }
+                replace(fb, offset, length, "", null);
+            }
+        });
+
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (textField.getText().equals(PREFIX)) {
+                    textField.setCaretPosition(PREFIX.length());
                 }
             }
-            replace(fb, offset, length, "", null);
-        }
-    });
+        });
 
-    // Handle focus dan navigasi
-    textField.addFocusListener(new FocusAdapter() {
-        @Override
-        public void focusGained(FocusEvent e) {
-            if (textField.getText().equals(PREFIX)) {
-                textField.setCaretPosition(PREFIX.length());
+        textField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int caretPos = textField.getCaretPosition();
+                if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) 
+                        && caretPos <= PREFIX.length()) {
+                    textField.setCaretPosition(PREFIX.length());
+                    e.consume();
+                }
+                if (e.getKeyCode() == KeyEvent.VK_HOME) {
+                    textField.setCaretPosition(PREFIX.length());
+                    e.consume();
+                }
             }
-        }
-    });
-
-    textField.addKeyListener(new KeyAdapter() {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            int caretPos = textField.getCaretPosition();
-            if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) 
-                    && caretPos <= PREFIX.length()) {
-                textField.setCaretPosition(PREFIX.length());
-                e.consume();
-            }
-            if (e.getKeyCode() == KeyEvent.VK_HOME) {
-                textField.setCaretPosition(PREFIX.length());
-                e.consume();
-            }
-        }
-    });
-}
- 
-private int getNumericValue(JTextField textField, String prefix) {
-    String text = textField.getText().substring(prefix.length()).replaceAll("[.,]", "");
-    return Integer.parseInt(text); // Akan throw exception jika melebihi INT.MAX_VALUE
-}
-
-// Method utility untuk mengatur nilai numerik ke textfield
-    private void setNumericValue(JTextField textField, long value, String prefix) {
-        String ValueStr = String.valueOf(value);
-        if (ValueStr.length() > 12) {
-            value = Long.parseLong(ValueStr.substring(0, 12));
-        }
-        NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
-        if (formatter instanceof DecimalFormat) {
-            ((DecimalFormat) formatter).applyPattern("#,###");
-        }
-        textField.setText(prefix + formatter.format(value));
+        });
     }
 
-
-    // Fungsi untuk membuat label teks
     private JLabel createTextLabel(String text, int x, int y, int width, int height, Font font, Color color) {
-        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        JLabel label = new JLabel(text, SwingConstants.LEFT);
         label.setBounds(x, y, width, height);
         label.setFont(font);
         label.setForeground(color);
         return label;
     }
 
-    // Kelas untuk membuat border bundar pada komponen
     public static class RoundedBorder extends AbstractBorder {
         private int radius;
 
@@ -489,13 +462,11 @@ private int getNumericValue(JTextField textField, String prefix) {
                 g2.scale(currentScale, currentScale);
                 g2.translate(-centerX, -centerY);
                 
-                // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
                 
                 g2.setTransform(originalTransform);
             } else {
-                // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             }
@@ -528,9 +499,7 @@ private int getNumericValue(JTextField textField, String prefix) {
         }
     }
      
-    // Kelas JTextField kustom dengan border rounded + placeholder
     static class RoundedTextField extends JTextField {
-
         private int radius;
         private String placeholder;
         private boolean isPlaceholderActive;
@@ -570,9 +539,9 @@ private int getNumericValue(JTextField textField, String prefix) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(Color.WHITE);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius); // Rounded textfield
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.setColor(Color.GRAY);
-            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius); // Border rounded
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
             g2.dispose();
             super.paintComponent(g);
         }
