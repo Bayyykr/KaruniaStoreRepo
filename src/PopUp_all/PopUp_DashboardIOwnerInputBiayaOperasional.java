@@ -1,5 +1,6 @@
 package PopUp_all;
 
+import Form.LoginForm;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -13,6 +14,10 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
+import db.conn;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.*;
 
 public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
 
@@ -34,18 +39,20 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
     private Timer closeAnimationTimer;
     private final int FINAL_WIDTH = 700; // Diubah dari 500 menjadi 700
     private final int FINAL_HEIGHT = 600;
-
+    private String norfid;
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+    private Connection con;
 
     public PopUp_DashboardIOwnerInputBiayaOperasional(JFrame parent) {
         this.parentFrame = parent;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
-
+        con = conn.getConnection();
         // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
+
             dispose();
             return;
         }
@@ -89,16 +96,16 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         contentPanel.add(titleLabel);
 
         // Tanggal dengan sudut bulat 20px - UKURAN LEBIH KECIL
-        String currentDate = "Tanggal: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+        String currentDate = "Tanggal: " + new SimpleDateFormat("yyyy/MM/dd").format(new Date());
         JPanel tanggalPanel = new RoundedPanel(RADIUS);
         tanggalPanel.setBounds(FINAL_WIDTH - 180, 30, 150, 30); // Lebar dikurangi dari 200 menjadi 120
         tanggalPanel.setBackground(new Color(226, 240, 255));
         tanggalPanel.setLayout(new BorderLayout());
 
         tanggalLabel = createTextLabel(currentDate, 0, 0, 120, 30,
-                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166)); 
-        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER); 
-        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5)); 
+                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166));
+        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
         tanggalPanel.add(tanggalLabel, BorderLayout.CENTER);
         contentPanel.add(tanggalPanel);
 
@@ -116,7 +123,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         idField = createRoundTextField(50, 30, 180, 35);
         idField.setFocusable(false);
         dataPanel.add(idField);
-
+        getIdBiaya();
         ((PlainDocument) idField.getDocument()).setDocumentFilter(new DocumentFilter() {
             private final int maxLength = 16;
 
@@ -154,10 +161,11 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
                 new Font("Poppins", Font.BOLD, 16), Color.BLACK);
         dataPanel.add(pjLabel);
 
-        // Memperbaiki lebar field penanggung jawab agar tidak terlihat putih di belakangnya
         penanggungJawabField = createRoundTextField(430, 30, dataPanel.getWidth() - 440, 35);
         penanggungJawabField.setFocusable(false);
         dataPanel.add(penanggungJawabField);
+
+        getNamaUserByRfid();
 
         ((PlainDocument) penanggungJawabField.getDocument()).setDocumentFilter(new DocumentFilter() {
             private final int maxLength = 30;
@@ -197,10 +205,10 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         totalField.setFont(new Font("Poppins", Font.PLAIN, 14));
         totalField.setBorder(new RoundBorder(Color.LIGHT_GRAY, RADIUS, 1));
         totalField.setText("Rp. ");
-        
+
         ((PlainDocument) totalField.getDocument()).setDocumentFilter(new DocumentFilter() {
             private final String prefix = "Rp. ";
-            private final int maxDigits = 10; 
+            private final int maxDigits = 10;
 
             private String formatWithSeparator(String value) {
                 // Hapus semua pemisah ribuan yang sudah ada
@@ -296,7 +304,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
                             super.insertString(fb, 0, prefix, attrs);
 
                             // Jika ada teks baru yang valid, tambahkan dan format
-                            if (text != null && text.matches(".*\\d+.*")) {
+                            if (text != null && text.matches(".\\d+.")) {
                                 // Ekstrak hanya digit dari teks baru
                                 String digits = text.replaceAll("\\D", "");
                                 if (digits.length() > 0 && digits.length() <= maxDigits) {
@@ -478,13 +486,22 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
                 new Color(240, 240, 240), Color.BLACK);
         batalButton.addActionListener(e -> startCloseAnimation());
         contentPanel.add(batalButton);
-
+        String testArea = catatanArea.getText();
+        String testJumlah = totalField.getText();
+        System.out.println("link" + testArea);
+        System.out.println("link2" + testJumlah);
         simpanButton = createRoundedButton("Simpan Perubahan", 450, 530, 220, 40,
                 new Color(40, 190, 100), Color.WHITE);
         simpanButton.addActionListener(e -> {
-            // Logika simpan perubahan akan diimplementasikan di sini
-            startCloseAnimation();
+            if (catatanArea.getText().trim().equals("") || totalField.getText().trim().equals("Rp.")) {
+                System.out.println("harus diisi");
+            } else {
+                System.out.println("ELSE DI EKSEKUSI");
+                insertDataBiaya();
+                startCloseAnimation();
+            }
         });
+
         contentPanel.add(simpanButton);
 
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
@@ -744,4 +761,118 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
             }
         }
     }
+    String newId = "BP_0001";
+
+    public void getIdBiaya() {
+        String getLastIdQuery = "SELECT id_biaya FROM biaya_operasional ORDER BY id_biaya DESC LIMIT 1";
+
+        try (PreparedStatement getIdStmt = con.prepareStatement(getLastIdQuery)) {
+            ResultSet rs = getIdStmt.executeQuery();
+            if (rs.next()) {
+                String lastId = rs.getString("id_biaya");
+                // 2. Ekstrak angka dari ID terakhir dan tambah 1
+                int lastNumber = Integer.parseInt(lastId.replace("BP_", ""));
+                newId = String.format("BP_%04d", lastNumber + 1);
+                idField.setText(newId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertDataBiaya() {
+        con = conn.getConnection();
+        String nilai = totalField.getText();
+        int totalBiaya = 0;
+        if (nilai != null && !nilai.trim().isEmpty()) {
+            nilai = nilai.replaceAll("[^0-9]", ""); // Hapus semua kecuali angka
+            if (!nilai.isEmpty()) {
+                totalBiaya = Integer.parseInt(nilai);
+            }
+        }
+        getNoRfid();
+        String catatanBiaya = catatanArea.getText();
+        String noRFID = LoginForm.getNoRFID();
+
+        String sql = "INSERT INTO biaya_operasional (id_biaya, catatan, total, tanggal, norfid) VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setString(1, newId);
+            stmt.setString(2, catatanBiaya);
+            stmt.setInt(3, totalBiaya);
+            stmt.setDate(4, new java.sql.Date(System.currentTimeMillis())); // Gunakan tanggal sekarang
+            stmt.setString(5, norfid);
+
+            int rowsInserted = stmt.executeUpdate();
+            if (rowsInserted > 0) {
+                PindahanAntarPopUp.showGajiKaryawanSuksesBayarGaji(parentFrame);
+                System.out.println("Data berhasil disisipkan dengan ID: " + newId);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void getNoRfid() {
+
+        String namaUser = LoginForm.getNamaUser();
+        String query = "SELECT norfid FROM user WHERE email = ?";
+
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, namaUser); // Safely set parameter
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                norfid = rs.getString("norfid");
+            } else {
+                JOptionPane.showMessageDialog(this, "User not found in database");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+        }
+    }
+
+    public String getNamaUserByRfid() {
+        if (con == null) {
+            con = conn.getConnection();
+            if (con == null) {
+                JOptionPane.showMessageDialog(this, "Database connection failed");
+                return null;
+            }
+        }
+
+        String noRFID = LoginForm.getNoRFID();
+        String namaUser = LoginForm.getNamaUser();
+        String query;
+        String parameter;
+
+        // Determine which query to use
+        if (noRFID == null || noRFID.isEmpty()) {
+            query = "SELECT nama_user FROM user WHERE email = ?";
+            parameter = namaUser;
+        } else {
+            query = "SELECT nama_user FROM user WHERE norfid = ?";
+            parameter = noRFID;
+        }
+
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, parameter); // Safely set parameter
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String namaUser2 = rs.getString("nama_user");
+                penanggungJawabField.setText(namaUser2);
+                return namaUser2; // Return the actual name from database
+            } else {
+                JOptionPane.showMessageDialog(this, "User not found in database");
+                return null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+            return null;
+        }
+    }
+
 }

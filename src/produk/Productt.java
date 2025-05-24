@@ -15,7 +15,7 @@ import javax.swing.SwingUtilities;
 import produk.ProductDisplayy;
 import produk.AddNewProductFormm;
 import produk.ProductDisplayyKasir;
-import laporan.Laporan;
+import Form.Laporan;
 import produk.EditProductPanel;
 
 public class Productt extends JFrame {

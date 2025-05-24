@@ -1,5 +1,6 @@
 package PopUp_all;
 
+import Form.LoginForm;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -9,9 +10,13 @@ import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.swing.text.*;
+import java.sql.*;
+import db.conn;
+import java.time.LocalDate;
 
 public class PopUp_DashboardKaryawanStokOpname extends JDialog {
 
+    private Connection con;
     private JComponent glassPane;
     private JFrame parentFrame;
     private static final int RADIUS = 20;
@@ -32,6 +37,8 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
     private final int FINAL_HEIGHT = 480;
 
     private static boolean isShowingPopup = false;
+    private int jumlah1 = 0;
+    private String norfid;
 
     public PopUp_DashboardKaryawanStokOpname(JFrame parent) {
         this.parentFrame = parent;
@@ -40,6 +47,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         setLayout(null);
 
         if (isShowingPopup) {
+
             dispose();
             return;
         }
@@ -72,22 +80,22 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         contentPanel.setBounds(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
         contentPanel.setBackground(Color.WHITE);
         add(contentPanel);
-
+        con = conn.getConnection();
         // Title
         JLabel titleLabel = createTextLabel("Stok Opname", 30, 20, 300, 30,
                 new Font("Poppins", Font.BOLD, 22), Color.BLACK);
         contentPanel.add(titleLabel);
 
-        String currentDate = "Tanggal: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+        String currentDate = "Tanggal: " + new SimpleDateFormat("yyyy/MM/dd").format(new Date());
         JPanel tanggalPanel = new RoundedPanel(RADIUS);
         tanggalPanel.setBounds(FINAL_WIDTH - 180, 30, 150, 30);
         tanggalPanel.setBackground(new Color(226, 240, 255));
         tanggalPanel.setLayout(new BorderLayout());
 
         tanggalLabel = createTextLabel(currentDate, 0, 0, 120, 30,
-                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166)); 
-        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER); 
-        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5)); 
+                new Font("Poppins", Font.BOLD, 12), new Color(23, 78, 166));
+        tanggalLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        tanggalLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
         tanggalPanel.add(tanggalLabel, BorderLayout.CENTER);
         contentPanel.add(tanggalPanel);
 
@@ -99,6 +107,9 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         barcodeField = createRoundTextField(30, 85, FINAL_WIDTH - 60, 35);
         addPlaceholder(barcodeField, "Gunakan Scanner atau Masukkan kode produk secara manual");
         contentPanel.add(barcodeField);
+        barcodeField.addActionListener(e -> {
+            checkBarcode();
+        });
 
         // Separator
         JSeparator separator1 = new JSeparator();
@@ -131,7 +142,6 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
 
         jumlahField = createRoundTextField(30, 240, FINAL_WIDTH - 60, 35);
         addPlaceholder(jumlahField, "Masukkan jumlah stok produk aktual atau terkini");
-
         // Filter untuk hanya menerima angka
         ((PlainDocument) jumlahField.getDocument()).setDocumentFilter(new DocumentFilter() {
             @Override
@@ -150,6 +160,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
                 }
             }
         });
+
         contentPanel.add(jumlahField);
 
         // Separator
@@ -186,7 +197,8 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         simpanButton = createRoundedButton("Simpan", FINAL_WIDTH - 160, 410, 120, 40,
                 new Color(40, 190, 100), Color.WHITE);
         simpanButton.addActionListener(e -> {
-            // Logika simpan perubahan
+
+            insertDataStok();
             startCloseAnimation();
         });
         contentPanel.add(simpanButton);
@@ -209,7 +221,16 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
             @Override
             public void focusGained(FocusEvent e) {
                 if (component.getText().equals(placeholderText)) {
-                    component.setText("");
+                    // Untuk JTextField dengan DocumentFilter, kita perlu bypass filter sementara
+                    if (component instanceof JTextField && ((JTextField) component).getDocument() instanceof PlainDocument) {
+                        PlainDocument doc = (PlainDocument) ((JTextField) component).getDocument();
+                        DocumentFilter filter = doc.getDocumentFilter();
+                        doc.setDocumentFilter(null); // Nonaktifkan filter sementara
+                        component.setText("");
+                        doc.setDocumentFilter(filter); // Aktifkan kembali filter
+                    } else {
+                        component.setText("");
+                    }
                     component.setForeground(Color.BLACK);
                 }
             }
@@ -217,7 +238,16 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
             @Override
             public void focusLost(FocusEvent e) {
                 if (component.getText().isEmpty()) {
-                    component.setText(placeholderText);
+                    // Untuk JTextField dengan DocumentFilter, kita perlu bypass filter sementara
+                    if (component instanceof JTextField && ((JTextField) component).getDocument() instanceof PlainDocument) {
+                        PlainDocument doc = (PlainDocument) ((JTextField) component).getDocument();
+                        DocumentFilter filter = doc.getDocumentFilter();
+                        doc.setDocumentFilter(null); // Nonaktifkan filter sementara
+                        component.setText(placeholderText);
+                        doc.setDocumentFilter(filter); // Aktifkan kembali filter
+                    } else {
+                        component.setText(placeholderText);
+                    }
                     component.setForeground(Color.GRAY);
                 }
             }
@@ -283,6 +313,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
     }
 
     private void cleanupAndClose() {
+
         isShowingPopup = false;
         closePopup();
         dispose();
@@ -436,6 +467,115 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
             } else {
                 super.paintChildren(g);
             }
+        }
+    }
+
+    private void checkBarcode() {
+        String kode = barcodeField.getText().trim();
+
+        // Hanya proses jika kode tidak kosong dan bukan placeholder
+        if (!kode.isEmpty() && !kode.equals("Gunakan Scanner atau Masukkan kode produk secara manual")) {
+            // Contoh koneksi ke database (sesuaikan dengan koneksi Anda)
+            try {
+                // 1. Dapatkan koneksi ke database
+
+                // 2. Buat query untuk mencari produk berdasarkan barcode/kode
+                String query = "SELECT nama_produk FROM produk WHERE id_produk = ?";
+                PreparedStatement stmt = con.prepareStatement(query);
+                stmt.setString(1, kode);
+
+                // 3. Eksekusi query
+                ResultSet rs = stmt.executeQuery();
+
+                // 4. Jika produk ditemukan, tampilkan namanya
+                if (rs.next()) {
+                    String namaProduk = rs.getString("nama_produk");
+                    SwingUtilities.invokeLater(() -> {
+                        namaProdukLabel.setText(namaProduk);
+                        namaProdukLabel.setForeground(Color.BLACK); // Ubah warna teks
+                    });
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        namaProdukLabel.setText("Produk tidak ditemukan");
+                        namaProdukLabel.setForeground(Color.RED);
+                    });
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    namaProdukLabel.setText("Error saat mencari produk");
+                    namaProdukLabel.setForeground(Color.RED);
+                });
+            }
+        }
+    }
+
+    private boolean isNorfidValid(String norfid) throws SQLException {
+        String query = "SELECT 1 FROM user WHERE norfid = ?";
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, norfid);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public void getNoRfid() {
+
+        String namaUser = LoginForm.getNamaUser();
+        String query = "SELECT norfid FROM user WHERE email = ?";
+
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, namaUser); // Safely set parameter
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                norfid = rs.getString("norfid");
+            } else {
+                JOptionPane.showMessageDialog(this, "User not found in database");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+        }
+    }
+
+    public void insertDataStok() {
+        String sqlOpname = "INSERT INTO stok_opname (tanggal, norfid) VALUES (?, ?)";
+        String sqlDetail = "INSERT INTO detail_opname (id_produk, id_opname, jumlah_produk) VALUES (?, ?, ?)";
+        LocalDate today = LocalDate.now();
+        String idProduk = barcodeField.getText();
+        String angka = jumlahField.getText();
+        int jumlahProduk = Integer.parseInt(angka); 
+        
+        getNoRfid();
+        try (PreparedStatement stmt = con.prepareStatement(sqlOpname, Statement.RETURN_GENERATED_KEYS)) {
+
+            // Set parameter
+            stmt.setString(1, today.toString());               // tanggal
+            stmt.setString(2, norfid);         // norfid
+
+            int rowsInserted = stmt.executeUpdate();
+
+            if (rowsInserted > 0) {
+                // Ambil id_opname terakhir yang baru dibuat
+                ResultSet generatedKeys = stmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    int idOpnameBaru = generatedKeys.getInt(1);
+
+                    // Insert ke detail_opname
+                    try (PreparedStatement stmtDetail = con.prepareStatement(sqlDetail)) {
+                        stmtDetail.setString(1, idProduk);
+                        stmtDetail.setInt(2, idOpnameBaru);
+                        stmtDetail.setInt(3, jumlahProduk);
+
+                        stmtDetail.executeUpdate();
+                        System.out.println("Detail opname berhasil ditambahkan.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -1,5 +1,6 @@
-package laporan;
+package Form;
 
+import Form.LaporanKeuanganSCV.Transaksi;
 import SourceCode.JTableRounded;
 import SourceCode.ScrollPane;
 import calendar.CustomKalender;
@@ -9,16 +10,50 @@ import Form.diagramlaporankeuangan;
 import Form.diagramkaryawan;
 import PopUp_all.*;
 import SourceCode.*;
-
+import com.mysql.cj.xdevapi.Row;
+import java.sql.*;
 import java.awt.*;
+import com.mysql.cj.xdevapi.Statement;
+import com.opencsv.CSVWriter;
+import db.conn;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.EventObject;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date; // java.util.Date
+import java.text.SimpleDateFormat;
+import java.awt.Dimension;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import javax.swing.text.Document;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 
 public class Laporan extends javax.swing.JPanel {
-    Component parentComponent = this; 
+
+    Component parentComponent = this;
     private JFrame parentFrame;
     private JPanel mainPanel, headerPanel, contentPanel, innerContentPanel, tabPanel;
     private ComboboxCustom periodCombo, exportCombo;
@@ -28,7 +63,7 @@ public class Laporan extends javax.swing.JPanel {
     private diagramlaporan diagramPanel;
     private JTableRounded tabelPemasukan, tabelPengeluaran;
     private JPanel pemasukanPanel, pengeluaranPanel, labaPanel, grafikPanel;
-
+    private java.sql.Date selectedDate;
     // Warna dan styling
     private Color selectedTabColor = new Color(20, 20, 20);
     private Color unselectedTabColor = new Color(20, 20, 20);
@@ -37,12 +72,35 @@ public class Laporan extends javax.swing.JPanel {
     private Color innerPanelBgColor = new Color(20, 20, 20, 245);
     private Color tablePanelBgColor = new Color(20, 20, 20, 245);
     private JButton activeTab;
+    public String start = "";
+    public String end = "";
+    private Connection con;
+    double totalPengeluaran = 0;
+    double totalPendapatan = 0;
+    double totalOperasional = 0;
+    double labaBersih = 0;
+    double labaKotor = 0;
+    JLabel totalPendapatanValue;
+    JLabel pemasukanValueLabel;
+    JLabel pengeluaranValueLabel;
+    JLabel labaKotorValueLabel;
+    JLabel labaKotorItem2ValueLabel;
+    JLabel operasionalValueLabel;
+    JLabel labaBersihValueLabel;
+    JLabel totalPengeluaranValue;
+    java.sql.Date sqlStartDate;
+    java.sql.Date sqlEndDate;
+//    private Date selectedDate;
+    public static java.sql.Date tanggalTerpilih;
 
     public Laporan() {
+        con = conn.getConnection();
         initComponents();
         setActiveTab(pemasukanTab);
         setupListeners();
     }
+
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     private void initComponents() {
         setLayout(new BorderLayout(15, 0));
@@ -89,14 +147,26 @@ public class Laporan extends javax.swing.JPanel {
         dateRangeButton.setBackground(Color.WHITE);
         dateRangeButton.setForeground(Color.BLACK);
         RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();
-        roundedUI.setBorderColor(Color.LIGHT_GRAY); 
+        roundedUI.setBorderColor(Color.LIGHT_GRAY);
         dateRangeButton.setUI(roundedUI);
         dateRangeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                 PopUp_StartDateEndDate dialog = new PopUp_StartDateEndDate(parentFrame);
+
                 dialog.setVisible(true);
+
+                sqlStartDate = dialog.getSqlStartDate();
+                sqlEndDate = dialog.getSqlEndDate();
+                loadPemasukanData(sqlStartDate, sqlEndDate);
+                loadLabaData(sqlStartDate, sqlEndDate);
+                loadPengeluaranData(sqlStartDate, sqlEndDate);
+                if (sqlStartDate != null && sqlEndDate != null) {
+                    // Gunakan untuk query database
+                    System.out.println("SQL Start Date: " + sqlStartDate);
+                    System.out.println("SQL End Date: " + sqlEndDate);
+                }
                 System.out.println("start date end date di klik");
             }
         });
@@ -109,13 +179,115 @@ public class Laporan extends javax.swing.JPanel {
         periodCombo.addItem("Bulan Ini");
         periodCombo.addItem("Bulan Lalu");
         periodCombo.addItem("Tahun Ini");
+        periodCombo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (periodCombo.getSelectedIndex() > 0) { // Skip jika memilih "Filter"
+                    Calendar calendar = Calendar.getInstance();
+                    Date startDate = null;
+                    Date endDate = null;
+
+                    switch (periodCombo.getSelectedItem().toString()) {
+                        case "Minggu Ini":
+                            // Set start date ke awal minggu (Minggu)
+                            calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+                            startDate = calendar.getTime();
+                            // End date adalah hari ini
+                            endDate = new Date();
+                            break;
+
+                        case "Bulan Ini":
+                            // Set start date ke tanggal 1 bulan ini
+                            calendar.set(Calendar.DAY_OF_MONTH, 1);
+                            startDate = calendar.getTime();
+                            // End date adalah hari ini
+                            endDate = new Date();
+                            break;
+
+                        case "Bulan Lalu":
+                            // Set ke bulan sebelumnya
+                            calendar.add(Calendar.MONTH, -1);
+                            // Start date tanggal 1 bulan lalu
+                            calendar.set(Calendar.DAY_OF_MONTH, 1);
+                            startDate = calendar.getTime();
+                            // End date adalah hari terakhir bulan lalu
+                            calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+                            endDate = calendar.getTime();
+                            break;
+
+                        case "Tahun Ini":
+                            // Set start date ke 1 Januari tahun ini
+                            calendar.set(Calendar.DAY_OF_YEAR, 1);
+                            startDate = calendar.getTime();
+                            // End date adalah hari ini
+                            endDate = new Date();
+                            break;
+                    }
+
+                    // Panggil method load data dengan parameter tanggal yang sesuai
+                    loadPemasukanData(startDate, endDate);
+                    loadPengeluaranData(startDate, endDate);
+                    loadLabaData(startDate, endDate);
+                }
+            }
+        });
 
         exportCombo = new ComboboxCustom();
-        exportCombo.setPreferredSize(new Dimension(150, 35));
+        exportCombo.setPreferredSize(new Dimension(140, 35));
         exportCombo.addItem("Ekspor File");
         exportCombo.addItem("PDF");
         exportCombo.addItem("Excel");
         exportCombo.addItem("CSV");
+        exportCombo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (exportCombo.getSelectedIndex() > 0) { // Skip jika memilih "Ekspor File"
+                    String exportType = exportCombo.getSelectedItem().toString();
+
+                    // Dapatkan tanggal yang sedang difilter (jika ada)
+                    Date startDate = null;
+                    Date endDate = null;
+
+                    // Jika menggunakan filter periode
+                    if (periodCombo.getSelectedIndex() > 0) {
+                        Calendar calendar = Calendar.getInstance();
+                        // ... (logika sama seperti sebelumnya untuk menentukan startDate dan endDate)
+                    }
+
+                    try {
+                        switch (exportType) {
+                            case "PDF":
+
+                                PDFExporter exporter = new PDFExporter();
+
+                                String[][] dataContoh = {
+                                    {"Produk C", "1111", "Rp 50.000"},
+                                    {"Produk C", "150", "Rp 75.000"},
+                                    {"Produk C", "200", "Rp 100.000"}
+                                };
+                                String donwloadsPath = System.getProperty("user.home") + "/Downloads/laporan_toko.pdf";
+                                exporter.exportToPDF("TOKO SUMBER REJEKI",donwloadsPath, dataContoh);
+                                break;
+
+                            case "Excel":
+
+
+                                break;
+                            case "CSV":
+//                                exportToCSV(startDate, endDate);
+                                 Form.LaporanKeuanganSCV.main(null); 
+                                
+                                break;
+                        }
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Error saat ekspor data: " + ex.getMessage(),
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                    } finally {
+                        exportCombo.setSelectedIndex(0); // Reset ke "Ekspor File"
+                    }
+                }
+            }
+        });
 
         JPanel buttonControlsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         buttonControlsPanel.setOpaque(false);
@@ -177,7 +349,6 @@ public class Laporan extends javax.swing.JPanel {
         dataContainer.add(pengeluaranPanel, "pengeluaran");
         dataContainer.add(grafikPanel, "laba");
         dataContainer.add(labaPanel, "Grafik");
-
         innerContentPanel.add(tabPanel, BorderLayout.NORTH);
         innerContentPanel.add(dataContainer, BorderLayout.CENTER);
         contentPanel.add(innerContentPanel, BorderLayout.CENTER);
@@ -193,7 +364,22 @@ public class Laporan extends javax.swing.JPanel {
         // Kalender
         calendarPanel = new CustomKalender();
         calendarPanel.setPreferredSize(new Dimension(350, 280));
+        calendarPanel.addPropertyChangeListener("selectedDate", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                // Konversi dari java.util.Date ke java.sql.Date
+                java.util.Date utilDate = (java.util.Date) evt.getNewValue();
+                selectedDate = new java.sql.Date(utilDate.getTime());
 
+                // Lakukan sesuatu dengan tanggal yang dipilih
+                System.out.println("Tanggal yang dipilih: " + dateFormat.format(selectedDate));
+
+                // Update UI atau lakukan tindakan yang diperlukan
+                loadPemasukanData(selectedDate, null);
+                loadLabaData(selectedDate, null);
+                loadPengeluaranData(selectedDate, null);
+            }
+        });
         // Container diagram
         JPanel diagramContainer = new JPanel(new BorderLayout()) {
             @Override
@@ -233,6 +419,76 @@ public class Laporan extends javax.swing.JPanel {
         add(horizontalPanel, BorderLayout.CENTER);
     }
 
+    private void loadPemasukanData(Date startDate, Date endDate) {
+        String query = "SELECT tj.id_transaksijual, tj.tanggal_transaksi, "
+                + "SUM(dtj.total_harga) as total, "
+                + "GROUP_CONCAT(dtj.jumlah_produk) as jumlah_produk, "
+                + "tj.norfid, u.nama_user "
+                + "FROM transaksi_jual tj "
+                + "JOIN detail_transaksijual dtj ON tj.id_transaksijual = dtj.id_transaksijual "
+                + "JOIN user u ON tj.norfid = u.norfid ";
+
+        // Tambahkan WHERE clause berdasarkan ketersediaan tanggal
+        if (startDate != null && endDate != null) {
+            // Jika keduanya ada, maka ini adalah rentang tanggal (range date)
+            query += "WHERE tj.tanggal_transaksi BETWEEN ? AND ? ";
+        } else if (startDate != null) {
+            // Jika hanya startDate yang ada, maka ini adalah tanggal tunggal (single date)
+            query += "WHERE DATE(tj.tanggal_transaksi) = DATE(?) ";
+        }
+
+        query += "GROUP BY tj.id_transaksijual, tj.tanggal_transaksi, tj.norfid, u.nama_user "
+                + "ORDER BY tj.tanggal_transaksi DESC";
+
+        try {
+            PreparedStatement stmt = con.prepareStatement(query);
+
+            // Set parameter tanggal sesuai dengan kondisi yang digunakan
+            if (startDate != null && endDate != null) {
+                // Range date: gunakan kedua parameter
+                stmt.setDate(1, new java.sql.Date(startDate.getTime()));
+                stmt.setDate(2, new java.sql.Date(endDate.getTime()));
+            } else if (startDate != null) {
+                // Single date: gunakan hanya satu parameter
+                stmt.setDate(1, new java.sql.Date(startDate.getTime()));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            JTable rawTable = tabelPemasukan.getTable();
+            DefaultTableModel model = (DefaultTableModel) rawTable.getModel();
+            model.setRowCount(0);
+            DecimalFormat decimalFormat = new DecimalFormat("#,###");
+            decimalFormat.setGroupingUsed(true);
+            SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            int no = 1;
+            double totalPendapatan = 0;
+
+            while (rs.next()) {
+                Date tanggalRaw = rs.getDate("tanggal_transaksi");
+                double total = rs.getDouble("total");
+                String namaKasir = rs.getString("nama_user");
+                totalPendapatan += total;
+                String tanggal = displayDateFormat.format(tanggalRaw);
+                String totalFormatted = "Rp. " + decimalFormat.format(total);
+                model.addRow(new Object[]{
+                    no++,
+                    tanggal,
+                    totalFormatted,
+                    namaKasir
+                });
+            }
+
+            // Update total pendapatan
+            String totalPendapatanFormatted = "Rp. " + decimalFormat.format(totalPendapatan);
+            totalPendapatanValue.setText(totalPendapatanFormatted);
+
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat mengambil data: " + e.getMessage());
+        }
+    }
+
     private void initPemasukanPanel() {
         pemasukanPanel = new JPanel(new BorderLayout());
         pemasukanPanel.setOpaque(false);
@@ -251,10 +507,10 @@ public class Laporan extends javax.swing.JPanel {
         totalPendapatanLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         totalPendapatanLabel.setBounds(15, -5, 250, 50);
 
-        JLabel totalPendapatanValue = new JLabel("Rp. 0");
+        totalPendapatanValue = new JLabel("Rp. 999.000.000");
         totalPendapatanValue.setForeground(Color.WHITE);
         totalPendapatanValue.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalPendapatanValue.setBounds(300, -5, 235, 50);
+        totalPendapatanValue.setBounds(230, -5, 235, 50);
         totalPendapatanValue.setHorizontalAlignment(SwingConstants.RIGHT);
 
         totalPendapatanPanel.add(totalPendapatanLabel);
@@ -269,28 +525,7 @@ public class Laporan extends javax.swing.JPanel {
         tabelPemasukan.setColumnWidth(2, 200);
         tabelPemasukan.setColumnWidth(3, 200);
 
-        // Data contoh
-        Object[][] data = {
-            {"1", "10/04/2025", "Rp. 5.500.000", "Admin"},
-            {"2", "09/04/2025", "Rp. 4.800.000", "Siti"},
-            {"3", "08/04/2025", "Rp. 7.200.000", "Admin"},
-            {"4", "07/04/2025", "Rp. 3.800.000", "Budi"},
-            {"5", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"6", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"7", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"8", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"9", "06/04/2025", "Rp. 3.700.000", "Admin"},
-            {"10", "06/04/2025", "Rp. 3.700.000", "Admin"}
-        };
-
-        for (Object[] row : data) {
-            tabelPemasukan.addRow(row);
-        }
+        loadPemasukanData(null, null);
 
         JTable rawTable = tabelPemasukan.getTable();
         TableColumnModel columnModel = rawTable.getColumnModel();
@@ -317,6 +552,78 @@ public class Laporan extends javax.swing.JPanel {
         pemasukanPanel.add(tabelContainer, BorderLayout.CENTER);
     }
 
+    private void loadLabaData(Date startDate, Date endDate) {
+        String query = "SELECT "
+                + "(SELECT IFNULL(SUM(total_harga), 0) FROM detail_transaksijual dtj "
+                + " JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
+                + (startDate != null && endDate != null
+                        ? " WHERE tj.tanggal_transaksi BETWEEN ? AND ? "
+                        : startDate != null ? " WHERE DATE(tj.tanggal_transaksi) = DATE(?) " : "")
+                + ") AS pemasukan, "
+                + "(SELECT IFNULL(SUM(total_harga), 0) FROM detail_transaksibeli dtb "
+                + " JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
+                + (startDate != null && endDate != null
+                        ? " WHERE tb.tanggal_transaksi BETWEEN ? AND ? "
+                        : startDate != null ? " WHERE DATE(tb.tanggal_transaksi) = DATE(?) " : "")
+                + ") AS pengeluaran, "
+                + "(SELECT IFNULL(SUM(total), 0) FROM biaya_operasional "
+                + (startDate != null && endDate != null
+                        ? " WHERE tanggal BETWEEN ? AND ? "
+                        : startDate != null ? " WHERE DATE(tanggal) = DATE(?) " : "")
+                + ") AS totalOperasional";
+
+        try {
+            PreparedStatement stmt = con.prepareStatement(query);
+            int paramIndex = 1;
+
+            // Set parameter tanggal jika ada
+            if (startDate != null) {
+                java.sql.Date sqlDate = new java.sql.Date(startDate.getTime());
+
+                // Parameter untuk pemasukan
+                stmt.setDate(paramIndex++, sqlDate);
+                if (endDate != null) {
+                    stmt.setDate(paramIndex++, new java.sql.Date(endDate.getTime()));
+                }
+
+                stmt.setDate(paramIndex++, sqlDate);
+                if (endDate != null) {
+                    stmt.setDate(paramIndex++, new java.sql.Date(endDate.getTime()));
+                }
+
+                stmt.setDate(paramIndex++, sqlDate);
+                if (endDate != null) {
+                    stmt.setDate(paramIndex, new java.sql.Date(endDate.getTime()));
+                }
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            DecimalFormat decimalFormat = new DecimalFormat("#,###");
+            decimalFormat.setGroupingUsed(true);
+
+            if (rs.next()) {
+                double totalPemasukan = rs.getDouble("pemasukan");
+                double totalPengeluaran = rs.getDouble("pengeluaran");
+                double biayaOperasional = rs.getDouble("totalOperasional");
+                double labaKotor = totalPemasukan - totalPengeluaran;
+                double labaBersih = labaKotor - biayaOperasional;
+
+                // Update label dengan nilai baru
+                pemasukanValueLabel.setText("Rp. " + decimalFormat.format(totalPemasukan));
+                pengeluaranValueLabel.setText("- Rp. " + decimalFormat.format(totalPengeluaran));
+                labaKotorValueLabel.setText("Rp. " + decimalFormat.format(labaKotor));
+                labaKotorItem2ValueLabel.setText("Rp. " + decimalFormat.format(labaKotor));
+                operasionalValueLabel.setText("- Rp. " + decimalFormat.format(biayaOperasional));
+                labaBersihValueLabel.setText("Rp. " + decimalFormat.format(labaBersih));
+            }
+
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat mengambil data laba: " + e.getMessage());
+        }
+    }
+
     private void initLabaPanel() {
         grafikPanel = new JPanel(null);
         grafikPanel.setOpaque(false);
@@ -341,7 +648,7 @@ public class Laporan extends javax.swing.JPanel {
         pemasukanLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         pemasukanLabel.setBounds(15, 0, 250, 50);
 
-        JLabel pemasukanValueLabel = new JLabel("Rp. 25.000.000");
+        pemasukanValueLabel = new JLabel("Rp. 25.000.000");
         pemasukanValueLabel.setForeground(Color.WHITE);
         pemasukanValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         pemasukanValueLabel.setBounds(270, 0, 235, 50);
@@ -361,7 +668,7 @@ public class Laporan extends javax.swing.JPanel {
         pengeluaranLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         pengeluaranLabel.setBounds(15, 0, 250, 50);
 
-        JLabel pengeluaranValueLabel = new JLabel("- Rp. 14.000.000");
+        pengeluaranValueLabel = new JLabel("- Rp. 14.000.000");
         pengeluaranValueLabel.setForeground(new Color(255, 75, 75));
         pengeluaranValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         pengeluaranValueLabel.setBounds(270, 0, 235, 50);
@@ -381,7 +688,7 @@ public class Laporan extends javax.swing.JPanel {
         labaKotorItemLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         labaKotorItemLabel.setBounds(15, 0, 250, 50);
 
-        JLabel labaKotorValueLabel = new JLabel("Rp. 11.000.000");
+        labaKotorValueLabel = new JLabel("Rp. 11.000.000");
         labaKotorValueLabel.setForeground(new Color(100, 255, 100));
         labaKotorValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         labaKotorValueLabel.setBounds(270, 0, 235, 50);
@@ -407,7 +714,7 @@ public class Laporan extends javax.swing.JPanel {
         labaKotorItem2Label.setFont(new Font("SansSerif", Font.PLAIN, 14));
         labaKotorItem2Label.setBounds(15, 0, 250, 50);
 
-        JLabel labaKotorItem2ValueLabel = new JLabel("Rp. 11.000.000");
+        labaKotorItem2ValueLabel = new JLabel("Rp. 11.000.000");
         labaKotorItem2ValueLabel.setForeground(new Color(100, 255, 100));
         labaKotorItem2ValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         labaKotorItem2ValueLabel.setBounds(270, 0, 235, 50);
@@ -428,7 +735,7 @@ public class Laporan extends javax.swing.JPanel {
         operasionalLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         operasionalLabel.setBounds(15, 0, 250, 50);
 
-        JLabel operasionalValueLabel = new JLabel("- Rp. 340.000");
+        operasionalValueLabel = new JLabel("- Rp. 340.000");
         operasionalValueLabel.setForeground(new Color(255, 75, 75));
         operasionalValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         operasionalValueLabel.setBounds(270, 0, 235, 50);
@@ -447,18 +754,19 @@ public class Laporan extends javax.swing.JPanel {
         JLabel labaBersihItemLabel = new JLabel("Laba Bersih");
         labaBersihItemLabel.setForeground(Color.WHITE);
         labaBersihItemLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        labaBersihItemLabel.setBounds(15, 0, 250, 50);
+        labaBersihItemLabel.setBounds(15, 0, 235, 50);
 
-        JLabel labaBersihValueLabel = new JLabel("Rp. 10.660.000");
+        labaBersihValueLabel = new JLabel("Rp. 10.660.000");
         labaBersihValueLabel.setForeground(new Color(100, 255, 100));
         labaBersihValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        labaBersihValueLabel.setBounds(270, 0, 235, 50);
+        labaBersihValueLabel.setBounds(270, 0, 250, 50);
         labaBersihValueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
         labaBersihPanel.add(labaBersihItemLabel);
         labaBersihPanel.add(labaBersihValueLabel);
         mainContentPanel.add(labaBersihPanel);
 
+        loadLabaData(null, null);
         // Menambahkan panel utama ke grafikPanel
         grafikPanel.add(mainContentPanel);
 
@@ -491,6 +799,76 @@ public class Laporan extends javax.swing.JPanel {
         });
     }
 
+    private void loadPengeluaranData(Date startDate, Date endDate) {
+        String query = "SELECT tb.id_transaksibeli, tb.tanggal_transaksi, "
+                + "SUM(dtb.total_harga) as total, "
+                + "GROUP_CONCAT(dtb.jumlah_produk) as jumlah_produk, "
+                + "tb.norfid, u.nama_user "
+                + "FROM transaksi_beli tb "
+                + "JOIN detail_transaksibeli dtb ON tb.id_transaksibeli = dtb.id_transaksibeli "
+                + "JOIN user u ON tb.norfid = u.norfid ";
+
+        // Tambahkan WHERE clause berdasarkan ketersediaan tanggal
+        if (startDate != null && endDate != null) {
+            // Jika keduanya ada, maka ini adalah rentang tanggal (range date)
+            query += "WHERE tb.tanggal_transaksi BETWEEN ? AND ? ";
+        } else if (startDate != null) {
+            // Jika hanya startDate yang ada, maka ini adalah tanggal tunggal (single date)
+            query += "WHERE DATE(tb.tanggal_transaksi) = DATE(?) ";
+        }
+
+        query += "GROUP BY tb.id_transaksibeli, tb.tanggal_transaksi, tb.norfid, u.nama_user "
+                + "ORDER BY tb.tanggal_transaksi DESC";
+
+        try {
+            PreparedStatement stmt = con.prepareStatement(query);
+
+            // Set parameter tanggal sesuai dengan kondisi yang digunakan
+            if (startDate != null && endDate != null) {
+                // Range date: gunakan kedua parameter
+                stmt.setDate(1, new java.sql.Date(startDate.getTime()));
+                stmt.setDate(2, new java.sql.Date(endDate.getTime()));
+            } else if (startDate != null) {
+                // Single date: gunakan hanya satu parameter
+                stmt.setDate(1, new java.sql.Date(startDate.getTime()));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            JTable rawTable = tabelPengeluaran.getTable();
+            DefaultTableModel model = (DefaultTableModel) rawTable.getModel();
+            model.setRowCount(0);
+            DecimalFormat decimalFormat = new DecimalFormat("#,###");
+            decimalFormat.setGroupingUsed(true);
+            SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            int no = 1;
+            double totalPengeluaran = 0;
+
+            while (rs.next()) {
+                Date tanggalRaw = rs.getDate("tanggal_transaksi");
+                double total = rs.getDouble("total");
+                String namaUser = rs.getString("nama_user");
+                totalPengeluaran += total;
+                String tanggal = displayDateFormat.format(tanggalRaw);
+                String totalFormatted = "Rp. " + decimalFormat.format(total);
+                model.addRow(new Object[]{
+                    no++,
+                    tanggal,
+                    totalFormatted,
+                    namaUser
+                });
+            }
+
+            // Update total pengeluaran
+            String totalPengeluaranFormatted = "- Rp. " + decimalFormat.format(totalPengeluaran);
+            totalPengeluaranValue.setText(totalPengeluaranFormatted);
+
+            rs.close();
+            stmt.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error saat mengambil data pengeluaran: " + e.getMessage());
+        }
+    }
+
     private void initPengeluaranPanel() {
         pengeluaranPanel = new JPanel(new BorderLayout());
         pengeluaranPanel.setOpaque(false);
@@ -509,10 +887,10 @@ public class Laporan extends javax.swing.JPanel {
         totalPengeluaranLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         totalPengeluaranLabel.setBounds(15, -5, 250, 50);
 
-        JLabel totalPengeluaranValue = new JLabel("- Rp. 15.500.000");
+        totalPengeluaranValue = new JLabel("- Rp. 15.500.000");
         totalPengeluaranValue.setForeground(new Color(255, 75, 75));
         totalPengeluaranValue.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalPengeluaranValue.setBounds(300, -5, 235, 50);
+        totalPengeluaranValue.setBounds(230, -5, 235, 50);
         totalPengeluaranValue.setHorizontalAlignment(SwingConstants.RIGHT);
 
         totalPengeluaranPanel.add(totalPengeluaranLabel);
@@ -526,30 +904,7 @@ public class Laporan extends javax.swing.JPanel {
         tabelPengeluaran.setColumnWidth(1, 200);
         tabelPengeluaran.setColumnWidth(2, 300);
 
-        // Data contoh
-        Object[][] data = {
-            {"1", "10/04/2025", "Rp. 3.200.000"},
-            {"2", "09/04/2025", "Rp. 2.800.000"},
-            {"3", "08/04/2025", "Rp. 4.100.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"4", "07/04/2025", "Rp. 2.500.000"},
-            {"5", "06/04/2025", "Rp. 2.900.000"}
-        };
-
-        for (Object[] row : data) {
-            tabelPengeluaran.addRow(row);
-        }
-
+        loadPengeluaranData(null, null);
         JTable rawTable = tabelPengeluaran.getTable();
         TableColumnModel columnModel = rawTable.getColumnModel();
 
@@ -709,4 +1064,75 @@ public class Laporan extends javax.swing.JPanel {
         labaTab.addActionListener(e -> setActiveTab(labaTab));
         GrafikTab.addActionListener(e -> setActiveTab(GrafikTab));
     }
+    ArrayList<ArrayList<String>> fruitGroups;
+
+    //Method Gebey Export
+    public void exportToCSVWithOpenCSV(Date startDate, Date endDate,
+            String totalPengeluaran, String totalPemasukan) {
+        try {
+            // 1. Format tanggal dan periode
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            String periodText;
+
+            if (startDate == null || endDate == null) {
+                // Jika tanggal tidak ditentukan, gunakan tanggal hari ini
+                periodText = "Laporan per " + dateFormat.format(new Date());
+            } else {
+                // Format periode dari tanggal mulai sampai tanggal akhir
+                periodText = dateFormat.format(startDate) + " s/d " + dateFormat.format(endDate);
+            }
+
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String fileName = "Laporan_Keuangan_" + timestamp + ".csv";
+
+            FileWriter writer = new FileWriter(fileName);
+            CSVWriter csvWriter = new CSVWriter(writer,
+                    ',', // Separator koma
+                    CSVWriter.DEFAULT_QUOTE_CHARACTER,
+                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+                    CSVWriter.DEFAULT_LINE_END);
+
+            csvWriter.writeNext(new String[]{"KARUNIA STORE"});
+            csvWriter.writeNext(new String[]{"Periode: " + periodText});
+            csvWriter.writeNext(new String[]{""}); // Baris kosong sebagai pembatas
+
+            csvWriter.writeNext(new String[]{"No", "Keterangan", "Jumlah"});
+
+            csvWriter.writeNext(new String[]{"1", "Pengeluaran", formatCurrency(totalPengeluaran)});
+            csvWriter.writeNext(new String[]{"2", "Pemasukan", formatCurrency(totalPemasukan)});
+
+            csvWriter.close();
+
+            JOptionPane.showMessageDialog(null,
+                    "File CSV berhasil dibuat:\n" + fileName,
+                    "Export Berhasil",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (IOException e) {
+
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "Gagal membuat file CSV:\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Method helper untuk memformat nilai mata uang
+    private String formatCurrency(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "Rp. 0";
+        }
+
+        // Bersihkan nilai dari karakter non-digit
+        String cleanValue = value.replaceAll("[^0-9-]", "").trim();
+
+        // Pastikan format konsisten
+        if (cleanValue.startsWith("-")) {
+            return "- Rp. " + cleanValue.substring(1).replaceAll("[^0-9]", "");
+        } else {
+            return "Rp. " + cleanValue.replaceAll("[^0-9]", "");
+        }
+    }
+
 }

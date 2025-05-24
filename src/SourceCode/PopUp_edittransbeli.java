@@ -84,7 +84,7 @@ public class PopUp_edittransbeli extends JDialog {
         contentPanel.setBackground(Color.WHITE);
         add(contentPanel);
 
-        titleLabel = createTextLabel("Edit Restok", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 20), Color.BLACK);
+        titleLabel = createTextLabel("Edit Restok", 160, 10, 400, 30, new Font("Arial", Font.BOLD, 20), Color.BLACK);
         titleLabel.setVisible(false);
         contentPanel.add(titleLabel);
         
