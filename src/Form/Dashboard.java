@@ -31,6 +31,7 @@ import java.sql.SQLException;
 
 public class Dashboard extends JPanel {
 
+    private Runnable setGetLaporanPanel;
     private CardLayout headerCardLayout;
     private JPanel headerCardsPanel;
     private int currentCardIndex = 0;
@@ -370,6 +371,9 @@ public class Dashboard extends JPanel {
         // Fix button position and size
         JButton ceklaporanbutton = createRegularButton("CEK LAPORAN", new Dimension(300, 50), 80, 140, true, "/SourceImage/next-icon-dark.png");
         ceklaporanbutton.addActionListener(e -> {
+             if (setGetLaporanPanel != null) {
+                setGetLaporanPanel.run();
+            }
             System.out.println("ini cek laporan");
         });
 
@@ -386,6 +390,10 @@ public class Dashboard extends JPanel {
         headerPanel.add(slideRightButton);
 
         return headerPanel;
+    }
+    
+     public void setToBackLaporan(Runnable listener) {
+        this.setGetLaporanPanel = listener;
     }
 
     private JPanel createAturDiskon() {

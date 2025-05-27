@@ -1581,158 +1581,139 @@ public class EditProductPanel extends JPanel {
     }
 
     private void updateProduct() {
-        // Show confirmation popup first
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(EditProductPanel.this);
-        PopUp_TambahProdukApakahAndaYakinInginEditProduk dialog = new PopUp_TambahProdukApakahAndaYakinInginEditProduk(parentFrame);
+        try {
+            // Validasi awal sebelum munculkan pop-up
+            String hargaJualText = txtHargaJual.getText().trim()
+                    .replaceAll("(?i)rp\\.?\\s?", "")
+                    .replaceAll("\\.", "")
+                    .replaceAll(",", "");
 
-        // Add action listener for OK button
-        dialog.addOKButtonActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // This code will execute when OK button is clicked
-                try {
-                    String hargaJualText = txtHargaJual.getText().trim()
-                            .replaceAll("(?i)rp\\.?\\s?", "") // Hilangkan semua variasi Rp
-                            .replaceAll("\\.", "") // Hilangkan titik
-                            .replaceAll(",", "");              // Hilangkan koma
+            String hargaBeliText = txtHargaBeli.getText().trim()
+                    .replaceAll("(?i)rp\\.?\\s?", "")
+                    .replaceAll("\\.", "")
+                    .replaceAll(",", "");
 
-                    String hargaBeliText = txtHargaBeli.getText().trim()
-                            .replaceAll("(?i)rp\\.?\\s?", "")
-                            .replaceAll("\\.", "")
-                            .replaceAll(",", "");
+            String ukuranText = txtUkuran.getText().trim();
+            String stokText = txtStok.getText().trim();
 
-                    if (txtNamaProduct.getText().trim().isEmpty()
-                            || hargaJualText.isEmpty()
-                            || hargaBeliText.isEmpty()
-                            || txtMerk.getText().trim().isEmpty()
-                            || txtUkuran.getText().trim().isEmpty()) {
-
-                        JOptionPane.showMessageDialog(EditProductPanel.this,
-                                "Semua field harus diisi",
-                                "Validasi Error",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-
-                    // Get values from form
-                    String namaProduk = txtNamaProduct.getText().trim();
-                    int hargaJual = Integer.parseInt(hargaJualText); // Gunakan teks yang sudah dibersihkan
-                    int hargaBeli = Integer.parseInt(hargaBeliText); // Gunakan teks yang sudah dibersihkan
-                    String merk = txtMerk.getText().trim();
-                    String ukuran = txtUkuran.getText().trim();
-
-                    // Get gender selection
-                    String gender = "";
-                    if (rbMale.isSelected()) {
-                        gender = "Cowok";
-                    } else if (rbFemale.isSelected()) {
-                        gender = "Cewek";
-                    } else if (rbUnisex.isSelected()) {
-                        gender = "Unisex";
-                    }
-
-                    // Get category and style
-                    String category = (String) cbCategory.getSelectedItem();
-                    String styleId = currentStyleIds[currentStyleIndex];
-
-                    // Create SQL statement for updating the product
-                    String sql = "UPDATE produk SET "
-                            + "nama_produk = ?, "
-                            + "harga_jual = ?, "
-                            + "harga_beli = ?, "
-                            + "merk = ?, "
-                            + "size = ?, "
-                            + "gender = ?, "
-                            + "jenis_produk = ?, "
-                            + "id_style = ? ";
-
-                    // Check if we need to update the image
-                    if (displayedImage != null) {
-                        sql += ", gambar = ? ";
-                    }
-
-                    sql += "WHERE id_produk = ?";
-
-                    try (PreparedStatement stmt = con.prepareStatement(sql)) {
-                        // Set values in prepared statement
-                        stmt.setString(1, namaProduk);
-                        stmt.setInt(2, hargaJual);
-                        stmt.setInt(3, hargaBeli);
-                        stmt.setString(4, merk);
-                        stmt.setString(5, ukuran);
-                        stmt.setString(6, gender);
-                        stmt.setString(7, category);
-                        stmt.setString(8, styleId);
-
-                        int paramIndex = 9;
-
-                        // Handle image if it exists
-                        if (displayedImage != null) {
-                            // Convert ImageIcon to byte array
-                            Image img = ((ImageIcon) displayedImage).getImage();
-                            BufferedImage bufferedImage = new BufferedImage(
-                                    img.getWidth(null),
-                                    img.getHeight(null),
-                                    BufferedImage.TYPE_INT_RGB
-                            );
-
-                            Graphics g = bufferedImage.createGraphics();
-                            g.drawImage(img, 0, 0, null);
-                            g.dispose();
-
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            ImageIO.write(bufferedImage, "jpg", baos);
-                            byte[] imageBytes = baos.toByteArray();
-
-                            stmt.setBytes(paramIndex++, imageBytes);
-                        }
-
-                        // Set product ID as the last parameter
-                        stmt.setString(paramIndex, kode);
-
-                        // Execute update
-                        int rowsAffected = stmt.executeUpdate();
-
-                        if (rowsAffected > 0) {
-                            // Update stock if necessary (if stock value changed)
-                            updateStockIfNeeded();
-
-                            PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
-                            Productt mainFrame = Productt.getMainFrame();
-                            if (mainFrame != null) {
-                                // Pindah ke panel product
-                                mainFrame.switchBackToProductPanel();
-                            }
-                            // Optionally refresh the form or close it
-                            // refreshForm(); or dispose();
-                        } else {
-                            JOptionPane.showMessageDialog(EditProductPanel.this,
-                                    "Gagal mengupdate produk",
-                                    "Error",
-                                    JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(EditProductPanel.this,
-                            "Harga harus berupa angka",
-                            "Validasi Error",
-                            JOptionPane.ERROR_MESSAGE);
-                } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(EditProductPanel.this,
-                            "Database error: " + ex.getMessage(),
-                            "SQL Error",
-                            JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(EditProductPanel.this,
-                            "Error: " + ex.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
-                }
+            // Validasi field kosong
+            if (txtNamaProduct.getText().trim().isEmpty()
+                    || hargaJualText.isEmpty()
+                    || hargaBeliText.isEmpty()
+                    || txtMerk.getText().trim().isEmpty()
+                    || ukuranText.isEmpty()
+                    || stokText.isEmpty()) {
+                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+                return;
             }
-        });
-        dialog.setVisible(true);
+
+            int hargaJual = Integer.parseInt(hargaJualText);
+            int hargaBeli = Integer.parseInt(hargaBeliText);
+            int ukuran = Integer.parseInt(ukuranText);
+            int stok = Integer.parseInt(stokText);
+
+            if (hargaBeli <= 0) {
+                PindahanAntarPopUp.showTambahProdukHargaBeliLebihDari0(parentFrame);
+                return;
+            }
+
+            if (hargaJual <= hargaBeli) {
+                PindahanAntarPopUp.showTambahProdukhargaJualHarusLebihDariHargaBeli(parentFrame);
+                return;
+            }
+            if (cbCategory.getSelectedIndex() == 0) {
+                PindahanAntarPopUp.showTambahProdukPilihKategoriDulu(parentFrame);
+                cbCategory.requestFocus();
+                return;
+            }
+            if (stok < 0) {
+                PindahanAntarPopUp.showTambahProdukStokTidakBolehNegatif(parentFrame);
+                txtStok.requestFocus();
+                return;
+            }
+
+            String category = (String) cbCategory.getSelectedItem();
+            if (category == null || category.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Kategori tidak boleh kosong.", "Validasi Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(EditProductPanel.this);
+            PopUp_TambahProdukApakahAndaYakinInginEditProduk dialog = new PopUp_TambahProdukApakahAndaYakinInginEditProduk(parentFrame);
+
+            dialog.addOKButtonActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        // Ambil ulang data yang sudah divalidasi
+                        String namaProduk = txtNamaProduct.getText().trim();
+                        String merk = txtMerk.getText().trim();
+                        String gender = rbMale.isSelected() ? "Cowok"
+                                : rbFemale.isSelected() ? "Cewek"
+                                : rbUnisex.isSelected() ? "Unisex"
+                                : "";
+
+                        String styleId = currentStyleIds[currentStyleIndex];
+
+                        String sql = "UPDATE produk SET "
+                                + "nama_produk = ?, harga_jual = ?, harga_beli = ?, merk = ?, size = ?, "
+                                + "gender = ?, jenis_produk = ?, id_style = ?";
+
+                        if (displayedImage != null) {
+                            sql += ", gambar = ?";
+                        }
+
+                        sql += " WHERE id_produk = ?";
+
+                        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                            stmt.setString(1, namaProduk);
+                            stmt.setInt(2, hargaJual);
+                            stmt.setInt(3, hargaBeli);
+                            stmt.setString(4, merk);
+                            stmt.setString(5, ukuranText);
+                            stmt.setString(6, gender);
+                            stmt.setString(7, category);
+                            stmt.setString(8, styleId);
+
+                            int paramIndex = 9;
+                            if (displayedImage != null) {
+                                Image img = ((ImageIcon) displayedImage).getImage();
+                                BufferedImage bufferedImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_RGB);
+                                Graphics g = bufferedImage.createGraphics();
+                                g.drawImage(img, 0, 0, null);
+                                g.dispose();
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                ImageIO.write(bufferedImage, "jpg", baos);
+                                stmt.setBytes(paramIndex++, baos.toByteArray());
+                            }
+
+                            stmt.setString(paramIndex, kode);
+
+                            int rowsAffected = stmt.executeUpdate();
+                            if (rowsAffected > 0) {
+                                updateStockIfNeeded();
+                                PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
+                                Productt mainFrame = Productt.getMainFrame();
+                                if (mainFrame != null) {
+                                    mainFrame.switchBackToProductPanel();
+                                }
+                            } else {
+                                JOptionPane.showMessageDialog(EditProductPanel.this, "Gagal mengupdate produk", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(EditProductPanel.this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        ex.printStackTrace();
+                    }
+                }
+            });
+
+            dialog.setVisible(true);
+
+        } catch (NumberFormatException ex) {
+            PindahanAntarPopUp.showEditProductFieldUkuranAtauStokHarusBerupaAngka(parentFrame);
+        }
     }
 
     private void updateStockIfNeeded() {
@@ -1777,10 +1758,7 @@ public class EditProductPanel extends JPanel {
             }
         } catch (NumberFormatException e) {
             // Handle invalid stock number
-            JOptionPane.showMessageDialog(this,
-                    "Stok harus berupa angka",
-                    "Validasi Error",
-                    JOptionPane.ERROR_MESSAGE);
+            PindahanAntarPopUp.showEditProductFieldUkuranAtauStokHarusBerupaAngka(parentFrame);
         } catch (SQLException e) {
             e.printStackTrace();
         }

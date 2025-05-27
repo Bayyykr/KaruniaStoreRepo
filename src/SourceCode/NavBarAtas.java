@@ -1,5 +1,6 @@
 package SourceCode;
 
+import PopUp_all.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -30,6 +31,7 @@ import javax.swing.plaf.basic.BasicButtonUI;
 import db.conn;
 import java.sql.*;
 import Form.LoginForm;
+import javax.swing.JFrame;
 
 public class NavBarAtas extends JPanel {
 
@@ -40,6 +42,7 @@ public class NavBarAtas extends JPanel {
     private boolean passwordVisible = false;
     private Connection con;
     private String NoRFID, namaUser;
+    private JFrame parentFrame;
 
     private class RoundedButton extends BasicButtonUI {
 
@@ -330,6 +333,7 @@ public class NavBarAtas extends JPanel {
         ChangeButton.setPreferredSize(new Dimension(90, 30));
         ChangeButton.addActionListener(e -> {
             updateUser();
+            clear();
         });
 
         buttonsPanel.add(CancelButton);
@@ -395,8 +399,18 @@ public class NavBarAtas extends JPanel {
     
     private void updateUser(){
         String nama = usernameField.getText();
-        String email = emailField.getText();
+        String email = emailField.getText().toLowerCase();
         String pw = passwordField.getText();
+        
+        if (nama.isEmpty() || email.isEmpty() || pw.isEmpty()) {
+        PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+        System.out.println("Field Tidak Boleh Kosong");     
+        return; 
+        }
+        if (!email.endsWith("@gmail.com")) {
+        PindahanAntarPopUp.showNavBarAtasPenulisanEmailSalah(parentFrame);
+        return;
+        }
         
         try {
             String sql = "UPDATE user SET nama_user = ?, email = ?, password = ? WHERE norfid = ?";
@@ -408,6 +422,7 @@ public class NavBarAtas extends JPanel {
                 
                 int rowUpdated = st.executeUpdate();
                 if(rowUpdated > 0){
+                    PindahanAntarPopUp.showEditKaryawanSuksesDiEdit(parentFrame);
                     System.out.println("user berhasil diupdate");
                 }
             }

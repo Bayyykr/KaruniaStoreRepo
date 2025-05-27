@@ -128,6 +128,11 @@ public class Productt extends JFrame {
         gajikaryawan.setBackToDataKaryawan(() -> {
             switchToDataKaryawan();
         });
+        
+        dashboardPanel.setToBackLaporan(() -> {
+            switchToLaporanPanel();
+        });
+        
         // Add menu change event listener
         sidebar.addEventMenu(new EventMenu() {
             @Override
@@ -349,6 +354,18 @@ public class Productt extends JFrame {
         }
 
         currentPanel = gajikaryawan;
+        add(currentPanel);
+        currentPanel.setVisible(true);
+
+        revalidate();
+        repaint();
+    }
+    public void switchToLaporanPanel() {
+        if (currentPanel != null) {
+            remove(currentPanel);
+        }
+
+        currentPanel = laporanPanel;
         add(currentPanel);
         currentPanel.setVisible(true);
 
