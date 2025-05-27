@@ -1,11 +1,12 @@
 package Form;
 
-import Form.LaporanKeuanganSCV.Transaksi;
 import SourceCode.JTableRounded;
 import SourceCode.ScrollPane;
 import calendar.CustomKalender;
 import produk.ComboboxCustom;
 import Form.diagramlaporan;
+import java.util.List;
+import java.util.ArrayList;
 import Form.diagramlaporankeuangan;
 import Form.diagramkaryawan;
 import PopUp_all.*;
@@ -14,8 +15,10 @@ import com.mysql.cj.xdevapi.Row;
 import java.sql.*;
 import java.awt.*;
 import com.mysql.cj.xdevapi.Statement;
-import com.opencsv.CSVWriter;
+
 import db.conn;
+import Form.ExcelExporter.LaporanData;
+import static Form.ExcelExporter.exportToExcel;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -47,6 +50,8 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
@@ -237,7 +242,6 @@ public class Laporan extends javax.swing.JPanel {
         exportCombo.addItem("Ekspor File");
         exportCombo.addItem("PDF");
         exportCombo.addItem("Excel");
-        exportCombo.addItem("CSV");
         exportCombo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -261,23 +265,30 @@ public class Laporan extends javax.swing.JPanel {
                                 PDFExporter exporter = new PDFExporter();
 
                                 String[][] dataContoh = {
-                                    {"Produk C", "1111", "Rp 50.000"},
-                                    {"Produk C", "150", "Rp 75.000"},
-                                    {"Produk C", "200", "Rp 100.000"}
+                                    {"Pemasukan", "1111", pemasukanValueLabel.getText()},
+                                    {"Pengeluaran", "150", pengeluaranValueLabel.getText()},
+                                    {"Laba Kotor", "200", labaKotorValueLabel.getText()}
                                 };
-                                String donwloadsPath = System.getProperty("user.home") + "/Downloads/laporan_toko.pdf";
-                                exporter.exportToPDF("TOKO SUMBER REJEKI",donwloadsPath, dataContoh);
+                                LocalDate tanggal = LocalDate.now();
+                                LocalTime waktu = LocalTime.now();
+
+                                // Format tanggal dan waktu
+                                DateTimeFormatter formatTanggal = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                                DateTimeFormatter formatWaktu = DateTimeFormatter.ofPattern("HH-mm-ss"); // gunakan '-' agar aman untuk file
+
+                                String tanggalStr = tanggal.format(formatTanggal);
+                                String waktuStr = waktu.format(formatWaktu);
+
+//                                String donwloadsPath = System.getProperty("user.home") + "/Downloads/" + "laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + ".pdf";
+                                exporter.exportToPDF("KARUNIA STORE", namaUser, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .pdf", dataContoh);
+//                                exporter.exportToPDF("KARUNIA STORE", donwloadsPath, dataContoh);
                                 break;
 
                             case "Excel":
 
+                                exportDataKaryawan();
+                                break;
 
-                                break;
-                            case "CSV":
-//                                exportToCSV(startDate, endDate);
-                                 Form.LaporanKeuanganSCV.main(null); 
-                                
-                                break;
                         }
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, "Error saat ekspor data: " + ex.getMessage(),
@@ -798,7 +809,7 @@ public class Laporan extends javax.swing.JPanel {
             }
         });
     }
-
+    private String namaUser;
     private void loadPengeluaranData(Date startDate, Date endDate) {
         String query = "SELECT tb.id_transaksibeli, tb.tanggal_transaksi, "
                 + "SUM(dtb.total_harga) as total, "
@@ -846,7 +857,7 @@ public class Laporan extends javax.swing.JPanel {
             while (rs.next()) {
                 Date tanggalRaw = rs.getDate("tanggal_transaksi");
                 double total = rs.getDouble("total");
-                String namaUser = rs.getString("nama_user");
+                namaUser = rs.getString("nama_user");
                 totalPengeluaran += total;
                 String tanggal = displayDateFormat.format(tanggalRaw);
                 String totalFormatted = "Rp. " + decimalFormat.format(total);
@@ -1064,59 +1075,6 @@ public class Laporan extends javax.swing.JPanel {
         labaTab.addActionListener(e -> setActiveTab(labaTab));
         GrafikTab.addActionListener(e -> setActiveTab(GrafikTab));
     }
-    ArrayList<ArrayList<String>> fruitGroups;
-
-    //Method Gebey Export
-    public void exportToCSVWithOpenCSV(Date startDate, Date endDate,
-            String totalPengeluaran, String totalPemasukan) {
-        try {
-            // 1. Format tanggal dan periode
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-            String periodText;
-
-            if (startDate == null || endDate == null) {
-                // Jika tanggal tidak ditentukan, gunakan tanggal hari ini
-                periodText = "Laporan per " + dateFormat.format(new Date());
-            } else {
-                // Format periode dari tanggal mulai sampai tanggal akhir
-                periodText = dateFormat.format(startDate) + " s/d " + dateFormat.format(endDate);
-            }
-
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String fileName = "Laporan_Keuangan_" + timestamp + ".csv";
-
-            FileWriter writer = new FileWriter(fileName);
-            CSVWriter csvWriter = new CSVWriter(writer,
-                    ',', // Separator koma
-                    CSVWriter.DEFAULT_QUOTE_CHARACTER,
-                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-                    CSVWriter.DEFAULT_LINE_END);
-
-            csvWriter.writeNext(new String[]{"KARUNIA STORE"});
-            csvWriter.writeNext(new String[]{"Periode: " + periodText});
-            csvWriter.writeNext(new String[]{""}); // Baris kosong sebagai pembatas
-
-            csvWriter.writeNext(new String[]{"No", "Keterangan", "Jumlah"});
-
-            csvWriter.writeNext(new String[]{"1", "Pengeluaran", formatCurrency(totalPengeluaran)});
-            csvWriter.writeNext(new String[]{"2", "Pemasukan", formatCurrency(totalPemasukan)});
-
-            csvWriter.close();
-
-            JOptionPane.showMessageDialog(null,
-                    "File CSV berhasil dibuat:\n" + fileName,
-                    "Export Berhasil",
-                    JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                    "Gagal membuat file CSV:\n" + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
     // Method helper untuk memformat nilai mata uang
     private String formatCurrency(String value) {
@@ -1133,6 +1091,31 @@ public class Laporan extends javax.swing.JPanel {
         } else {
             return "Rp. " + cleanValue.replaceAll("[^0-9]", "");
         }
+    }
+
+    public void exportDataKaryawan() {
+        // Membuat data
+        System.setProperty("log4j2.loggerContextFactory",
+                "org.apache.logging.log4j.simple.SimpleLoggerContextFactory");
+
+        List<ExcelExporter.LaporanData> dataList = new ArrayList<>();
+        dataList.add(new ExcelExporter.LaporanData("Pemasukan", pemasukanValueLabel.getText()));
+        dataList.add(new ExcelExporter.LaporanData("Pengeluaran", pengeluaranValueLabel.getText()));
+        dataList.add(new ExcelExporter.LaporanData("Laba", labaKotorValueLabel.getText()));
+
+        // Export ke Excel
+        LocalDate tanggal = LocalDate.now();
+        LocalTime waktu = LocalTime.now();
+
+        // Format tanggal dan waktu
+        DateTimeFormatter formatTanggal = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter formatWaktu = DateTimeFormatter.ofPattern("HH-mm-ss"); // gunakan '-' agar aman untuk file
+
+        String tanggalStr = tanggal.format(formatTanggal);
+        String waktuStr = waktu.format(formatWaktu);
+
+        ExcelExporter.exportToExcel(dataList, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
+        exportToExcel(dataList, namaUser, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
     }
 
 }

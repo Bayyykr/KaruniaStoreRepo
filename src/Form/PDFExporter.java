@@ -13,7 +13,7 @@ import java.util.Date;
 
 public class PDFExporter {
     
-    public void exportToPDF(String namaToko, String filePath, String[][] dataTable) 
+    public void exportToPDF(String namaToko, String namaUser, String filePath, String[][] dataTable) 
             throws IOException {
         
         PDDocument document = new PDDocument();
@@ -27,7 +27,7 @@ public class PDFExporter {
             float margin = 50;
             float pageWidth = page.getMediaBox().getWidth();
             
-            // Header toko - center
+            // Header toko - center (bagian atas)
             contentStream.beginText();
             contentStream.setFont(PDType1Font.HELVETICA_BOLD, 18);
             float namaTokoWidth = PDType1Font.HELVETICA_BOLD.getStringWidth(namaToko) / 1000 * 18;
@@ -35,17 +35,29 @@ public class PDFExporter {
             contentStream.showText(namaToko);
             contentStream.endText();
             
-            // Tanggal - pojok kanan atas
+            // Nama user - pojok kanan atas (sejajar dengan nama toko)
+            if (namaUser != null && !namaUser.isEmpty()) {
+                contentStream.beginText();
+                contentStream.setFont(PDType1Font.HELVETICA, 12);
+                float namaUserWidth = PDType1Font.HELVETICA.getStringWidth(namaUser) / 1000 * 12;
+                contentStream.newLineAtOffset(pageWidth - margin - namaUserWidth, yPosition);
+                contentStream.showText(namaUser);
+                contentStream.endText();
+            }
+            
+            yPosition -= 30; // Jarak antara nama toko dan tanggal
+            
+            // Tanggal - center (di bawah nama toko)
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
             String currentDate = "Tanggal: " + dateFormat.format(new Date());
             contentStream.beginText();
             contentStream.setFont(PDType1Font.HELVETICA, 12);
             float dateWidth = PDType1Font.HELVETICA.getStringWidth(currentDate) / 1000 * 12;
-            contentStream.newLineAtOffset(pageWidth - margin - dateWidth, yPosition); // Posisi kanan
+            contentStream.newLineAtOffset((pageWidth - dateWidth) / 2, yPosition); // Center position
             contentStream.showText(currentDate);
             contentStream.endText();
             
-            yPosition -= 50; // Jarak antara header dan tabel
+            yPosition -= 50; // Jarak antara tanggal dan tabel
             
             // Tabel dengan lebar penuh
             drawTable(contentStream, margin, yPosition, pageWidth - (2 * margin), dataTable);
@@ -57,6 +69,12 @@ public class PDFExporter {
         document.save(filePath);
         document.close();
         System.out.println("PDF berhasil dibuat: " + filePath);
+    }
+    
+    // Overload method untuk backward compatibility (tanpa namaUser)
+    public void exportToPDF(String namaToko, String filePath, String[][] dataTable) 
+            throws IOException {
+        exportToPDF(namaToko, null, filePath, dataTable);
     }
     
     private void drawTable(PDPageContentStream contentStream, float x, float y, float tableWidth, String[][] data) 
@@ -78,7 +96,7 @@ public class PDFExporter {
         }
         
         // Header tabel
-        String[] headers = {"No", "Keterangan", "Jumlah"};
+        String[] headers = {"No", "Keterangan", "Total"};
         drawTableRow(contentStream, x, y, columnWidths, cellHeight, headers, true);
         y -= cellHeight;
         
@@ -153,12 +171,16 @@ public class PDFExporter {
             PDFExporter exporter = new PDFExporter();
             
             String[][] dataContoh = {
-                {"Produk A", "100", "Rp 50.000"},
-                {"Produk B", "150", "Rp 75.000"},
-                {"Produk C", "200", "Rp 100.000"}
+                {"Pemasukan", "", "Rp. 0"},
+                {"Pengeluaran", "", "- Rp. 3,000,000"},
+                {"Laba Kotor", "", "Rp. -3,000,000"}
             };
             
-            exporter.exportToPDF("TOKO SUMBER REJEKI", "laporan_toko.pdf", dataContoh);
+            // Contoh dengan nama user
+            exporter.exportToPDF("KARUNIA STORE", "John Doe", "laporan_toko_dengan_nama.pdf", dataContoh);
+            
+            // Contoh tanpa nama user (menggunakan method lama)
+            exporter.exportToPDF("KARUNIA STORE", "laporan_toko_tanpa_nama.pdf", dataContoh);
             
         } catch (Exception e) {
             System.err.println("Error saat membuat PDF: " + e.getMessage());
