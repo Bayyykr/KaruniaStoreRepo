@@ -1,5 +1,6 @@
 package SourceCode;
 
+import PopUp_all.PindahanAntarPopUp;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -145,7 +146,7 @@ public class PopUp_edittransbeli extends JDialog {
             String qtyText = quantityField.getText().trim();
             
             if (priceText.isEmpty() || qtyText.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Harga dan quantity tidak boleh kosong", "Error", JOptionPane.ERROR_MESSAGE);
+                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
                 return;
             }
 
@@ -153,7 +154,7 @@ public class PopUp_edittransbeli extends JDialog {
             int qty = Integer.parseInt(qtyText);
             
             if (price <= 0 || qty <= 0) {
-                JOptionPane.showMessageDialog(this, "Harga dan quantity harus lebih dari 0", "Error", JOptionPane.ERROR_MESSAGE);
+                PindahanAntarPopUp.showTransBeliEditQtyDanHargaHarusLebihDari0(parentFrame);
                 return;
             }
 
@@ -162,10 +163,11 @@ public class PopUp_edittransbeli extends JDialog {
             table.setValueAt("Rp. " + formatter.format(price), row, 3);
             table.setValueAt(qty, row, 4);
             table.setValueAt("Rp. " + formatter.format(total), row, 5);
-
+            
+            PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
             startCloseAnimation();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format harga dan quantity harus angka", "Error", JOptionPane.ERROR_MESSAGE);
+           PindahanAntarPopUp.showTransBeliEditQtyHarusAngka(parentFrame);
         }
     }
 

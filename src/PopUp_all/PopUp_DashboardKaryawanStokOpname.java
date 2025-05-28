@@ -197,9 +197,9 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         simpanButton = createRoundedButton("Simpan", FINAL_WIDTH - 160, 410, 120, 40,
                 new Color(40, 190, 100), Color.WHITE);
         simpanButton.addActionListener(e -> {
-
-            insertDataStok();
-            startCloseAnimation();
+            if (insertDataStok()) {
+                startCloseAnimation();
+            }
         });
         contentPanel.add(simpanButton);
 
@@ -472,14 +472,8 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
 
     private void checkBarcode() {
         String kode = barcodeField.getText().trim();
-
-        // Hanya proses jika kode tidak kosong dan bukan placeholder
         if (!kode.isEmpty() && !kode.equals("Gunakan Scanner atau Masukkan kode produk secara manual")) {
-            // Contoh koneksi ke database (sesuaikan dengan koneksi Anda)
             try {
-                // 1. Dapatkan koneksi ke database
-
-                // 2. Buat query untuk mencari produk berdasarkan barcode/kode
                 String query = "SELECT nama_produk FROM produk WHERE id_produk = ?";
                 PreparedStatement stmt = con.prepareStatement(query);
                 stmt.setString(1, kode);
@@ -487,7 +481,6 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
                 // 3. Eksekusi query
                 ResultSet rs = stmt.executeQuery();
 
-                // 4. Jika produk ditemukan, tampilkan namanya
                 if (rs.next()) {
                     String namaProduk = rs.getString("nama_produk");
                     SwingUtilities.invokeLater(() -> {
@@ -496,6 +489,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
                     });
                 } else {
                     SwingUtilities.invokeLater(() -> {
+                        PindahanAntarPopUp.showTransBeliKodeProdukTidakDitemukan(parentFrame);
                         namaProdukLabel.setText("Produk tidak ditemukan");
                         namaProdukLabel.setForeground(Color.RED);
                     });
@@ -526,7 +520,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         String query = "SELECT norfid FROM user WHERE email = ?";
 
         try (PreparedStatement stmt = con.prepareStatement(query)) {
-            stmt.setString(1, namaUser); // Safely set parameter
+            stmt.setString(1, namaUser); 
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -540,42 +534,65 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
         }
     }
 
-    public void insertDataStok() {
-        String sqlOpname = "INSERT INTO stok_opname (tanggal, norfid) VALUES (?, ?)";
-        String sqlDetail = "INSERT INTO detail_opname (id_produk, id_opname, jumlah_produk) VALUES (?, ?, ?)";
-        LocalDate today = LocalDate.now();
-        String idProduk = barcodeField.getText();
-        String angka = jumlahField.getText();
-        int jumlahProduk = Integer.parseInt(angka); 
-        
-        getNoRfid();
-        try (PreparedStatement stmt = con.prepareStatement(sqlOpname, Statement.RETURN_GENERATED_KEYS)) {
+  public boolean insertDataStok() {
+    String sqlOpname = "INSERT INTO stok_opname (tanggal, norfid) VALUES (?, ?)";
+    String sqlDetail = "INSERT INTO detail_opname (id_produk, id_opname, jumlah_produk, keterangan) VALUES (?, ?, ?, ?)";
+    String sqlInsertKartuStok = "INSERT INTO kartu_stok (produk_masuk, produk_keluar, tanggal_transaksi, produk_sisa, id_produk) VALUES (?, ?, NOW(), ?, ?)";
+    LocalDate today = LocalDate.now();
 
-            // Set parameter
-            stmt.setString(1, today.toString());               // tanggal
-            stmt.setString(2, norfid);         // norfid
+    String idProduk = barcodeField.getText();
+    String angka = jumlahField.getText();
+    String keterangan = keteranganArea.getText();
 
-            int rowsInserted = stmt.executeUpdate();
-
-            if (rowsInserted > 0) {
-                // Ambil id_opname terakhir yang baru dibuat
-                ResultSet generatedKeys = stmt.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    int idOpnameBaru = generatedKeys.getInt(1);
-
-                    // Insert ke detail_opname
-                    try (PreparedStatement stmtDetail = con.prepareStatement(sqlDetail)) {
-                        stmtDetail.setString(1, idProduk);
-                        stmtDetail.setInt(2, idOpnameBaru);
-                        stmtDetail.setInt(3, jumlahProduk);
-
-                        stmtDetail.executeUpdate();
-                        System.out.println("Detail opname berhasil ditambahkan.");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    if (idProduk.isEmpty() || angka.isEmpty() || keterangan.isEmpty()) {
+        PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+        return false;
     }
+
+    int jumlahProduk;
+    try {
+        jumlahProduk = Integer.parseInt(angka);
+    } catch (NumberFormatException e) {
+        PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+        return false;
+    }
+
+    getNoRfid();
+
+    try (PreparedStatement stmt = con.prepareStatement(sqlOpname, Statement.RETURN_GENERATED_KEYS)) {
+        stmt.setString(1, today.toString());
+        stmt.setString(2, norfid);
+
+        int rowsInserted = stmt.executeUpdate();
+
+        if (rowsInserted > 0) {
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int idOpnameBaru = generatedKeys.getInt(1);
+
+                try (PreparedStatement stmtDetail = con.prepareStatement(sqlDetail)) {
+                    stmtDetail.setString(1, idProduk);
+                    stmtDetail.setInt(2, idOpnameBaru);
+                    stmtDetail.setInt(3, jumlahProduk);
+                    stmtDetail.setString(4, keterangan);
+                    stmtDetail.executeUpdate();
+                }
+
+                try (PreparedStatement stmtKartu = con.prepareStatement(sqlInsertKartuStok)) {
+                    stmtKartu.setInt(1, jumlahProduk); // produk_masuk (hasil opname)
+                    stmtKartu.setInt(2, 0);            // produk_keluar
+                    stmtKartu.setInt(3, jumlahProduk); // produk_sisa = hasil opname
+                    stmtKartu.setString(4, idProduk);  // id_produk
+                    stmtKartu.executeUpdate();
+                }
+
+                PindahanAntarPopUp.showDashboardOwnerStokOpnameSuksesDitambahkan(parentFrame);
+                return true;
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return false;
+}
 }

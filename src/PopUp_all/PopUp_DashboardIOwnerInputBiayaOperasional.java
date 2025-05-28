@@ -494,6 +494,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
                 new Color(40, 190, 100), Color.WHITE);
         simpanButton.addActionListener(e -> {
             if (catatanArea.getText().trim().equals("") || totalField.getText().trim().equals("Rp.")) {
+                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parent);
                 System.out.println("harus diisi");
             } else {
                 System.out.println("ELSE DI EKSEKUSI");
@@ -805,7 +806,7 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
 
             int rowsInserted = stmt.executeUpdate();
             if (rowsInserted > 0) {
-                PindahanAntarPopUp.showGajiKaryawanSuksesBayarGaji(parentFrame);
+                PindahanAntarPopUp.showDashboardOwnerBiayaOperasionalSuksesDitambahkan(parentFrame);
                 System.out.println("Data berhasil disisipkan dengan ID: " + newId);
             }
         } catch (SQLException ex) {

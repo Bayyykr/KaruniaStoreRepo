@@ -521,7 +521,7 @@ public class Laporan extends javax.swing.JPanel {
         totalPendapatanValue = new JLabel("Rp. 999.000.000");
         totalPendapatanValue.setForeground(Color.WHITE);
         totalPendapatanValue.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalPendapatanValue.setBounds(230, -5, 235, 50);
+        totalPendapatanValue.setBounds(295, -5, 235, 50);
         totalPendapatanValue.setHorizontalAlignment(SwingConstants.RIGHT);
 
         totalPendapatanPanel.add(totalPendapatanLabel);
@@ -901,7 +901,7 @@ public class Laporan extends javax.swing.JPanel {
         totalPengeluaranValue = new JLabel("- Rp. 15.500.000");
         totalPengeluaranValue.setForeground(new Color(255, 75, 75));
         totalPengeluaranValue.setFont(new Font("SansSerif", Font.BOLD, 14));
-        totalPengeluaranValue.setBounds(230, -5, 235, 50);
+        totalPengeluaranValue.setBounds(295, -5, 235, 50);
         totalPengeluaranValue.setHorizontalAlignment(SwingConstants.RIGHT);
 
         totalPengeluaranPanel.add(totalPengeluaranLabel);

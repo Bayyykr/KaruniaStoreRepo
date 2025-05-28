@@ -1396,4 +1396,84 @@ public class PindahanAntarPopUp {
             popup.setVisible(true);
         });
     }
+    public static void showDashboardOwnerBiayaOperasionalSuksesDitambahkan(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallDashboardOwnerBiayaOperasionalSuksesDitambahkan popup = new PopUp_SmallDashboardOwnerBiayaOperasionalSuksesDitambahkan(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showDashboardOwnerStokOpnameSuksesDitambahkan(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallDashboardOwnerStokOpnameSuksesDitambahkan popup = new PopUp_SmallDashboardOwnerStokOpnameSuksesDitambahkan(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTransBeliEditQtyHarusAngka(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTransBeliEditQtyHarusAngka popup = new PopUp_SmallTransBeliEditQtyHarusAngka(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
+    public static void showTransBeliEditQtyDanHargaHarusLebihDari0(JFrame parent) {
+        SwingUtilities.invokeLater(() -> {
+            // Buat popup password salah
+            PopUp_SmallTransBeliEditQtyDanHargaHarusLebihDari0 popup = new PopUp_SmallTransBeliEditQtyDanHargaHarusLebihDari0(parent) {
+                @Override
+                public void setVisible(boolean visible) {
+                    if (visible) {
+                        // Daftarkan popup ke pengelola saat ditampilkan
+                        PindahanAntarPopUp.registerPopup(this);
+                    } else {
+                        // Hapus dari daftar saat disembunyikan
+                        PindahanAntarPopUp.unregisterPopup(this);
+                    }   
+                    super.setVisible(visible);
+                }
+            };
+            // Tampilkan popup
+            popup.setVisible(true);
+        });
+    }
 }
