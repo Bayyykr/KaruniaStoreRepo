@@ -24,6 +24,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
 
 public class AbsenKaryawan extends JPanel {
+
     private Runnable backToDataKaryawan;
     private JTextField searchField, monthField;
     private JButton configButton, backButton;
@@ -54,9 +55,11 @@ public class AbsenKaryawan extends JPanel {
 
         con = conn.getConnection();
 
-        // Initialize current date to current month's first day
+        this.selectedMonth = Calendar.getInstance().get(Calendar.MONTH) + 1; // +1 karena bulan di Calendar dimulai dari 0
+        this.selectedYear = Calendar.getInstance().get(Calendar.YEAR);
+
         currentDate = Calendar.getInstance();
-        currentDate.set(Calendar.DAY_OF_MONTH, -1); // First day of current month
+        currentDate.set(Calendar.DAY_OF_MONTH, 1);
 
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
@@ -120,7 +123,7 @@ public class AbsenKaryawan extends JPanel {
         buttonsPanel.setOpaque(false);
 
         // Month field - UPDATED with rounded border
-        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy" , indonesianLocale);
+        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMMM yyyy", indonesianLocale);
         monthField = new JTextField(monthYearFormat.format(currentDate.getTime()).toUpperCase());
         monthField.setPreferredSize(new Dimension(140, 40));
         monthField.setEnabled(false);
@@ -209,7 +212,7 @@ public class AbsenKaryawan extends JPanel {
 
                     System.out.println("Membuka popup dengan bulan index: " + bulanIndex + ", tahun: " + tahun);
                 } catch (Exception f) {
-                    System.out.println("Error parsing bulan/tahun: " +f.getMessage());
+                    System.out.println("Error parsing bulan/tahun: " + f.getMessage());
                     f.printStackTrace();
                 }
 
@@ -257,6 +260,7 @@ public class AbsenKaryawan extends JPanel {
 
         // Load data from database when panel is first created
         loadDataFromDatabase();
+        initializeCurrentMonthView();
     }
 
     private void createTable() {
@@ -378,7 +382,6 @@ public class AbsenKaryawan extends JPanel {
         }
     }
 
-    // Load data from database
     private void loadDataFromDatabase() {
         if (!currentSearchTerm.isEmpty()) {
             performSearchh(currentSearchTerm);
@@ -389,7 +392,6 @@ public class AbsenKaryawan extends JPanel {
         model.setRowCount(0); // Clear existing data
 
         try {
-            // Get all employees with their positions
             String employeeQuery = "SELECT norfid, nama_user, jabatan "
                     + "FROM user WHERE jabatan != 'owner' AND status != 'nonaktif' "
                     + "ORDER BY nama_user";
@@ -403,10 +405,9 @@ public class AbsenKaryawan extends JPanel {
                     String name = empRs.getString("nama_user");
                     String position = empRs.getString("jabatan");
 
-                    // Get total attendance days for this employee for the selected month and year
+                    // Gunakan selectedMonth dan selectedYear yang sudah diupdate
                     int totalAttendance = getTotalAttendanceDays(norfid, selectedMonth, selectedYear);
 
-                    // Create a new row for this employee
                     Object[] row = new Object[model.getColumnCount()];
                     row[0] = rowNum + ".";
                     row[1] = name;
@@ -418,9 +419,8 @@ public class AbsenKaryawan extends JPanel {
                 }
             }
 
-            // Refresh the table display
             mainTable.repaint();
-            updateSelectedMonthYearFromCurrentDate();
+            updateMonthFieldDisplay(); // Pastikan tampilan bulan sesuai
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage(),
@@ -1007,12 +1007,9 @@ public class AbsenKaryawan extends JPanel {
         this.selectedMonth = month;
         this.selectedYear = year;
 
-        // Update the current date to reflect the selection
-        // Month in Calendar is 0-based, so subtract 1
-        currentDate.set(Calendar.MONTH, month - 1);
+        // Update currentDate ke tanggal 1 bulan yang dipilih
         currentDate.set(Calendar.YEAR, year);
-
-        // Reset to the first day of the month
+        currentDate.set(Calendar.MONTH, month - 1);
         currentDate.set(Calendar.DAY_OF_MONTH, 1);
 
         // Update the month field display
@@ -1056,7 +1053,7 @@ public class AbsenKaryawan extends JPanel {
             {"JULI", "7"}, {"AGUSTUS", "8"}, {"SEPTEMBER", "9"},
             {"OKTOBER", "10"}, {"NOVEMBER", "11"}, {"DESEMBER", "12"}
         };
-        
+
         int index = 0;
 
         String upperMonthName = monthName.toUpperCase();
@@ -1068,5 +1065,23 @@ public class AbsenKaryawan extends JPanel {
             }
         }
         return index;
+    }
+
+    private void initializeCurrentMonthView() {
+        // Set calendar ke bulan dan tahun saat ini
+        Calendar cal = Calendar.getInstance();
+        this.selectedMonth = cal.get(Calendar.MONTH) + 1;
+        this.selectedYear = cal.get(Calendar.YEAR);
+
+        // Update currentDate ke tanggal 1 bulan ini
+        currentDate.set(Calendar.YEAR, selectedYear);
+        currentDate.set(Calendar.MONTH, selectedMonth - 1);
+        currentDate.set(Calendar.DAY_OF_MONTH, 1);
+
+        // Update tampilan bulan
+        updateMonthFieldDisplay();
+
+        // Load data untuk bulan ini
+        loadDataFromDatabase();
     }
 }

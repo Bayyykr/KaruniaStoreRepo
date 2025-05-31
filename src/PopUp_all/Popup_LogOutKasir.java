@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
+import java.sql.*;
+import db.conn;
 
 public class Popup_LogOutKasir extends JDialog {
 
@@ -28,12 +30,17 @@ public class Popup_LogOutKasir extends JDialog {
 
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
+    private Connection con;
+    private String userNorfid;
 
-    public Popup_LogOutKasir(JFrame parent) {
+    public Popup_LogOutKasir(JFrame parent, String norfid) {
         this.parentFrame = parent;
+        this.userNorfid = norfid;
         setModal(true);
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
+
+        con = conn.getConnection();
 
         // Periksa apakah popup sudah ditampilkan
         if (isShowingPopup) {
@@ -102,12 +109,13 @@ public class Popup_LogOutKasir extends JDialog {
         LeaveButton = createRoundedButton("Leave", 250, 190, 130, 30, new Color(0xFF6347), Color.WHITE);
         LeaveButton.setVisible(false);
         LeaveButton.addMouseListener(new MouseAdapter() {
-     @Override
-     public void mouseClicked(MouseEvent e) {
-         startCloseAnimation();
-         ((FormKasir) parentFrame).switchBackToLoginPanel();
-        }
-    });
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                recordLogout();
+                startCloseAnimation();
+                ((FormKasir) parentFrame).switchBackToLoginPanel();
+            }
+        });
         contentPanel.add(LeaveButton);
 
         // Tambahkan WindowListener untuk membersihkan saat popup ditutup
@@ -337,5 +345,46 @@ public class Popup_LogOutKasir extends JDialog {
                 super.paintChildren(g);
             }
         }
+    }
+
+    private void recordLogout() {
+        if (con == null) {
+            JOptionPane.showMessageDialog(this, "No database connection available");
+            return;
+        }
+
+        try {
+            // Get the current user's norfid - you'll need to adapt this to how you store the current user
+            String norfid = getCurrentUserNorfid();
+
+            if (norfid == null || norfid.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No user RFID found");
+                return;
+            }
+
+            // Update the waktu_keluar for today's attendance record
+            String updateQuery = "UPDATE absensi SET waktu_keluar = NOW() WHERE norfid = ? AND DATE(waktu_masuk) = CURDATE()";
+
+            PreparedStatement stmt = con.prepareStatement(updateQuery);
+            stmt.setString(1, norfid);
+
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("Logout time recorded successfully for RFID: " + norfid);
+            } else {
+                System.out.println("No attendance record found to update for RFID: " + norfid);
+            }
+
+            stmt.close();
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error recording logout: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private String getCurrentUserNorfid() {
+        return this.userNorfid;
     }
 }

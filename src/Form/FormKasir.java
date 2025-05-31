@@ -7,13 +7,16 @@ import SourceCode.SidebarCustom.Menu;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.sql.*;
+import db.conn;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import produk.ProductDisplayy;
 import produk.AddNewProductFormm;
 import produk.ProductDisplayyKasir;
-import Form.Laporan;
 import produk.EditProductPanel;
 
 public class FormKasir extends JFrame {
@@ -34,17 +37,49 @@ public class FormKasir extends JFrame {
     private Laporan laporanPanel; // Tambahkan reference untuk panel laporan
     private JPanel currentPanel; // Current active panel
     private static FormKasir mainFrame; // Reference to the main frame (static agar bisa diakses)
+    private static String currentUserNorfid;
+    private Connection con;
 
     // Getter untuk mengambil instance utama (mencegah null pointer)
     public static FormKasir getMainFrame() {
         return mainFrame;
     }
 
+    private void setNamaUser() {
+        String email = LoginForm.getNamaUser();
+        String norfid = LoginForm.getNoRFID();
+
+        String sql = "SELECT nama_user, norfid FROM user WHERE email = ? OR norfid = ?";
+        try (PreparedStatement st = con.prepareStatement(sql)) {
+            st.setString(1, email);
+            st.setString(2, norfid);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                currentUserNorfid = rs.getString("norfid");
+            } else {
+                System.out.println("No karyawan found ");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public FormKasir() {
         mainFrame = this; // Simpan instance utama
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Ubah ke DO_NOTHING_ON_CLOSE
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Catat waktu keluar sebelum menutup
+                recordLogoutOnClose();
+                // Tutup aplikasi
+                System.exit(0);
+            }
+        });
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+        con = conn.getConnection();
+        setNamaUser();
 
         // Get screen size
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -123,7 +158,7 @@ public class FormKasir extends JFrame {
             @Override
             public void menuIndexChange(int index) {
                 if (index == 2) {
-                    Popup_LogOutKasir dialog = new Popup_LogOutKasir(FormKasir.this);
+                    Popup_LogOutKasir dialog = new Popup_LogOutKasir(FormKasir.this, currentUserNorfid);
                     dialog.setVisible(true);
                     return;
                 }
@@ -321,5 +356,30 @@ public class FormKasir extends JFrame {
         SwingUtilities.invokeLater(() -> {
             new FormKasir().setVisible(true);
         });
+    }
+
+    public void recordLogoutOnClose() {
+        if (currentUserNorfid == null || currentUserNorfid.isEmpty()) {
+            System.out.println("No user RFID found for logout recording");
+            return;
+        }
+
+        try {
+            String updateQuery = "UPDATE absensi SET waktu_keluar = NOW() WHERE norfid = ? AND DATE(waktu_masuk) = CURDATE()";
+
+            PreparedStatement stmt = con.prepareStatement(updateQuery);
+            stmt.setString(1, currentUserNorfid);
+
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("Auto logout time recorded successfully for RFID: " + currentUserNorfid);
+            } else {
+                System.out.println("No attendance record found to update for RFID: " + currentUserNorfid);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error recording auto logout: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

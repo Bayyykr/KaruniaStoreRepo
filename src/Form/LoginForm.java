@@ -69,20 +69,20 @@ public class LoginForm extends JFrame {
         RFIDField();
         FungsiKomponenLogin();
     }
-    
+
     public static LoginForm getInstance() {
         if (instance == null) {
             instance = new LoginForm();
         }
         return instance;
     }
-    
+
     public void resetForm() {
-    usernameField.setText("Email");
-    passwordField.setText("Password");
-    passwordField.setEchoChar((char) 0);
+        usernameField.setText("Email");
+        passwordField.setText("Password");
+        passwordField.setEchoChar((char) 0);
 //    rfidField.setText("");
-}
+    }
 
     private void initComponents() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -492,7 +492,6 @@ public class LoginForm extends JFrame {
 //                setLocation(x, y);
 //            }
 //        });
-
         setLocationRelativeTo(null);
     }
 
@@ -548,9 +547,9 @@ public class LoginForm extends JFrame {
 //                    javax.swing.JFrame parentFrame = (javax.swing.JFrame) SwingUtilities.getWindowAncestor(this);
                             System.out.println("masuk");
                             if (jabatan.equals("kasir")) {
-                            new FormKasir().setVisible(true);
-                            LoginForm.this.setVisible(false);
-                            dialog.dispose();
+                                new FormKasir().setVisible(true);
+                                LoginForm.this.setVisible(false);
+                                dialog.dispose();
                                 System.out.println("ini kasir");
                             } else if (jabatan.equals("owner")) {
 //                            new Dashboard().setVisible(true);
@@ -562,9 +561,9 @@ public class LoginForm extends JFrame {
 //                        parentFrame.dispose();
 //                    }
                         } else {
-                        PopUpRFIDWarning popup = new PopUpRFIDWarning(LoginForm.this);
-                        popup.setLocationRelativeTo(SwingUtilities.getWindowAncestor(LoginForm.this));
-                        popup.setVisible(true);
+                            PopUpRFIDWarning popup = new PopUpRFIDWarning(LoginForm.this);
+                            popup.setLocationRelativeTo(SwingUtilities.getWindowAncestor(LoginForm.this));
+                            popup.setVisible(true);
                             System.out.println(no);
                             System.out.println("no rfid salah");
                         }
@@ -583,9 +582,11 @@ public class LoginForm extends JFrame {
                                 String rolee = rs.getString("jabatan");
                                 jabatan = rolee;
                                 setNoRFID(norfid);
+
+                                recordAttendance(norfid);
                                 return true;
                             } else {
-                            // Reset field ketika validasi gagal
+                                // Reset field ketika validasi gagal
                                 rfidField.setText("");
                                 return false;
                             }
@@ -672,7 +673,7 @@ public class LoginForm extends JFrame {
             }
 
             private boolean validateUser(String email, String pw) {
-                String query = "SELECT email, password, jabatan FROM user WHERE email = ? AND password = ?";
+                String query = "SELECT norfid, email, password, jabatan FROM user WHERE email = ? AND password = ?";
                 try {
                     PreparedStatement stmt = con.prepareStatement(query);
                     stmt.setString(1, email);
@@ -683,8 +684,11 @@ public class LoginForm extends JFrame {
                     // Jika ada hasil, berarti username, password, dan posisi sesuai
                     if (rs.next()) {
                         String rolee = rs.getString("jabatan");
+                        String norfid = rs.getString("norfid");
                         jabatan = rolee;
                         setNamaUser(email);
+                        setNoRFID(norfid);
+                        recordAttendance(norfid);
                         return true;
                     } else {
                         return false;
@@ -709,5 +713,26 @@ public class LoginForm extends JFrame {
         Matcher matcher = pattern.matcher(email);
 
         return matcher.matches();
+    }
+
+    private void recordAttendance(String norfid) {
+        String checkQuery = "SELECT id_absen FROM absensi WHERE norfid = ? AND DATE(waktu_masuk) = CURDATE()";
+        String insertQuery = "INSERT INTO absensi (norfid, waktu_masuk) VALUES (?, NOW())";
+
+        try {
+            // Check if attendance already recorded today
+            PreparedStatement checkStmt = con.prepareStatement(checkQuery);
+            checkStmt.setString(1, norfid);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (!rs.next()) {
+                // No attendance recorded today, insert new record
+                PreparedStatement insertStmt = con.prepareStatement(insertQuery);
+                insertStmt.setString(1, norfid);
+                insertStmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(LoginForm.this, "Error recording attendance: " + e.getMessage());
+        }
     }
 }
