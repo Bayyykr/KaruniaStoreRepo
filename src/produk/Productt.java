@@ -49,17 +49,17 @@ public class Productt extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        // Get screen size
+        
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         getContentPane().setBackground(Color.WHITE);
         setSize(screenSize);
         setLayout(null);
 
-        // Initialize components
+        
         Menu sidebar = new Menu();
         NavBarAtas top = new NavBarAtas();
 
-        // Initialize all panels
+        
         dashboardPanel = new Dashboard();
         dashboardPanelKasir = new DashboardKasir();
         produkPanelkasir = new ProductDisplayyKasir();

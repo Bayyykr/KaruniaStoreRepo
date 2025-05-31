@@ -457,8 +457,13 @@ public class Laporan extends javax.swing.JPanel {
             // Set parameter tanggal sesuai dengan kondisi yang digunakan
             if (startDate != null && endDate != null) {
                 // Range date: gunakan kedua parameter
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(endDate);   
+                cal.add(Calendar.DATE, 1); // Tambah 1 hari
+                java.sql.Date adjustedEndDate = new java.sql.Date(cal.getTimeInMillis());
+
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
-                stmt.setDate(2, new java.sql.Date(endDate.getTime()));
+                stmt.setDate(2, adjustedEndDate);
             } else if (startDate != null) {
                 // Single date: gunakan hanya satu parameter
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
@@ -810,6 +815,7 @@ public class Laporan extends javax.swing.JPanel {
         });
     }
     private String namaUser;
+
     private void loadPengeluaranData(Date startDate, Date endDate) {
         String query = "SELECT tb.id_transaksibeli, tb.tanggal_transaksi, "
                 + "SUM(dtb.total_harga) as total, "
@@ -823,6 +829,7 @@ public class Laporan extends javax.swing.JPanel {
         if (startDate != null && endDate != null) {
             // Jika keduanya ada, maka ini adalah rentang tanggal (range date)
             query += "WHERE tb.tanggal_transaksi BETWEEN ? AND ? ";
+
         } else if (startDate != null) {
             // Jika hanya startDate yang ada, maka ini adalah tanggal tunggal (single date)
             query += "WHERE DATE(tb.tanggal_transaksi) = DATE(?) ";
@@ -836,9 +843,12 @@ public class Laporan extends javax.swing.JPanel {
 
             // Set parameter tanggal sesuai dengan kondisi yang digunakan
             if (startDate != null && endDate != null) {
-                // Range date: gunakan kedua parameter
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(endDate);
+                cal.add(Calendar.DATE, 1); // Tambah 1 hari
+                java.sql.Date adjustedEndDate = new java.sql.Date(cal.getTimeInMillis());
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
-                stmt.setDate(2, new java.sql.Date(endDate.getTime()));
+                stmt.setDate(2, adjustedEndDate);
             } else if (startDate != null) {
                 // Single date: gunakan hanya satu parameter
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
@@ -1101,7 +1111,7 @@ public class Laporan extends javax.swing.JPanel {
         List<ExcelExporter.LaporanData> dataList = new ArrayList<>();
         dataList.add(new ExcelExporter.LaporanData("Pemasukan", pemasukanValueLabel.getText()));
         dataList.add(new ExcelExporter.LaporanData("Pengeluaran", pengeluaranValueLabel.getText()));
-        dataList.add(new ExcelExporter.LaporanData("Laba", labaKotorValueLabel.getText()));
+        dataList.add(new ExcelExporter.LaporanData("Laba Kotor", labaKotorValueLabel.getText()));
 
         // Export ke Excel
         LocalDate tanggal = LocalDate.now();

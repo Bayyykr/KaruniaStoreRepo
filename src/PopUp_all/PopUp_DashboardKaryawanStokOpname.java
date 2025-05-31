@@ -543,8 +543,9 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
     String idProduk = barcodeField.getText();
     String angka = jumlahField.getText();
     String keterangan = keteranganArea.getText();
+    String nama_produk = namaProdukLabel.getText();
 
-    if (idProduk.isEmpty() || angka.isEmpty() || keterangan.isEmpty()) {
+    if (idProduk.isEmpty() || angka.isEmpty() || keterangan.isEmpty() || nama_produk.equals("Nama produk akan muncul otomatis")) {
         PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
         return false;
     }

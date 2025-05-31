@@ -254,7 +254,7 @@ public class PopUp_StartDateEndDate extends JDialog {
                     PindahanAntarPopUp.showStartnDateMasukkanrentangtahun(parentFrame);
                 }
             } catch (NumberFormatException ex) {
-                    PindahanAntarPopUp.showStartnDateMasukkanangkatahunyangvalid(parentFrame);
+                PindahanAntarPopUp.showStartnDateMasukkanangkatahunyangvalid(parentFrame);
             }
         } else if (years.length == 2) {
             // Handle input rentang tahun
@@ -655,7 +655,13 @@ public class PopUp_StartDateEndDate extends JDialog {
         batalButton = createButton("Batal", new Color(255, 255, 255), Color.BLACK);
         batalButton.setBounds(FINAL_WIDTH / 2 + 100, FINAL_HEIGHT - 50, 110, 30);
         batalButton.setBorder(new RoundedBorder(10, Color.BLACK, 1));
-        batalButton.addActionListener(e -> startCloseAnimation());
+        batalButton.addActionListener(e -> {
+            // Reset tanggal saat batal diklik
+            startDate = null;
+            endDate = null;
+            startCloseAnimation();
+        });
+
         contentPanel.add(batalButton);
         prosesButton = createButton("Proses", new Color(64, 72, 82), Color.WHITE);
         prosesButton.setBorder(new RoundedBorder(10, Color.DARK_GRAY, 2));
@@ -749,6 +755,7 @@ public class PopUp_StartDateEndDate extends JDialog {
 
                 if (currentFrame[0] >= totalFrames) {
                     closeAnimationTimer.stop();
+
                     cleanupAndClose();
                 }
             }
