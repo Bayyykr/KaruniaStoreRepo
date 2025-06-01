@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Path2D;
 import javax.swing.plaf.basic.BasicCheckBoxUI;
+import produk.ProductDisplayy;
 
 public class DeleteProductPanel extends JPanel {
 
@@ -254,6 +255,11 @@ public class DeleteProductPanel extends JPanel {
                 if (dialog.isConfirmed()) {  // You may need to adjust this based on your PopUp class implementation
                     // Update status to "tidakdijual" for selected products
                     int updatedCount = updateSelectedProductsStatus();
+                    Productt mainFrame = Productt.getMainFrame();
+                    ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
+                    if (productDisplay != null) {
+                        productDisplay.refreshProducts();
+                    }
                     PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
                     // Setelah menghapus, reset mode pilihan
                     selectMode = false;
@@ -347,11 +353,11 @@ public class DeleteProductPanel extends JPanel {
                 }
             }
         });
-        
+
         searchField.addKeyListener(new java.awt.event.KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
-               String searchTerm = searchField.getText();
+                String searchTerm = searchField.getText();
                 if (searchTerm.equals("Search")) {
                     searchTerm = "";
                 }
@@ -360,14 +366,14 @@ public class DeleteProductPanel extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                
+
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                 
+
             }
-            
+
         });
 
         // Tombol pencarian dengan background hitam
@@ -405,29 +411,29 @@ public class DeleteProductPanel extends JPanel {
         return searchPanel;
     }
 
-   private JScrollPane createProductListPanel() {
-    // Panel daftar produk dengan BoxLayout
-    productListPanel = new JPanel();
-    productListPanel.setLayout(new BoxLayout(productListPanel, BoxLayout.Y_AXIS));
-    productListPanel.setBackground(Color.WHITE); // Set background to white
-    productListPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0)); 
+    private JScrollPane createProductListPanel() {
+        // Panel daftar produk dengan BoxLayout
+        productListPanel = new JPanel();
+        productListPanel.setLayout(new BoxLayout(productListPanel, BoxLayout.Y_AXIS));
+        productListPanel.setBackground(Color.WHITE); // Set background to white
+        productListPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
-    loadProductsFromDatabase("");
+        loadProductsFromDatabase("");
 
-    ScrollPane scrollPane = new ScrollPane(productListPanel);
+        ScrollPane scrollPane = new ScrollPane(productListPanel);
 
-    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    
-    scrollPane.setThumbColor(new Color(100, 100, 100, 150));
-    scrollPane.setTrackColor(new Color(240, 240, 240, 100));
-    scrollPane.setThumbThickness(8);
-    scrollPane.setThumbRadius(8);
-    
-    scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-    return scrollPane;
-}
+        scrollPane.setThumbColor(new Color(100, 100, 100, 150));
+        scrollPane.setTrackColor(new Color(240, 240, 240, 100));
+        scrollPane.setThumbThickness(8);
+        scrollPane.setThumbRadius(8);
+
+        scrollPane.getViewport().setBackground(Color.WHITE);
+
+        return scrollPane;
+    }
 
     // New method to load products from the database
     private void loadProductsFromDatabase(String searchTerm) {
@@ -684,6 +690,11 @@ public class DeleteProductPanel extends JPanel {
                 // class has a method to get the user's choice)
                 if (dialog.isConfirmed()) {  // You may need to adjust this based on your PopUp class implementation
                     // Update status to "tidakdijual" for selected products
+                    Productt mainFrame = Productt.getMainFrame();
+                    ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
+                    if (productDisplay != null) {
+                        productDisplay.refreshProducts();
+                    }
                     deleteSingleProduct(productId);
                     PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
                     // Setelah menghapus, reset mode pilihan

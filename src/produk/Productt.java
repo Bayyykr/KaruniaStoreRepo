@@ -152,6 +152,7 @@ public class Productt extends JFrame {
                         currentPanel = dashboardPanel;
                         break;
                     case 1:
+                        produkPanel.refreshProducts();
                         currentPanel = produkPanel;
                         break;
                     case 2:
@@ -371,6 +372,10 @@ public class Productt extends JFrame {
 
         revalidate();
         repaint();
+    }
+    
+    public ProductDisplayy getProductDisplayPanel() {
+        return this.produkPanel;
     }
 
     public static void main(String args[]) {

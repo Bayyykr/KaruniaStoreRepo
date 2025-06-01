@@ -1701,6 +1701,10 @@ public class EditProductPanel extends JPanel {
                                 PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
                                 Productt mainFrame = Productt.getMainFrame();
                                 if (mainFrame != null) {
+                                    ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
+                                    if (productDisplay != null) {
+                                        productDisplay.refreshProducts();
+                                    }
                                     mainFrame.switchBackToProductPanel();
                                 }
                             } else {

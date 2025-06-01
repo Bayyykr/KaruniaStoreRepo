@@ -1355,6 +1355,10 @@ public class AddNewProductFormm extends JPanel {
 
                 Productt mainFrame = Productt.getMainFrame();
                 if (mainFrame != null) {
+                    ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
+                    if (productDisplay != null) {
+                        productDisplay.refreshProducts();
+                    }
                     // Pindah ke panel product
                     mainFrame.switchBackToProductPanel();
                 }

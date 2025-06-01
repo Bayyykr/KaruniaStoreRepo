@@ -1617,4 +1617,14 @@ public class ProductDisplayy extends javax.swing.JPanel {
 
     }
 
+    public void refreshProducts() {
+        // Reinitialize all category panels with fresh data
+        initializeCategoryPanels();
+
+        // Show the currently active tab again to refresh its content
+        if (activeTab != null && activeTab.getComponent(0) instanceof JButton) {
+            String activeCategory = ((JButton) activeTab.getComponent(0)).getText();
+            switchCategory(activeCategory);
+        }
+    }
 }
