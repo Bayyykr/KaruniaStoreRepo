@@ -554,7 +554,7 @@ public class PopUp_DashboardKaryawanStokOpname extends JDialog {
     try {
         jumlahProduk = Integer.parseInt(angka);
     } catch (NumberFormatException e) {
-        PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+        PindahanAntarPopUp.showDashboardKaryawanFieldJumlahTidakBolehLebihDari11(parentFrame);
         return false;
     }
 

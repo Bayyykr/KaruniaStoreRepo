@@ -80,7 +80,7 @@ public class PopUp_SmallAturDiskonOwnerAngkaHarus0sampai100 extends JDialog {
         contentPanel.add(successLabel);
 
         // Label deskripsi
-        descriptionLabel = createTextLabel("Nilai Diskon Harus 0 - 100!!", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
+        descriptionLabel = createTextLabel("Nilai Diskon Harus 1 - 100!!", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
         contentPanel.add(descriptionLabel);
 
         // Label close (X) - di pojok kanan atas

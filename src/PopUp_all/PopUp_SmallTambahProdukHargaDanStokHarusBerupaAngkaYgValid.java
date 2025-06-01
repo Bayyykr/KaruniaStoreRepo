@@ -80,7 +80,7 @@ public class PopUp_SmallTambahProdukHargaDanStokHarusBerupaAngkaYgValid extends 
         contentPanel.add(successLabel);
 
         // Label deskripsi
-        descriptionLabel = createTextLabel("Ukuran dan stok harus berupa angka", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
+        descriptionLabel = createTextLabel("Ukuran atau stok harus berupa angka", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
         contentPanel.add(descriptionLabel);
 
         // Label close (X) - di pojok kanan atas

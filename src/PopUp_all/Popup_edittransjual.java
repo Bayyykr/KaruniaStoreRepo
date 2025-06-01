@@ -21,7 +21,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
 public class Popup_edittransjual extends JDialog {
-
+    
     private JComponent glassPane;
     private static final int RADIUS = 20;
     private JButton cancelButton, updateButton;
@@ -29,7 +29,7 @@ public class Popup_edittransjual extends JDialog {
     private ComboboxCustom productComboBox;
     private JFrame parentFrame;
     private JLabel titleLabel, diskonLabel, qtyLabel;
-
+    
     private int xMouse, yMouse;
     private final int ANIMATION_DURATION = 300; // ms
     private final int ANIMATION_DELAY = 10; // ms
@@ -53,7 +53,7 @@ public class Popup_edittransjual extends JDialog {
 
     // Flag untuk menghindari penambahan glassPane berulang
     private static boolean isShowingPopup = false;
-
+    
     public Popup_edittransjual(JFrame parent, JTable table, int selectedRow) {
         this.parentFrame = parent;
         this.table = table;
@@ -62,7 +62,7 @@ public class Popup_edittransjual extends JDialog {
         setPreferredSize(new Dimension(FINAL_WIDTH, FINAL_HEIGHT));
         setLayout(null);
         con = conn.getConnection();
-        
+
         // Menggunakan titik sebagai pemisah ribuan, bukan koma
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setGroupingSeparator('.');
@@ -100,9 +100,9 @@ public class Popup_edittransjual extends JDialog {
 
         // Menghapus glassPane yang mungkin sudah ada sebelumnya
         cleanupExistingGlassPane();
-
+        
         parentLayeredPane().add(glassPane, JLayeredPane.POPUP_LAYER);
-
+        
         setUndecorated(true); // Menghilangkan border default
         setSize(FINAL_WIDTH, FINAL_HEIGHT);
         setLocationRelativeTo(parent);
@@ -114,8 +114,8 @@ public class Popup_edittransjual extends JDialog {
         contentPanel.setBounds(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
         contentPanel.setBackground(Color.WHITE);
         add(contentPanel);
-
-        titleLabel = createTextLabel("Edit Transaksi Beli", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 16), Color.BLACK);
+        
+        titleLabel = createTextLabel("Edit Transaksi Jual", 20, 10, 400, 30, new Font("Arial", Font.BOLD, 16), Color.BLACK);
         titleLabel.setVisible(false);
         contentPanel.add(titleLabel);
 
@@ -139,7 +139,7 @@ public class Popup_edittransjual extends JDialog {
                 PreparedStatement ps = con.prepareStatement(query);
                 ps.setDouble(1, Double.parseDouble(discountValue));
                 ResultSet rs = ps.executeQuery();
-
+                
                 if (rs.next()) {
                     String diskonName = rs.getString("nama_diskon");
                     // Find and select the matching item in the combo box
@@ -160,7 +160,7 @@ public class Popup_edittransjual extends JDialog {
                         }
                     }
                 }
-
+                
                 rs.close();
                 ps.close();
             } catch (SQLException | NumberFormatException ex) {
@@ -175,7 +175,7 @@ public class Popup_edittransjual extends JDialog {
                 System.err.println("Error matching discount value: " + ex.getMessage());
             }
         }
-
+        
         contentPanel.add(productComboBox);
 
         // Tambahkan label Qty di luar textfield
@@ -190,6 +190,19 @@ public class Popup_edittransjual extends JDialog {
         quantityField.setText(currentQty);
         quantityField.setBounds(105, 140, 226, 35);
         quantityField.setVisible(false);
+
+        // Tambahkan KeyListener untuk validasi real-time pada quantity field
+        quantityField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                // Hanya izinkan angka dan backspace
+                if (!Character.isDigit(c) && c != KeyEvent.VK_BACK_SPACE) {
+                    e.consume();
+                }
+            }
+        });
+        
         contentPanel.add(quantityField);
 
         // Menginisialisasi tombol Cancel dan Update
@@ -209,8 +222,10 @@ public class Popup_edittransjual extends JDialog {
         updateButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                updateTableData();  // Call method to update table data
-                startCloseAnimation();
+                if (validateInput()) {
+                    updateTableData();  // Call method to update table data
+                    startCloseAnimation();
+                }
             }
         });
         contentPanel.add(updateButton);
@@ -226,29 +241,50 @@ public class Popup_edittransjual extends JDialog {
         // Memulai animasi setelah pop-up muncul
         startScaleAnimation();  // Memulai animasi
     }
+    
+    //Validasi field edit
+    private boolean validateInput() {
+        String qtyText = quantityField.getText().trim();
+        
+        if (qtyText.isEmpty()) {
+            PindahanAntarPopUp.showTransBeliQuantityTidakBolehKosong(parentFrame);
+            quantityField.requestFocus();
+            return false;
+        }
+        
+        int qty;
+        try {
+            qty = Integer.parseInt(qtyText);
+        } catch (NumberFormatException ex) {
+            PindahanAntarPopUp.showTransBeliEditQtyHarusAngka(parentFrame);
+            quantityField.requestFocus();
+            return false;
+        }
+        
+        if (qty <= 0) {
+            PindahanAntarPopUp.showTransBeliQuantityHarusLebihDari0(parentFrame);
+            quantityField.requestFocus();
+            return false;
+        }
+        PindahanAntarPopUp.showProdukBerhasilDiedit(parentFrame);
+        return true;
+    }
+    
+    private void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error Validasi", JOptionPane.ERROR_MESSAGE);
+    }
 
     // Method to update the table data with new discount and quantity
     private void updateTableData() {
         try {
             DefaultTableModel model = (DefaultTableModel) table.getModel();
-
-            // Get the new quantity
-            int newQty;
-            try {
-                newQty = Integer.parseInt(quantityField.getText());
-                if (newQty <= 0) {
-                    JOptionPane.showMessageDialog(this, "Quantity harus lebih dari 0", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Quantity harus berupa angka", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            
+            int newQty = Integer.parseInt(quantityField.getText().trim());
 
             // Get the new discount
             String diskonText = productComboBox.getSelectedItem().toString();
             double diskon = 0;
-
+            
             if (!diskonText.isEmpty()) {
                 // Get the actual discount percentage from database based on the selected name
                 try {
@@ -256,7 +292,7 @@ public class Popup_edittransjual extends JDialog {
                     PreparedStatement ps = con.prepareStatement(query);
                     ps.setString(1, diskonText);
                     ResultSet rs = ps.executeQuery();
-
+                    
                     if (rs.next()) {
                         diskon = rs.getDouble("total_diskon");
                     } else {
@@ -265,7 +301,7 @@ public class Popup_edittransjual extends JDialog {
                             diskon = Double.parseDouble(diskonText.replace("%", ""));
                         }
                     }
-
+                    
                     rs.close();
                     ps.close();
                 } catch (SQLException ex) {
@@ -289,7 +325,7 @@ public class Popup_edittransjual extends JDialog {
             model.setValueAt(newQty, selectedRow, 3);
             model.setValueAt(diskonDisplay, selectedRow, 5);
             model.setValueAt("Rp. " + formatter.format(totalPrice), selectedRow, 6);
-
+            
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error updating data: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
@@ -306,26 +342,26 @@ public class Popup_edittransjual extends JDialog {
         }
         parentLayeredPane().repaint();
     }
-
+    
     private void startScaleAnimation() {
         if (animationStarted || (animationTimer != null && animationTimer.isRunning())) {
             return;
         }
-
+        
         animationStarted = true;
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
-
+        
         animationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentFrame[0]++;
-
+                
                 float progress = (float) currentFrame[0] / totalFrames;
                 float easedProgress = 1 - (1 - progress) * (1 - progress) * (1 - progress);  // Easing untuk efek zoom-in
 
                 currentScale = 0.01f + 0.99f * easedProgress;
-
+                
                 if (progress >= 0.3 && !titleLabel.isVisible()) {
                     titleLabel.setVisible(true);
                     diskonLabel.setVisible(true);
@@ -335,13 +371,13 @@ public class Popup_edittransjual extends JDialog {
                     cancelButton.setVisible(true);
                     updateButton.setVisible(true);
                 }
-
+                
                 repaint();
-
+                
                 if (currentFrame[0] >= totalFrames) {
                     animationTimer.stop();
                     currentScale = 1.0f;
-
+                    
                     titleLabel.setVisible(true);
                     diskonLabel.setVisible(true);
                     productComboBox.setVisible(true);
@@ -349,45 +385,45 @@ public class Popup_edittransjual extends JDialog {
                     quantityField.setVisible(true);
                     cancelButton.setVisible(true);
                     updateButton.setVisible(true);
-
+                    
                     repaint();
                 }
             }
         });
-
+        
         animationTimer.start();  // Memulai animasi zoom-in
     }
-
+    
     private void startCloseAnimation() {
         if (closeAnimationTimer != null && closeAnimationTimer.isRunning()) {
             closeAnimationTimer.stop();
         }
-
+        
         final int totalFrames = ANIMATION_DURATION / ANIMATION_DELAY;
         final int[] currentFrame = {0};
-
+        
         closeAnimationTimer = new Timer(ANIMATION_DELAY, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentFrame[0]++;
-
+                
                 float progress = (float) currentFrame[0] / totalFrames;
                 float easedProgress = progress * progress;  // Easing untuk animasi halus
 
                 currentScale = 1.0f - 0.99f * easedProgress;  // Zoom-out dari tengah
 
                 repaint();
-
+                
                 if (currentFrame[0] >= totalFrames) {
                     closeAnimationTimer.stop();  // Menghentikan timer animasi
                     cleanupAndClose();
                 }
             }
         });
-
+        
         closeAnimationTimer.start();  // Memulai animasi zoom-out
     }
-
+    
     private void cleanupAndClose() {
         // Reset flag saat popup ditutup
         isShowingPopup = false;
@@ -398,16 +434,16 @@ public class Popup_edittransjual extends JDialog {
         // Tutup dialog
         dispose();
     }
-
+    
     private void closePopup() {
         parentLayeredPane().remove(glassPane);
         parentLayeredPane().repaint();
     }
-
+    
     private JLayeredPane parentLayeredPane() {
         return parentFrame.getLayeredPane();
     }
-
+    
     private JButton createRoundedButton(String text, int x, int y, int width, int height, Color bgColor, Color textColor) {
         JButton button = new JButton(text) {
             @Override
@@ -444,25 +480,25 @@ public class Popup_edittransjual extends JDialog {
         label.setForeground(color);
         return label;
     }
-
+    
     class RoundedPanel extends JPanel {
-
+        
         private int radius;
-
+        
         public RoundedPanel(int radius) {
             this.radius = radius;
             setOpaque(false);
         }
-
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+            
             if (animationStarted) {
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-
+                
                 AffineTransform originalTransform = g2.getTransform();
                 g2.translate(centerX, centerY);
                 g2.scale(currentScale, currentScale);
@@ -471,34 +507,34 @@ public class Popup_edittransjual extends JDialog {
                 // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-
+                
                 g2.setTransform(originalTransform);
             } else {
                 // Draw background with rounded corners
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             }
-
+            
             g2.dispose();
         }
-
+        
         @Override
         protected void paintChildren(Graphics g) {
             if (animationStarted && currentScale < 0.3) {
                 return;
             }
-
+            
             if (animationStarted) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+                
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
-
+                
                 g2d.translate(centerX, centerY);
                 g2d.scale(currentScale, currentScale);
                 g2d.translate(-centerX, -centerY);
-
+                
                 super.paintChildren(g2d);
                 g2d.dispose();
             } else {
@@ -509,11 +545,11 @@ public class Popup_edittransjual extends JDialog {
 
     // Kelas JTextField kustom dengan border rounded + placeholder
     static class RoundedTextField extends JTextField {
-
+        
         private int radius;
         private String placeholder;
         private boolean isPlaceholderActive;
-
+        
         public RoundedTextField(int radius, String placeholder) {
             super(placeholder);
             this.radius = radius;
@@ -522,7 +558,7 @@ public class Popup_edittransjual extends JDialog {
             setForeground(Color.GRAY);
             setOpaque(false);
             setBorder(new EmptyBorder(5, 10, 5, 10));
-
+            
             addFocusListener(new FocusListener() {
                 @Override
                 public void focusGained(FocusEvent e) {
@@ -532,7 +568,7 @@ public class Popup_edittransjual extends JDialog {
                         isPlaceholderActive = false;
                     }
                 }
-
+                
                 @Override
                 public void focusLost(FocusEvent e) {
                     if (getText().isEmpty()) {
@@ -543,7 +579,7 @@ public class Popup_edittransjual extends JDialog {
                 }
             });
         }
-
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -556,7 +592,7 @@ public class Popup_edittransjual extends JDialog {
             super.paintComponent(g);
         }
     }
-
+    
     private String[] getDiscountOptionsFromDatabase() {
         try {
             // Query to get distinct discount options from database
@@ -572,10 +608,10 @@ public class Popup_edittransjual extends JDialog {
                 String diskonValue = rs.getString("nama_diskon");
                 options.add(diskonValue);
             }
-
+            
             rs.close();
             ps.close();
-
+            
             return options.toArray(new String[0]);
         } catch (SQLException ex) {
             System.err.println("Error fetching discount options: " + ex.getMessage());

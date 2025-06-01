@@ -80,7 +80,7 @@ public class PopUp_SmallTransBeliEditQtyHarusAngka extends JDialog {
         contentPanel.add(successLabel);
 
         // Label deskripsi
-        descriptionLabel = createTextLabel("Quantity Harus Berupa Angka!!", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
+        descriptionLabel = createTextLabel("Quantity Harus Berupa Angka Yang Valid!!", 40, 25, 250, 20, new Font("poppins", Font.PLAIN, 11), new Color(90, 90, 90));
         contentPanel.add(descriptionLabel);
 
         // Label close (X) - di pojok kanan atas

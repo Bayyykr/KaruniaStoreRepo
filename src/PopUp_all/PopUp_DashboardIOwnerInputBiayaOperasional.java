@@ -493,15 +493,24 @@ public class PopUp_DashboardIOwnerInputBiayaOperasional extends JDialog {
         simpanButton = createRoundedButton("Simpan Perubahan", 450, 530, 220, 40,
                 new Color(40, 190, 100), Color.WHITE);
         simpanButton.addActionListener(e -> {
-            if (catatanArea.getText().trim().equals("") || totalField.getText().trim().equals("Rp.")) {
-                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parent);
-                System.out.println("harus diisi");
-            } else {
-                System.out.println("ELSE DI EKSEKUSI");
-                insertDataBiaya();
-                startCloseAnimation();
-            }
-        });
+        String totalText = totalField.getText().trim().replace("Rp.", "").replace(".", "").replace(",", "").replace(" ", "");   
+
+        int totalValue = 0;
+        try {
+            totalValue = Integer.parseInt(totalText);
+        } catch (NumberFormatException ex) {
+            totalValue = 0;
+        }
+
+        if (catatanArea.getText().trim().equals("") || totalField.getText().trim().equals("Rp.") || totalValue == 0) {
+            PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parent);
+            System.out.println("harus diisi");
+        } else {
+            System.out.println("ELSE DI EKSEKUSI");
+            insertDataBiaya();
+            startCloseAnimation();
+        }
+    });
 
         contentPanel.add(simpanButton);
 

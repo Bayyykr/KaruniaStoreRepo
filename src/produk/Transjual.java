@@ -327,7 +327,6 @@ public class Transjual extends JPanel {
                         if (selectedRow != -1) {
                             handleEditTransaksi(selectedRow);
                             hitungKembalian();
-                            PindahanAntarPopUp.showProdukBerhasilDiedit(parentFrame);
                         } else {
                             JOptionPane.showMessageDialog(Transjual.this,
                                     "Pilih baris yang ingin diedit terlebih dahulu",
