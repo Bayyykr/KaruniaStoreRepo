@@ -39,6 +39,7 @@ import java.sql.*;
 import PopUp_all.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -46,6 +47,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.PlainDocument;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class EditProductPanel extends JPanel {
 
@@ -69,7 +72,6 @@ public class EditProductPanel extends JPanel {
     private JLabel imagePreview;
     private JButton btnRemoveImage;
     private JPanel uploadInstructionsPanel;
-    private String defaultImagePath = "/SourceImage/gambar_sepatu.png";
 
     // Current style options and index
     private String[] currentStyleOptions = {""};
@@ -1464,37 +1466,32 @@ public class EditProductPanel extends JPanel {
 
                     // Handle product image
                     try {
-                        // Try to get image as BLOB
                         Blob imageBlob = rs.getBlob("gambar");
-
                         if (imageBlob != null && imageBlob.length() > 0) {
+                            // Always show upload panel for default image
+                            // (remove the comparison with default image)
                             try (InputStream is = imageBlob.getBinaryStream()) {
                                 BufferedImage originalImage = ImageIO.read(is);
                                 if (originalImage != null) {
-                                    // Resize image to fit preview area
+                                    // Show the image only if it's not null
                                     Image resizedImage = originalImage.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
                                     displayedImage = new ImageIcon(resizedImage);
-
-                                    // Show image
                                     imagePreview.setIcon(displayedImage);
-
-                                    // Update UI
                                     uploadInstructionsPanel.setVisible(false);
                                     imagePreview.setVisible(true);
                                     btnRemoveImage.setVisible(true);
-
-                                    // Update photo count label
                                     lblPhotoCount.setText("foto maks (1/1)");
-
-                                    System.out.println("Successfully loaded image from BLOB");
                                 } else {
+                                    // If image is null, show upload panel
                                     removeSelectedImage();
                                 }
                             } catch (Exception e) {
+                                // If there's any error reading image, show upload panel
                                 removeSelectedImage();
                                 e.printStackTrace();
                             }
                         } else {
+                            // No image, show upload panel
                             removeSelectedImage();
                         }
                     } catch (SQLException e) {
@@ -1659,7 +1656,11 @@ public class EditProductPanel extends JPanel {
                                 + "nama_produk = ?, harga_jual = ?, harga_beli = ?, merk = ?, size = ?, "
                                 + "gender = ?, jenis_produk = ?, id_style = ?";
 
+                        // Handle image update - either new image, default image, or no change
                         if (displayedImage != null) {
+                            sql += ", gambar = ?";
+                        } else if (uploadInstructionsPanel.isVisible()) {
+                            // User removed the image - set to default image
                             sql += ", gambar = ?";
                         }
 
@@ -1676,7 +1677,9 @@ public class EditProductPanel extends JPanel {
                             stmt.setString(8, styleId);
 
                             int paramIndex = 9;
+
                             if (displayedImage != null) {
+                                // User selected a new image
                                 Image img = ((ImageIcon) displayedImage).getImage();
                                 BufferedImage bufferedImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_RGB);
                                 Graphics g = bufferedImage.createGraphics();
@@ -1685,6 +1688,9 @@ public class EditProductPanel extends JPanel {
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                                 ImageIO.write(bufferedImage, "jpg", baos);
                                 stmt.setBytes(paramIndex++, baos.toByteArray());
+                            } else if (uploadInstructionsPanel.isVisible()) {
+                                // User removed the image - set to generated path (same as AddNewProductFormm)
+                                stmt.setString(paramIndex++, generateDefaultImagePath());
                             }
 
                             stmt.setString(paramIndex, kode);
@@ -1763,4 +1769,11 @@ public class EditProductPanel extends JPanel {
             e.printStackTrace();
         }
     }
+
+    private String generateDefaultImagePath() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        String timestamp = dateFormat.format(new Date());
+        return "SourceCode/products/" + timestamp + "gambar_sepatu.png";
+    }
+
 }
