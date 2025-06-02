@@ -121,8 +121,8 @@ public class Menu extends javax.swing.JPanel {
         // Menu tambahan hanya untuk owner
         if (!isKasir) {
             listMenu.addItem(new Model_Menu("karyawan", "Karyawan", Model_Menu.MenuType.MENU));
-            listMenu.addItem(new Model_Menu("laporan", "Laporan", Model_Menu.MenuType.MENU));
             listMenu.addItem(new Model_Menu("restock", "Restok", Model_Menu.MenuType.MENU));
+            listMenu.addItem(new Model_Menu("laporan", "Laporan", Model_Menu.MenuType.MENU));
         }
         
         // Menu keluar untuk semua pengguna

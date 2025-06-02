@@ -156,10 +156,10 @@ public class Productt extends JFrame {
                     case 2:
                         currentPanel = karyawanPanel;
                         break;
-                    case 3:
+                    case 4:
                         currentPanel = laporanPanel;
                         break;
-                    case 4:
+                    case 3:
                         currentPanel = transaksiBeli;
                         break;
                     default:
