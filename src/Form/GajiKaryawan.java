@@ -250,85 +250,84 @@ public class GajiKaryawan extends JPanel {
         tableModel.setRowCount(0); // Clear any existing rows
         table.setRowHeight(50);
         // Renderer untuk alignment tengah yang mempertahankan warna seleksi dan zebra stripping
-DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value,
-            boolean isSelected, boolean hasFocus, int row, int column) {
-        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        
-        // Pertahankan warna seleksi dan zebra stripping dari renderer default
-        if (isSelected) {
-            c.setBackground(table.getSelectionBackground());
-            c.setForeground(table.getSelectionForeground());
-        } else {
-            c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
-            c.setForeground(table.getForeground());
-        }
-        
-        // Set alignment tengah
-        ((JLabel)c).setHorizontalAlignment(JLabel.CENTER);
-        return c;
-    }
-};
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // Pertahankan warna seleksi dan zebra stripping dari renderer default
+                if (isSelected) {
+                    c.setBackground(table.getSelectionBackground());
+                    c.setForeground(table.getSelectionForeground());
+                } else {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+                    c.setForeground(table.getForeground());
+                }
+
+                // Set alignment tengah
+                ((JLabel) c).setHorizontalAlignment(JLabel.CENTER);
+                return c;
+            }
+        };
 
 // Renderer khusus untuk Status Gaji dengan warna teks
-DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value,
-            boolean isSelected, boolean hasFocus, int row, int column) {
-        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        
-        // Pertahankan warna background
-        if (isSelected) {
-            c.setBackground(table.getSelectionBackground());
-            c.setForeground(table.getSelectionForeground());
-        } else {
-            c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
-            c.setForeground(table.getForeground());
-        }
-        
-        // Style khusus untuk status gaji
+        DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // Pertahankan warna background
+                if (isSelected) {
+                    c.setBackground(table.getSelectionBackground());
+                    c.setForeground(table.getSelectionForeground());
+                } else {
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+                    c.setForeground(table.getForeground());
+                }
+
+                // Style khusus untuk status gaji
 //        c.setFont(c.getFont().deriveFont(Font.BOLD));
 //        if (value != null && value.toString().equals("Sudah Dibayar")) {
 //            c.setForeground(new Color(40, 167, 69)); // Hijau
 //        } else {
 //            c.setForeground(new Color(220, 53, 69)); // Merah
 //        }
-        
-        ((JLabel)c).setHorizontalAlignment(JLabel.CENTER);
-        return c;
-    }
-};
+                ((JLabel) c).setHorizontalAlignment(JLabel.CENTER);
+                return c;
+            }
+        };
 
 // Terapkan renderer ke kolom yang ingin ditengahkan
-table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); 
-table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer); 
-table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); 
-table.getColumnModel().getColumn(4).setCellRenderer(statusRenderer);  
+        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(4).setCellRenderer(statusRenderer);
 
-table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
 
-table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value,
-            boolean isSelected, boolean hasFocus, int row, int column) {
-        Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        if (column == 5) {
-            return comp;
-        }
-        // Jika seleksi, gunakan warna seleksi
-        if (isSelected) {
-            comp.setBackground(table.getSelectionBackground());
-            comp.setForeground(table.getSelectionForeground());
-        } else {
-            // Jika tidak diseleksi, gunakan warna zebra-striping
-            comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
-            comp.setForeground(table.getForeground());
-        }
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (column == 5) {
+                    return comp;
+                }
+                // Jika seleksi, gunakan warna seleksi
+                if (isSelected) {
+                    comp.setBackground(table.getSelectionBackground());
+                    comp.setForeground(table.getSelectionForeground());
+                } else {
+                    // Jika tidak diseleksi, gunakan warna zebra-striping
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(240, 240, 240));
+                    comp.setForeground(table.getForeground());
+                }
 
-        return comp;
-    }
-});
+                return comp;
+            }
+        });
         loadDataKaryawan();
 
         // Customize table columns
@@ -733,7 +732,7 @@ table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
                     originalEmployeeData.add(row.clone());
                 }
             }
-            
+
             String searchText = searchField.getText();
             if (!searchText.equals("Search") && !searchText.isEmpty()) {
                 applySearchFilter();
@@ -840,7 +839,7 @@ table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
                 hasAttendance = (count > 0);
 
                 if (count == 0) {
-                     JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
                     PopUp_GajiKaryawanBelumMelakukanAbsensiPdaBulanIni Absensi = new PopUp_GajiKaryawanBelumMelakukanAbsensiPdaBulanIni(parentFrame);
                     Absensi.setVisible(true);
                     System.out.println("Karyawan dengan NORFID " + norfid + " tidak memiliki data absensi pada bulan ini.");
@@ -939,5 +938,10 @@ table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
                 tableModel.addRow(row);
             }
         }
+    }
+
+    public void refreshData() {
+        loadDataKaryawan(); // Memuat ulang data dari database
+        tableModel.fireTableDataChanged(); // Memperbarui tampilan tabel
     }
 }

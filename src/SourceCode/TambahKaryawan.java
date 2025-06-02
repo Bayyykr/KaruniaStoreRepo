@@ -1,5 +1,8 @@
 package SourceCode;
 
+import Form.AbsenKaryawan;
+import Form.GajiKaryawan;
+import Form.Productt;
 import PopUp_all.PindahanAntarPopUp;
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
@@ -635,13 +638,13 @@ public class TambahKaryawan extends javax.swing.JDialog {
                     emailField.requestFocus();
                     return;
                 }
-                
-                 if (pw.length() > 20) {
+
+                if (pw.length() > 20) {
                     PindahanAntarPopUp.showEditDataKaryawanPassswordTidakLebihDari20karakter(parentFrame);
                     passwordField.requestFocus();
                     return;
                 }
-                 if (no.length() > 16) {
+                if (no.length() > 16) {
                     PindahanAntarPopUp.showDataKaryawanNoRFIDTIdakBolehLebihDari16(parentFrame);
                     passwordField.requestFocus();
                     return;
@@ -685,6 +688,16 @@ public class TambahKaryawan extends javax.swing.JDialog {
                         if (rowInserted > 0) {
                             wasDataAdded = true;
                             PindahanAntarPopUp.showTambahKaryawanBerhasilDiTambah(parentFrame);
+                            Productt mainFrame = Productt.getMainFrame();
+                            AbsenKaryawan absen = mainFrame.getAbsenPanel();
+                            if (absen != null) {
+                                absen.refreshData();
+                            }
+
+                            GajiKaryawan gaji = mainFrame.getGajiPanel();
+                            if (gaji != null) {
+                                gaji.refreshData();
+                            }
                             startCloseAnimation();
                         }
                     }

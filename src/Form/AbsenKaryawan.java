@@ -1084,4 +1084,9 @@ public class AbsenKaryawan extends JPanel {
         // Load data untuk bulan ini
         loadDataFromDatabase();
     }
+
+    public void refreshData() {
+        loadDataFromDatabase(); // Memuat ulang data dari database
+        initializeCurrentMonthView(); // Menginisialisasi tampilan bulan saat ini
+    }
 }

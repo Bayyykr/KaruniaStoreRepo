@@ -235,7 +235,7 @@ public class DataKaryawan extends JPanel {
 
         // Get the JTable from JTableRounded
         JTable table = employeeTable.getTable();
-        
+
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for (int i = 0; i <= 6; i++) { // Kolom 2-6 (nama, email, password, no hp, alamat)
@@ -525,6 +525,16 @@ public class DataKaryawan extends JPanel {
 
                         if (HapusData.wasDataDeleted) {
                             getData();  // Refresh table data
+                            Productt mainFrame = Productt.getMainFrame();
+                            AbsenKaryawan absen = mainFrame.getAbsenPanel();
+                            if (absen != null) {
+                                absen.refreshData();
+                            }
+
+                            GajiKaryawan gaji = mainFrame.getGajiPanel();
+                            if (gaji != null) {
+                                gaji.refreshData();
+                            }
                         }
                     }
                 });
@@ -663,7 +673,7 @@ public class DataKaryawan extends JPanel {
         String searchText = searchField.getText();
         if (searchText.equals("search") || searchText.isEmpty()) {
             getData();
-            return; 
+            return;
         }
 
         // Clear existing table data
@@ -723,12 +733,12 @@ public class DataKaryawan extends JPanel {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
     private DefaultTableCellRenderer createCenterRenderer() {
-    DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-    centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-    return centerRenderer;
-}
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        return centerRenderer;
+    }
 
     public void refreshTable() {
         searchField.setText("Search");

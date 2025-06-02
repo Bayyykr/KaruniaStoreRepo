@@ -1,5 +1,8 @@
 package SourceCode;
 
+import Form.AbsenKaryawan;
+import Form.GajiKaryawan;
+import Form.Productt;
 import PopUp_all.PindahanAntarPopUp;
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
@@ -425,6 +428,16 @@ public class PopUp_EditKaryawan extends javax.swing.JDialog {
                         if (rowUpdate > 0) {
                             wasDataUpdated = true;
                             PindahanAntarPopUp.showEditKaryawanSuksesDiEdit(parentFrame);
+                            Productt mainFrame = Productt.getMainFrame();
+                            AbsenKaryawan absen = mainFrame.getAbsenPanel();
+                            if (absen != null) {
+                                absen.refreshData();
+                            }
+                            
+                            GajiKaryawan gaji = mainFrame.getGajiPanel();
+                            if (gaji != null) {
+                                gaji.refreshData();
+                            }
                             startCloseAnimation();
                         }
                     }

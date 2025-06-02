@@ -386,6 +386,14 @@ public class Productt extends JFrame {
         return deleteProductPanel;
     }
 
+    public AbsenKaryawan getAbsenPanel() {
+        return this.absenpanel;
+    }
+    
+    public GajiKaryawan getGajiPanel() {
+        return this.gajikaryawan;
+    }
+
     public static void main(String args[]) {
         SwingUtilities.invokeLater(() -> {
             new Productt().setVisible(true);
