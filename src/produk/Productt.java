@@ -16,6 +16,7 @@ import produk.ProductDisplayy;
 import produk.AddNewProductFormm;
 import produk.ProductDisplayyKasir;
 import Form.Laporan;
+import java.awt.Component;
 import produk.EditProductPanel;
 
 public class Productt extends JFrame {
@@ -49,17 +50,14 @@ public class Productt extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         getContentPane().setBackground(Color.WHITE);
         setSize(screenSize);
         setLayout(null);
 
-        
         Menu sidebar = new Menu();
         NavBarAtas top = new NavBarAtas();
 
-        
         dashboardPanel = new Dashboard();
         dashboardPanelKasir = new DashboardKasir();
         produkPanelkasir = new ProductDisplayyKasir();
@@ -128,16 +126,16 @@ public class Productt extends JFrame {
         gajikaryawan.setBackToDataKaryawan(() -> {
             switchToDataKaryawan();
         });
-        
+
         dashboardPanel.setToBackLaporan(() -> {
             switchToLaporanPanel();
         });
-        
+
         // Add menu change event listener
         sidebar.addEventMenu(new EventMenu() {
             @Override
             public void menuIndexChange(int index) {
-                if (index == 5) { 
+                if (index == 5) {
                     Popup_LogOutOwner dialog = new Popup_LogOutOwner(Productt.this);
                     dialog.setVisible(true);
                     return;
@@ -302,6 +300,7 @@ public class Productt extends JFrame {
         revalidate();
         repaint();
     }
+
     public void switchBackToLoginPanel() {
         this.dispose();
         LoginForm loginForm = LoginForm.getInstance();
@@ -309,6 +308,7 @@ public class Productt extends JFrame {
         loginForm.setVisible(true);
         loginForm.setLocationRelativeTo(null);
     }
+
     // Method untuk kembali ke panel produk
     public void switchBackToProductPanelKasir() {
         if (currentPanel != null) {
@@ -361,6 +361,7 @@ public class Productt extends JFrame {
         revalidate();
         repaint();
     }
+
     public void switchToLaporanPanel() {
         if (currentPanel != null) {
             remove(currentPanel);
@@ -373,9 +374,16 @@ public class Productt extends JFrame {
         revalidate();
         repaint();
     }
-    
+
     public ProductDisplayy getProductDisplayPanel() {
         return this.produkPanel;
+    }
+
+    public DeleteProductPanel getDeleteProductPanel() {
+        if (deleteProductPanel == null) {
+            deleteProductPanel = new DeleteProductPanel();
+        }
+        return deleteProductPanel;
     }
 
     public static void main(String args[]) {

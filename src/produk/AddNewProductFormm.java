@@ -20,6 +20,7 @@ import javax.swing.border.*;
 import java.io.File;
 import java.lang.reflect.Field;
 import Form.Productt;
+import Form.DeleteProductPanel;
 import PopUp_all.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -51,6 +52,10 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Locale;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -1335,14 +1340,15 @@ public class AddNewProductFormm extends JPanel {
                 String productId = currentBarcodeValue;
                 String category = convertCategory((String) cbCategory.getSelectedItem());
                 String gender = getSelectedGender();
-                String imagePath = selectedImageFile != null ? saveImageToServer(selectedImageFile) : "";
+                byte[] imageData = selectedImageFile != null ? saveImageToServer(selectedImageFile) : null;
+
                 // Parse prices
                 double hargaJual = parsePrice(txtHargaJual.getText().trim(), "Harga jual tidak boleh kosong.");
                 double hargaBeli = parsePrice(txtHargaBeli.getText().trim(), "Harga beli tidak boleh kosong.");
 
                 insertProduct(productId, txtMerk.getText().trim(), category,
                         txtUkuran.getText().trim(), gender,
-                        selectedImageFile != null ? imagePath : "default.jpg",
+                        imageData,
                         txtNamaProduct.getText().trim(), hargaJual, hargaBeli,
                         getStyleIdFromName(currentStyleOptions[currentStyleIndex]));
 
@@ -1359,7 +1365,11 @@ public class AddNewProductFormm extends JPanel {
                     if (productDisplay != null) {
                         productDisplay.refreshProducts();
                     }
-                    // Pindah ke panel product
+
+                    DeleteProductPanel deletePanel = mainFrame.getDeleteProductPanel();
+                    if (deletePanel != null) {
+                        deletePanel.refreshProducts();
+                    }
                     mainFrame.switchBackToProductPanel();
                 }
 
@@ -1528,30 +1538,70 @@ public class AddNewProductFormm extends JPanel {
         return true;
     }
 
-    private String saveImageToServer(File imageFile) {
+    private byte[] saveImageToServer(File imageFile) {
         if (imageFile == null) {
-            return ""; // Kembalikan string kosong
+            return null;
         }
 
         try {
+            // Baca gambar
             BufferedImage originalImage = ImageIO.read(imageFile);
             if (originalImage == null) {
-                throw new IOException("Format file tidak didukung");
+                throw new IOException("Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.");
             }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(originalImage, "jpg", baos);
 
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            // Dapatkan ekstensi file
+            String fileName = imageFile.getName().toLowerCase();
+            String format = "jpg"; // default
+
+            if (fileName.endsWith(".png")) {
+                format = "png";
+            } else if (fileName.endsWith(".jpeg") || fileName.endsWith(".jpg")) {
+                format = "jpg";
+            }
+
+            // Konversi ke format yang sesuai
+            if (format.equals("png")) {
+                if (!ImageIO.write(originalImage, "png", baos)) {
+                    throw new IOException("Gagal mengkonversi gambar ke PNG");
+                }
+            } else { // JPG/JPEG
+                // Konversi ke JPG dengan kualitas 0.85 (85%)
+                BufferedImage jpgImage = new BufferedImage(
+                        originalImage.getWidth(),
+                        originalImage.getHeight(),
+                        BufferedImage.TYPE_INT_RGB);
+
+                // Convert transparent pixels to white
+                jpgImage.createGraphics().drawImage(originalImage, 0, 0, Color.WHITE, null);
+
+                // Tulis dengan kompresi JPEG
+                ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+                ImageWriteParam param = writer.getDefaultWriteParam();
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                param.setCompressionQuality(0.85f); // Kualitas 85%
+
+                try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+                    writer.setOutput(ios);
+                    writer.write(null, new IIOImage(jpgImage, null, null), param);
+                }
+                writer.dispose();
+            }
+
+            return baos.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Gagal memproses gambar: " + e.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Gagal memproses gambar: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
-            return "";
+            return null;
         }
     }
 
     private void insertProduct(String productId, String merk, String category, String size,
-            String gender, String imageData, String namaProduk,
+            String gender, byte[] imageData, String namaProduk,
             double hargaJual, double hargaBeli, String styleId) throws Exception {
 
         String sql = "INSERT INTO produk (id_produk, merk, jenis_produk, size, gender, gambar, nama_produk, "
@@ -1566,10 +1616,9 @@ public class AddNewProductFormm extends JPanel {
             st.setString(5, gender);
 
             // Handle image data
-            if (imageData != null && !imageData.isEmpty()) {
+            if (imageData != null) {
                 try {
-                    byte[] imageBytes = Base64.getDecoder().decode(imageData);
-                    st.setBytes(6, imageBytes);
+                    st.setBytes(6, imageData);
                 } catch (IllegalArgumentException e) {
                     // Jika decode gagal, simpan path default
                     st.setString(6, generateDefaultImagePath());

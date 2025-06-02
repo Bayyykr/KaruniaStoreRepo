@@ -9,6 +9,7 @@ import java.awt.event.*;
 import javax.swing.border.*;
 import java.io.File;
 import java.lang.reflect.Field;
+import Form.DeleteProductPanel;
 import Form.Productt;
 import PopUp_all.Popup_keluaraddnewproduct;
 import java.awt.datatransfer.DataFlavor;
@@ -1704,6 +1705,11 @@ public class EditProductPanel extends JPanel {
                                     ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
                                     if (productDisplay != null) {
                                         productDisplay.refreshProducts();
+                                    }
+
+                                    DeleteProductPanel deletePanel = mainFrame.getDeleteProductPanel();
+                                    if (deletePanel != null) {
+                                        deletePanel.refreshProducts();
                                     }
                                     mainFrame.switchBackToProductPanel();
                                 }

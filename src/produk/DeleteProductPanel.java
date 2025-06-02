@@ -690,12 +690,12 @@ public class DeleteProductPanel extends JPanel {
                 // class has a method to get the user's choice)
                 if (dialog.isConfirmed()) {  // You may need to adjust this based on your PopUp class implementation
                     // Update status to "tidakdijual" for selected products
+                    deleteSingleProduct(productId);
                     Productt mainFrame = Productt.getMainFrame();
                     ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
                     if (productDisplay != null) {
                         productDisplay.refreshProducts();
                     }
-                    deleteSingleProduct(productId);
                     PindahanAntarPopUp.showHapuskaryawanSuksesDiHapus(parentFrame);
                     // Setelah menghapus, reset mode pilihan
                     selectMode = false;
@@ -827,5 +827,20 @@ public class DeleteProductPanel extends JPanel {
             }
         }
         counterLabel.setText(selectedCount + " Product Selected");
+    }
+
+    public void refreshProducts() {
+        // Reset form state
+        selectMode = false;
+        selectedCount = 0;
+        counterLabel.setText("0 Product Selected");
+        updateButtonsForSelectionMode();
+
+        // Reload products from database
+        String searchTerm = searchField.getText();
+        if (searchTerm.equals("Search")) {
+            searchTerm = "";
+        }
+        loadProductsFromDatabase(searchTerm);
     }
 }
