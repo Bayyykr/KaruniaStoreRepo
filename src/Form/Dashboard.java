@@ -33,7 +33,7 @@ public class Dashboard extends JPanel {
 
     private Runnable setGetLaporanPanel;
     private CardLayout headerCardLayout;
-    private JPanel headerCardsPanel;
+    private JPanel headerCardsPanel, stockPanel;
     private int currentCardIndex = 0;
     private final String[] cardNames = {"welcome", "diskon", "laporan", "barangTelaris"};
 
@@ -183,7 +183,7 @@ public class Dashboard extends JPanel {
         JPanel contentPanel = new JPanel(new BorderLayout(20, 0));
         contentPanel.setBackground(Color.white);
 
-        JPanel stockPanel = createInventoryStockPanel();
+        stockPanel = createInventoryStockPanel();
         stockPanel.setPreferredSize(new Dimension(400, getHeight()));
 
         // Create a wrapper panel with a 50px left margin
@@ -884,86 +884,15 @@ public class Dashboard extends JPanel {
         }
     }
 
-    public void refreshDashboardData() {
-        // Refresh semua komponen yang perlu diupdate
-        refreshHeaderCards();
-        refreshStockPanel();
-        refreshChartData();
+    public void refreshDashboard() {
+        // Remove existing components
+        removeAll();
 
-        // Jika ada komponen lain yang perlu direfresh, tambahkan di sini
-    }
+        // Reinitialize components
+        initComponents();
 
-    private void refreshHeaderCards() {
-        // Hapus dan buat ulang header cards
-        headerCardsPanel.removeAll();
-
-        JPanel welcomeHeaderPanel = createWelcomeHeader();
-        JPanel diskonPanel = createAturDiskon();
-        JPanel cekLaporanPanel = createLaporanSlidee();
-        JPanel barangTelarisPanelSlide = createBarangTerlaris();
-
-        headerCardsPanel.add(welcomeHeaderPanel, "welcome");
-        headerCardsPanel.add(diskonPanel, "diskon");
-        headerCardsPanel.add(cekLaporanPanel, "laporan");
-        headerCardsPanel.add(barangTelarisPanelSlide, "barangTelaris");
-
-        // Kembali ke card awal
-        currentCardIndex = 0;
-        headerCardLayout.show(headerCardsPanel, cardNames[currentCardIndex]);
-
-        // Update nama user jika berubah
-        setNamaUser();
-    }
-
-    private void refreshStockPanel() {
-        // Cari komponen stock panel di hierarchy komponen
-        Component[] components = getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JPanel) {
-                JPanel mainPanel = (JPanel) comp;
-                Component[] subComponents = mainPanel.getComponents();
-                for (Component subComp : subComponents) {
-                    if (subComp instanceof JPanel && subComp.getName() != null && subComp.getName().equals("stockPanelWrapper")) {
-                        // Hapus dan buat ulang stock panel
-                        JPanel stockPanelWrapper = (JPanel) subComp;
-                        stockPanelWrapper.removeAll();
-                        JPanel newStockPanel = createInventoryStockPanel();
-                        stockPanelWrapper.add(newStockPanel, BorderLayout.CENTER);
-
-                        stockPanelWrapper.revalidate();
-                        stockPanelWrapper.repaint();
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    private void refreshChartData() {
-        // Cari komponen chart panel di hierarchy komponen
-        Component[] components = getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JPanel) {
-                JPanel mainPanel = (JPanel) comp;
-                Component[] subComponents = mainPanel.getComponents();
-                for (Component subComp : subComponents) {
-                    if (subComp instanceof JPanel && subComp.getName() != null && subComp.getName().equals("chartPanelWrapper")) {
-                        // Hapus dan buat ulang chart panel
-                        JPanel chartPanelWrapper = (JPanel) subComp;
-                        chartPanelWrapper.removeAll();
-                        cobadiagram newChartPanel = new cobadiagram();
-                        newChartPanel.setBorder(BorderFactory.createCompoundBorder(
-                                new RoundedBorder(50, new Color(220, 220, 220), 2),
-                                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-                        ));
-                        chartPanelWrapper.add(newChartPanel, BorderLayout.CENTER);
-
-                        chartPanelWrapper.revalidate();
-                        chartPanelWrapper.repaint();
-                        return;
-                    }
-                }
-            }
-        }
+        // Force UI update
+        revalidate();
+        repaint();
     }
 }

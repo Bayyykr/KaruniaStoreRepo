@@ -147,7 +147,7 @@ public class Productt extends JFrame {
 
                 switch (index) {
                     case 0:
-                        dashboardPanel.refreshDashboardData();
+                        dashboardPanel.refreshDashboard();
                         currentPanel = dashboardPanel;
                         break;
                     case 1:

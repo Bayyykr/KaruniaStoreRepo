@@ -1004,82 +1004,16 @@ public class DashboardKasir extends JPanel {
         }
     }
 
-    public void refreshDashboardData() {
-        // Refresh semua komponen yang perlu diupdate
-        refreshHeaderCards();
-        refreshStockPanels();
+    public void refreshDashboardKasir() {
+        // Remove existing components
+        removeAll();
 
-        // Jika ada komponen lain yang perlu direfresh, tambahkan di sini
+        // Reinitialize components
+        initComponents();
+
+        // Force UI update
+        revalidate();
+        repaint();
     }
 
-    private void refreshHeaderCards() {
-        // Hapus dan buat ulang header cards
-        headerCardsPanel.removeAll();
-
-        JPanel welcomeHeaderPanel = createWelcomeHeader();
-        JPanel CekPromoDanDiskonPanel = createDiksondanPromo();
-        JPanel barangTelarisPanelSlide = createBarangTerlaris();
-
-        headerCardsPanel.add(welcomeHeaderPanel, "welcome");
-        headerCardsPanel.add(CekPromoDanDiskonPanel, "aturpromodandiskon");
-        headerCardsPanel.add(barangTelarisPanelSlide, "barangTerlaris");
-
-        // Kembali ke card awal
-        currentCardIndex = 0;
-        headerCardLayout.show(headerCardsPanel, cardNames[currentCardIndex]);
-
-        // Update nama user jika berubah
-        setNamaUser();
-    }
-
-    private void refreshStockPanels() {
-        // Cari dan refresh panel stok harian
-        refreshPanelByName("Stok Harian", this::createInventoryStockPanel);
-
-        // Cari dan refresh panel stok menipis
-        refreshPanelByName("Daftar Stok Menipis", this::createStokPanel);
-    }
-
-    private void refreshPanelByName(String panelTitle, PanelCreator creator) {
-        Component[] components = getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JPanel) {
-                JPanel mainPanel = (JPanel) comp;
-                Component[] subComponents = mainPanel.getComponents();
-                for (Component subComp : subComponents) {
-                    if (subComp instanceof JPanel) {
-                        JPanel wrapperPanel = (JPanel) subComp;
-                        Component[] wrapperComponents = wrapperPanel.getComponents();
-                        for (Component wrapperComp : wrapperComponents) {
-                            if (wrapperComp instanceof JPanel) {
-                                JPanel targetPanel = (JPanel) wrapperComp;
-                                Component[] targetComponents = targetPanel.getComponents();
-                                for (Component targetComp : targetComponents) {
-                                    if (targetComp instanceof JLabel) {
-                                        JLabel titleLabel = (JLabel) targetComp;
-                                        if (titleLabel.getText().equals(panelTitle)) {
-                                            // Hapus dan buat ulang panel
-                                            wrapperPanel.removeAll();
-                                            JPanel newPanel = creator.create();
-                                            wrapperPanel.add(newPanel);
-
-                                            wrapperPanel.revalidate();
-                                            wrapperPanel.repaint();
-                                            return;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @FunctionalInterface
-    private interface PanelCreator {
-
-        JPanel create();
-    }
 }

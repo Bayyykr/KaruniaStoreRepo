@@ -169,7 +169,7 @@ public class FormKasir extends JFrame {
                 }
                 switch (index) {
                     case 0: // Dashboard
-                        dashboardPanelKasir.refreshDashboardData();
+                        dashboardPanelKasir.refreshDashboardKasir();
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
