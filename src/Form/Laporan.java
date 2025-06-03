@@ -187,56 +187,89 @@ public class Laporan extends javax.swing.JPanel {
         periodCombo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (periodCombo.getSelectedIndex() > 0) { // Skip jika memilih "Filter"
+                if (periodCombo.getSelectedIndex() > 0) {
                     Calendar calendar = Calendar.getInstance();
                     Date startDate = null;
                     Date endDate = null;
 
                     switch (periodCombo.getSelectedItem().toString()) {
                         case "Minggu Ini":
-                            // Set start date ke awal minggu (Minggu)
-                            calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+                            calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+                            resetTimeToStart(calendar);
                             startDate = calendar.getTime();
-                            // End date adalah hari ini
-                            endDate = new Date();
+
+                            calendar = Calendar.getInstance();
+                            resetTimeToEnd(calendar);
+                            endDate = calendar.getTime();
                             break;
 
                         case "Bulan Ini":
-                            // Set start date ke tanggal 1 bulan ini
                             calendar.set(Calendar.DAY_OF_MONTH, 1);
+                            resetTimeToStart(calendar);
                             startDate = calendar.getTime();
-                            // End date adalah hari ini
-                            endDate = new Date();
+
+                            calendar = Calendar.getInstance();
+                            resetTimeToEnd(calendar);
+                            endDate = calendar.getTime();
                             break;
 
                         case "Bulan Lalu":
-                            // Set ke bulan sebelumnya
                             calendar.add(Calendar.MONTH, -1);
-                            // Start date tanggal 1 bulan lalu
                             calendar.set(Calendar.DAY_OF_MONTH, 1);
+                            resetTimeToStart(calendar);
                             startDate = calendar.getTime();
-                            // End date adalah hari terakhir bulan lalu
+
                             calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+                            resetTimeToEnd(calendar);
                             endDate = calendar.getTime();
                             break;
 
                         case "Tahun Ini":
-                            // Set start date ke 1 Januari tahun ini
-                            calendar.set(Calendar.DAY_OF_YEAR, 1);
+                            calendar.set(Calendar.MONTH, Calendar.JANUARY);
+                            calendar.set(Calendar.DAY_OF_MONTH, 1);
+                            resetTimeToStart(calendar);
                             startDate = calendar.getTime();
-                            // End date adalah hari ini
-                            endDate = new Date();
+
+                            calendar = Calendar.getInstance();
+                            resetTimeToEnd(calendar);
+                            endDate = calendar.getTime();
                             break;
                     }
 
-                    // Panggil method load data dengan parameter tanggal yang sesuai
+                    System.out.println("=== FILTER APPLIED ===");
+                    System.out.println("Filter: " + periodCombo.getSelectedItem().toString());
+                    System.out.println("Start Date: " + startDate);
+                    System.out.println("End Date: " + endDate);
+                    System.out.println("======================");
+
                     loadPemasukanData(startDate, endDate);
                     loadPengeluaranData(startDate, endDate);
                     loadLabaData(startDate, endDate);
+                } else {
+                    System.out.println("=== FILTER RESET ===");
+                    System.out.println("Loading all data without filter");
+                    System.out.println("====================");
+
+                    loadPemasukanData(null, null);
+                    loadPengeluaranData(null, null);
+                    loadLabaData(null, null);
                 }
             }
-        });
 
+            private void resetTimeToStart(Calendar calendar) {
+                calendar.set(Calendar.HOUR_OF_DAY, 0);
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
+            }
+
+            private void resetTimeToEnd(Calendar calendar) {
+                calendar.set(Calendar.HOUR_OF_DAY, 23);
+                calendar.set(Calendar.MINUTE, 59);
+                calendar.set(Calendar.SECOND, 59);
+                calendar.set(Calendar.MILLISECOND, 999);
+            }
+        });
         exportCombo = new ComboboxCustom();
         exportCombo.setPreferredSize(new Dimension(140, 35));
         exportCombo.addItem("Ekspor File");
@@ -458,7 +491,7 @@ public class Laporan extends javax.swing.JPanel {
             if (startDate != null && endDate != null) {
                 // Range date: gunakan kedua parameter
                 Calendar cal = Calendar.getInstance();
-                cal.setTime(endDate);   
+                cal.setTime(endDate);
                 cal.add(Calendar.DATE, 1); // Tambah 1 hari
                 java.sql.Date adjustedEndDate = new java.sql.Date(cal.getTimeInMillis());
 
@@ -569,50 +602,124 @@ public class Laporan extends javax.swing.JPanel {
     }
 
     private void loadLabaData(Date startDate, Date endDate) {
+        // Debug: Print raw query components first
+        System.out.println("=== DEBUG LABA QUERY ===");
+        System.out.println("Start Date: " + startDate);
+        System.out.println("End Date: " + endDate);
+
         String query = "SELECT "
-                + "(SELECT IFNULL(SUM(total_harga), 0) FROM detail_transaksijual dtj "
+                + "(SELECT IFNULL(SUM(dtj.total_harga), 0) FROM detail_transaksijual dtj "
                 + " JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
                 + (startDate != null && endDate != null
-                        ? " WHERE tj.tanggal_transaksi BETWEEN ? AND ? "
+                        ? " WHERE tj.tanggal_transaksi >= ? AND tj.tanggal_transaksi <= ? "
                         : startDate != null ? " WHERE DATE(tj.tanggal_transaksi) = DATE(?) " : "")
                 + ") AS pemasukan, "
-                + "(SELECT IFNULL(SUM(total_harga), 0) FROM detail_transaksibeli dtb "
+                + "(SELECT IFNULL(SUM(dtb.total_harga), 0) FROM detail_transaksibeli dtb "
                 + " JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
                 + (startDate != null && endDate != null
-                        ? " WHERE tb.tanggal_transaksi BETWEEN ? AND ? "
+                        ? " WHERE tb.tanggal_transaksi >= ? AND tb.tanggal_transaksi <= ? "
                         : startDate != null ? " WHERE DATE(tb.tanggal_transaksi) = DATE(?) " : "")
                 + ") AS pengeluaran, "
                 + "(SELECT IFNULL(SUM(total), 0) FROM biaya_operasional "
                 + (startDate != null && endDate != null
-                        ? " WHERE tanggal BETWEEN ? AND ? "
+                        ? " WHERE tanggal >= ? AND tanggal <= ? "
                         : startDate != null ? " WHERE DATE(tanggal) = DATE(?) " : "")
                 + ") AS totalOperasional";
+
+        System.out.println("Query: " + query);
 
         try {
             PreparedStatement stmt = con.prepareStatement(query);
             int paramIndex = 1;
 
-            // Set parameter tanggal jika ada
             if (startDate != null) {
-                java.sql.Date sqlDate = new java.sql.Date(startDate.getTime());
+                java.sql.Timestamp sqlStartDate = new java.sql.Timestamp(startDate.getTime());
+                java.sql.Timestamp sqlEndDate = endDate != null ? new java.sql.Timestamp(endDate.getTime()) : null;
 
-                // Parameter untuk pemasukan
-                stmt.setDate(paramIndex++, sqlDate);
+                System.out.println("SQL Start Date: " + sqlStartDate);
+                System.out.println("SQL End Date: " + sqlEndDate);
+
+                // Parameter untuk subquery pemasukan
                 if (endDate != null) {
-                    stmt.setDate(paramIndex++, new java.sql.Date(endDate.getTime()));
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
+                    stmt.setTimestamp(paramIndex++, sqlEndDate);
+                } else {
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
                 }
 
-                stmt.setDate(paramIndex++, sqlDate);
+                // Parameter untuk subquery pengeluaran
                 if (endDate != null) {
-                    stmt.setDate(paramIndex++, new java.sql.Date(endDate.getTime()));
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
+                    stmt.setTimestamp(paramIndex++, sqlEndDate);
+                } else {
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
                 }
 
-                stmt.setDate(paramIndex++, sqlDate);
+                // Parameter untuk subquery biaya operasional
                 if (endDate != null) {
-                    stmt.setDate(paramIndex, new java.sql.Date(endDate.getTime()));
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
+                    stmt.setTimestamp(paramIndex++, sqlEndDate);
+                } else {
+                    stmt.setTimestamp(paramIndex++, sqlStartDate);
                 }
             }
 
+            // Test individual subqueries
+            System.out.println("=== TESTING SUBQUERIES ===");
+
+            // Test pemasukan
+            if (startDate != null && endDate != null) {
+                String testQuery = "SELECT COUNT(*) as count, IFNULL(SUM(dtj.total_harga), 0) as total "
+                        + "FROM detail_transaksijual dtj "
+                        + "JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
+                        + "WHERE tj.tanggal_transaksi >= ? AND tj.tanggal_transaksi <= ?";
+
+                PreparedStatement testStmt = con.prepareStatement(testQuery);
+                testStmt.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
+                testStmt.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
+
+                ResultSet testRs = testStmt.executeQuery();
+                if (testRs.next()) {
+                    System.out.println("Pemasukan test - Records: " + testRs.getInt("count") + ", Total: " + testRs.getDouble("total"));
+                }
+                testRs.close();
+                testStmt.close();
+
+                // Test pengeluaran
+                String testQuery2 = "SELECT COUNT(*) as count, IFNULL(SUM(dtb.total_harga), 0) as total "
+                        + "FROM detail_transaksibeli dtb "
+                        + "JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
+                        + "WHERE tb.tanggal_transaksi >= ? AND tb.tanggal_transaksi <= ?";
+
+                PreparedStatement testStmt2 = con.prepareStatement(testQuery2);
+                testStmt2.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
+                testStmt2.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
+
+                ResultSet testRs2 = testStmt2.executeQuery();
+                if (testRs2.next()) {
+                    System.out.println("Pengeluaran test - Records: " + testRs2.getInt("count") + ", Total: " + testRs2.getDouble("total"));
+                }
+                testRs2.close();
+                testStmt2.close();
+
+                // Test biaya operasional
+                String testQuery3 = "SELECT COUNT(*) as count, IFNULL(SUM(total), 0) as total "
+                        + "FROM biaya_operasional "
+                        + "WHERE tanggal >= ? AND tanggal <= ?";
+
+                PreparedStatement testStmt3 = con.prepareStatement(testQuery3);
+                testStmt3.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
+                testStmt3.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
+
+                ResultSet testRs3 = testStmt3.executeQuery();
+                if (testRs3.next()) {
+                    System.out.println("Operasional test - Records: " + testRs3.getInt("count") + ", Total: " + testRs3.getDouble("total"));
+                }
+                testRs3.close();
+                testStmt3.close();
+            }
+
+            // Execute main query
             ResultSet rs = stmt.executeQuery();
             DecimalFormat decimalFormat = new DecimalFormat("#,###");
             decimalFormat.setGroupingUsed(true);
@@ -631,12 +738,22 @@ public class Laporan extends javax.swing.JPanel {
                 labaKotorItem2ValueLabel.setText("Rp. " + decimalFormat.format(labaKotor));
                 operasionalValueLabel.setText("- Rp. " + decimalFormat.format(biayaOperasional));
                 labaBersihValueLabel.setText("Rp. " + decimalFormat.format(labaBersih));
+
+                System.out.println("=== FINAL RESULTS ===");
+                System.out.println("Pemasukan: " + totalPemasukan);
+                System.out.println("Pengeluaran: " + totalPengeluaran);
+                System.out.println("Biaya Operasional: " + biayaOperasional);
+                System.out.println("Laba Kotor: " + labaKotor);
+                System.out.println("Laba Bersih: " + labaBersih);
+                System.out.println("====================");
             }
 
             rs.close();
             stmt.close();
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error saat mengambil data laba: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

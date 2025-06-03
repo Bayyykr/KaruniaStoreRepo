@@ -1435,11 +1435,26 @@ public class AddNewProductFormm extends JPanel {
         }
     }
 
-    private boolean validateForm() {
+private boolean validateForm() {
+        String namaProduk = txtNamaProduct.getText().trim();
         if (txtNamaProduct.getText().trim().isEmpty()) {
             PindahanAntarPopUp.showTambahProdukNamaTidakBolehKosong(parentFrame);
             txtNamaProduct.requestFocus();
             return false;
+        }
+        if (namaProduk.length() > 30) {
+            PindahanAntarPopUp.showTambahProdukNamaTidakBolehLebihDari30Karakter(parentFrame);
+            txtNamaProduct.requestFocus();
+            return false;
+        }
+        try {
+            int nilaiNama = Integer.parseInt(txtNamaProduct.getText().trim());
+            if (nilaiNama <= 0) {
+                PindahanAntarPopUp.showProdukNamaProdukTidakBolehHanya0AtauNegatif(parentFrame);
+                txtNamaProduct.requestFocus();
+                return false;
+            }
+        } catch (NumberFormatException e) {
         }
 
         if (txtHargaJual.getText().trim().isEmpty()) {
@@ -1453,14 +1468,51 @@ public class AddNewProductFormm extends JPanel {
             txtHargaBeli.requestFocus();
             return false;
         }
-        if (txtMerk.getText().trim().isEmpty()) {
+        
+        String merk = txtMerk.getText().trim();
+        if (merk.isEmpty()) {
             PindahanAntarPopUp.showTambahProdukMerkTidakBolehKosong(parentFrame);
             txtMerk.requestFocus();
             return false;
         }
 
-        if (txtUkuran.getText().trim().isEmpty()) {
+        if (merk.length() > 15) {
+            PindahanAntarPopUp.showTambahProdukMerkTidakBolehLebihDari15Karakter(parentFrame);
+            txtMerk.requestFocus();
+            return false;
+        }
+        try {
+            int nilaiMerk= Integer.parseInt(txtMerk.getText().trim());
+            if (nilaiMerk <= 0) {
+                PindahanAntarPopUp.showMerkTidakBolehHanya0AtauNegatif(parentFrame);
+                txtMerk.requestFocus();
+                return false;
+            }
+        } catch (NumberFormatException e) {
+        }
+
+        String ukuran = txtUkuran.getText().trim();
+        if (ukuran.isEmpty()) {
             PindahanAntarPopUp.showTambahProdukUkuranTidakBolehKosong(parentFrame);
+            txtUkuran.requestFocus();
+            return false;
+        }
+
+        if (ukuran.length() > 5) {
+            PindahanAntarPopUp.showProdukUkuranTidakBolehLebihDari5Karakter(parentFrame);
+            txtUkuran.requestFocus();
+            return false;
+        }
+
+        try {
+            int nilaiUkuran = Integer.parseInt(ukuran);
+            if (nilaiUkuran <= 0) {
+                PindahanAntarPopUp.showProdukUkuranTidakBoleh0AtauNegatif(parentFrame);
+                txtUkuran.requestFocus();
+                return false;
+            }
+        } catch (NumberFormatException e) {      
+            PindahanAntarPopUp.showTambahProdukHargaDanStokHarusBerupaAngka(parentFrame);
             txtUkuran.requestFocus();
             return false;
         }

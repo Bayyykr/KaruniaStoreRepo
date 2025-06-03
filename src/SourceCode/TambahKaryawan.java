@@ -626,6 +626,19 @@ public class TambahKaryawan extends javax.swing.JDialog {
                     System.out.println("data tidak boleh kosong");
                     return;
                 }
+                
+                try {
+                    long norfid = Long.parseLong(no);
+                    if (norfid < 0) {
+                        PindahanAntarPopUp.showTambahKaryawanNoRFIDTidakValidAtauNegatif(parentFrame);
+                        rfidField.requestFocus();
+                        return;
+                    }
+                } catch (NumberFormatException ex) {
+                    PindahanAntarPopUp.showTambahKaryawanNoRFIDTidakValidAtauNegatif(parentFrame);
+                    rfidField.requestFocus();
+                    return;
+                }
 
                 if (nama.length() > 30) {
                     PindahanAntarPopUp.showEditDataKaryawanNamaTidakLebihDari30karakter(parentFrame);

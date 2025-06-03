@@ -97,7 +97,7 @@ public class DataKaryawan extends JPanel {
         buttonPanel.setBackground(Color.white);
 
         // DATA ABSEN button - dark gray with white text
-        dataAbsenButton = new JButton("DATA ABSEN");
+        dataAbsenButton = new JButton("DATA PRESENSI");
         dataAbsenButton.setPreferredSize(new Dimension(123, 40));
         dataAbsenButton.setBackground(new Color(52, 61, 70));
         dataAbsenButton.setForeground(Color.WHITE);

@@ -22,6 +22,9 @@ import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.DefaultCategoryDataset;
 import db.conn;
 import java.sql.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -101,33 +104,33 @@ public class diagramlaporankeuangan extends JPanel {
     }
 
     private DefaultCategoryDataset createDataset() {
-        // Create dataset for chart
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
         Map<String, Double> pemasukanMap = new HashMap<>();
         Map<String, Double> pengeluaranMap = new HashMap<>();
 
-        dataset.addValue(0, "Pemasukan", "Senin");
-        dataset.addValue(0, "Pemasukan", "Selasa");
-        dataset.addValue(0, "Pemasukan", "Rabu");
-        dataset.addValue(0, "Pemasukan", "Kamis");
-        dataset.addValue(0, "Pemasukan", "Jum'at");
-        dataset.addValue(0, "Pemasukan", "Sabtu");
-        dataset.addValue(0, "Pemasukan", "Minggu");
+        String[] semuaHari = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
+
+        LocalDate today = LocalDate.now();
+        DayOfWeek firstDayOfWeek = DayOfWeek.MONDAY;
+        LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek));
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         try {
             String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
                     + "FROM transaksi_jual tj "
                     + "JOIN detail_transaksijual dt ON tj.id_transaksijual = dt.id_transaksijual "
+                    + "WHERE tanggal_transaksi BETWEEN ? AND ? "
                     + "GROUP BY DAYNAME(tanggal_transaksi)";
             PreparedStatement stmt = con.prepareStatement(sql);
+            stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
+            stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 String hari = rs.getString("hari").toLowerCase();
                 double total = rs.getDouble("total");
                 pemasukanMap.put(hari, total);
-                dataset.addValue(total, "Pemasukan", ubahHariKeIndo(hari));
             }
 
             rs.close();
@@ -136,27 +139,21 @@ public class diagramlaporankeuangan extends JPanel {
             e.printStackTrace();
         }
 
-        dataset.addValue(0, "Pengeluaran", "Senin");
-        dataset.addValue(0, "Pengeluaran", "Selasa");
-        dataset.addValue(0, "Pengeluaran", "Rabu");
-        dataset.addValue(0, "Pengeluaran", "Kamis");
-        dataset.addValue(0, "Pengeluaran", "Jum'at");
-        dataset.addValue(0, "Pengeluaran", "Sabtu");
-        dataset.addValue(0, "Pengeluaran", "Minggu");
-
         try {
             String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
                     + "FROM transaksi_beli tb "
                     + "JOIN detail_transaksibeli dtb ON tb.id_transaksibeli = dtb.id_transaksibeli "
+                    + "WHERE tanggal_transaksi BETWEEN ? AND ? "
                     + "GROUP BY DAYNAME(tanggal_transaksi)";
             PreparedStatement stmt = con.prepareStatement(sql);
+            stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
+            stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 String hari = rs.getString("hari").toLowerCase();
                 double total = rs.getDouble("total");
                 pengeluaranMap.put(hari, total);
-                dataset.addValue(total, "Pengeluaran", ubahHariKeIndo(hari));
             }
 
             rs.close();
@@ -165,21 +162,15 @@ public class diagramlaporankeuangan extends JPanel {
             e.printStackTrace();
         }
 
-        dataset.addValue(0, "Laba", "Senin");
-        dataset.addValue(0, "Laba", "Selasa");
-        dataset.addValue(0, "Laba", "Rabu");
-        dataset.addValue(0, "Laba", "Kamis");
-        dataset.addValue(0, "Laba", "Jum'at");
-        dataset.addValue(0, "Laba", "Sabtu");
-        dataset.addValue(0, "Laba", "Minggu");
-
-        String[] semuaHari = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
-
         for (String hari : semuaHari) {
+            String label = ubahHariKeIndo(hari);
             double pemasukan = pemasukanMap.getOrDefault(hari, 0.0);
             double pengeluaran = pengeluaranMap.getOrDefault(hari, 0.0);
             double laba = pemasukan - pengeluaran;
-            dataset.addValue(laba, "Laba", ubahHariKeIndo(hari));
+
+            dataset.addValue(pemasukan, "Pemasukan", label);
+            dataset.addValue(pengeluaran, "Pengeluaran", label);
+            dataset.addValue(laba, "Laba", label);
         }
 
         return dataset;

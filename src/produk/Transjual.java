@@ -795,7 +795,7 @@ public class Transjual extends JPanel {
                     int totalBelanja = Integer.parseInt(totalStr);
 
                     if (uangMasuk < totalBelanja) {
-                        JOptionPane.showMessageDialog(parentFrame, "Uang yang diberikan tidak boleh kurang dari total belanja.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                        PindahanAntarPopUp.showTransJualMasukkanuangTidakBolehMinus(parentFrame);
                         return;
                     }
 
@@ -1551,9 +1551,7 @@ public class Transjual extends JPanel {
                 PindahanAntarPopUp.showStrukBerhasilDicetak(parentFrame);
             }
         } catch (PrinterException ex) {
-            JOptionPane.showMessageDialog(parentComponent,
-                    "Error saat mencetak: " + ex.getMessage(),
-                    "Printer Error", JOptionPane.ERROR_MESSAGE);
+            PindahanAntarPopUp.showTransJualCetakStrukDibatalkan(parentFrame);
             ex.printStackTrace();
         }
     }

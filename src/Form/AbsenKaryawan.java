@@ -69,8 +69,8 @@ public class AbsenKaryawan extends JPanel {
         titlePanel.setOpaque(false);
 
         // Title
-        JLabel titleLabel = new JLabel("Data Absen");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel titleLabel = new JLabel("Data Presensi");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 29));
         titlePanel.add(titleLabel);
         topPanel.add(titlePanel, BorderLayout.NORTH);
 

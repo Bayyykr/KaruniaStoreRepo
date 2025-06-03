@@ -14,6 +14,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import java.sql.*;
 import db.conn;
+import PopUp_all.*;
 
 public class ScanBarcodeDialogKasir extends JDialog {
 
@@ -200,6 +201,7 @@ public class ScanBarcodeDialogKasir extends JDialog {
                         AfterScanBarcodeDialogKasir dialog = new AfterScanBarcodeDialogKasir(parentFrame, scannedBarcode);
                         dialog.setVisible(true);
                     }else{
+                        PindahanAntarPopUp.showProdukDisplayScanKodeProductDataTidakAda(parentFrame);
                         System.out.println("DATA PRODUK TIDAK ADA");
                     }
                 }

@@ -33,6 +33,7 @@ import java.util.Locale;
 public class ProductDisplayyKasir extends javax.swing.JPanel {
 
     // Deklarasikan plusButton sebagai field class
+    private JFrame parentFrame;
     Component parentComponent = this;
     private JButton sellButton;
     private Runnable trashButtonListener;
@@ -1647,7 +1648,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
     private void addProductToTransjual(String productId, String productName, double price, int size, int stock) {
         // Check if stock is 0
         if (stock <= 0) {
-            System.out.println("Stok produk " + productName + " (ID: " + productId + ") adalah 0. Tidak dapat ditambahkan.");
+            PindahanAntarPopUp.showProdukDisplayKasirStok0TidakBisaDijual(parentFrame);
             return;
         }
 

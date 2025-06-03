@@ -554,6 +554,7 @@ public class LoginForm extends JFrame {
                             } else if (jabatan.equals("owner")) {
 //                            new Dashboard().setVisible(true);
 //                            this.setVisible(false);
+                                PindahanAntarPopUp.showMasukSebagaiKasir(instance);
                                 System.out.println("ini owner");
                             }
 
