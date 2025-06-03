@@ -94,7 +94,7 @@ public class PopUp_edittransbeli extends JDialog {
         contentPanel.add(priceLabel);
 
         priceField = new RoundedTextField(5, "Harga Satuan");
-        setRpField(priceField);
+        setupPriceField(priceField);
         priceField.setBounds(70, 65, 300, 40);
         contentPanel.add(priceField);
 
@@ -103,6 +103,7 @@ public class PopUp_edittransbeli extends JDialog {
         contentPanel.add(quantityLabel);
 
         quantityField = new RoundedTextField(5, "Quantity");
+        setupQuantityField(quantityField);
         quantityField.setBounds(70, 135, 300, 40);
         contentPanel.add(quantityField);
 
@@ -136,8 +137,9 @@ public class PopUp_edittransbeli extends JDialog {
         String priceStr = table.getValueAt(row, 3).toString().replace("Rp. ", "").replace(".", "").trim();
         String qtyStr = table.getValueAt(row, 4).toString();
         
-        priceField.setText("Rp. " + formatter.format(Integer.parseInt(priceStr)));
-        quantityField.setText(qtyStr);
+        // Set nilai tanpa memicu placeholder logic
+        priceField.setActualValue("Rp. " + formatter.format(Integer.parseInt(priceStr)));
+        quantityField.setActualValue(qtyStr);
     }
 
     private void updateRowData() {
@@ -294,121 +296,90 @@ public class PopUp_edittransbeli extends JDialog {
         return button;
     }
     
-    private void setRpField(final JTextField textField) {
+    // Method baru untuk setup price field yang lebih sederhana
+    private void setupPriceField(final JTextField textField) {
         final String PREFIX = "Rp. ";
         final NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
-        if (formatter instanceof DecimalFormat) {
-            ((DecimalFormat) formatter).applyPattern("#,###");
-        }
-
-        if (!textField.getText().startsWith(PREFIX)) {
-            textField.setText(PREFIX);
-        }
-
-        ((AbstractDocument) textField.getDocument()).setDocumentFilter(new DocumentFilter() {
-            @Override
-            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
-                    throws BadLocationException {
-
-                if (offset < PREFIX.length()) {
-                    return;
-                }
-
-                if (!text.matches("\\d*")) {
-                    return;
-                }
-
-                Document doc = fb.getDocument();
-                StringBuilder sb = new StringBuilder(doc.getText(0, doc.getLength()));
-                sb.replace(offset, offset + length, text);
-
-                String numericText = sb.toString().substring(PREFIX.length()).replaceAll("[.,]", "");
-
-                if (numericText.length() > 10) {
-                    Toolkit.getDefaultToolkit().beep();
-                    return;
-                }
-
-                try {
-                    if (numericText.isEmpty()) {
-                        super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
-                        return;
-                    }
-
-                    long value = Long.parseLong(numericText);
-                    
-                    if (value > Integer.MAX_VALUE) {
-                        Toolkit.getDefaultToolkit().beep();
-                        return;
-                    }
-
-                    String formattedText = PREFIX + formatter.format(value);
-                    super.replace(fb, 0, doc.getLength(), formattedText, attrs);
-
-                    SwingUtilities.invokeLater(() -> {
-                        try {
-                            int newPos = Math.min(offset + text.length(), formattedText.length());
-                            int addedSeparators = countSeparators(formattedText, offset + text.length());
-                            textField.setCaretPosition(Math.min(newPos + addedSeparators, formattedText.length()));
-                        } catch (Exception e) {
-                            textField.setCaretPosition(formattedText.length());
-                        }
-                    });
-                } catch (NumberFormatException e) {
-                    super.replace(fb, 0, doc.getLength(), PREFIX, attrs);
-                }
-            }
-
-            private int countSeparators(String text, int position) {
-                int count = 0;
-                for (int i = PREFIX.length(); i < Math.min(position, text.length()); i++) {
-                    if (text.charAt(i) == '.' || text.charAt(i) == ',') {
-                        count++;
-                    }
-                }
-                return count;
-            }
-
-            @Override
-            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
-                    throws BadLocationException {
-                replace(fb, offset, 0, string, attr);
-            }
-
-            @Override
-            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-                if (offset < PREFIX.length()) {
-                    if (offset + length > PREFIX.length()) {
-                        length = (offset + length) - PREFIX.length();
-                        offset = PREFIX.length();
-                    } else {
-                        return;
-                    }
-                }
-                replace(fb, offset, length, "", null);
-            }
-        });
-
-        textField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (textField.getText().equals(PREFIX)) {
-                    textField.setCaretPosition(PREFIX.length());
-                }
-            }
-        });
-
+        
         textField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                
+                // Hanya izinkan angka dan backspace
+                if (!Character.isDigit(c) && c != KeyEvent.VK_BACK_SPACE) {
+                    e.consume();
+                    return;
+                }
+                
+                SwingUtilities.invokeLater(() -> {
+                    String text = textField.getText();
+                    
+                    // Jika tidak ada prefix, tambahkan
+                    if (!text.startsWith(PREFIX)) {
+                        text = PREFIX + text.replace(PREFIX, "");
+                    }
+                    
+                    // Ekstrak angka saja
+                    String numbers = text.substring(PREFIX.length()).replaceAll("[^0-9]", "");
+                    
+                    if (!numbers.isEmpty()) {
+                        try {
+                            long value = Long.parseLong(numbers);
+                            if (value <= Integer.MAX_VALUE) {
+                                String formatted = PREFIX + formatter.format(value);
+                                if (!textField.getText().equals(formatted)) {
+                                    textField.setText(formatted);
+                                }
+                            }
+                        } catch (NumberFormatException ex) {
+                            textField.setText(PREFIX);
+                        }
+                    } else {
+                        textField.setText(PREFIX);
+                    }
+                });
+            }
+            
             @Override
             public void keyPressed(KeyEvent e) {
                 int caretPos = textField.getCaretPosition();
-                if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_BACK_SPACE) 
-                        && caretPos <= PREFIX.length()) {
+                if (caretPos < PREFIX.length()) {
                     textField.setCaretPosition(PREFIX.length());
-                    e.consume();
+                    if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_LEFT) {
+                        e.consume();
+                    }
                 }
-                if (e.getKeyCode() == KeyEvent.VK_HOME) {
+            }
+        });
+        
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                String text = textField.getText();
+                if (text.isEmpty()) {
+                    textField.setText(PREFIX);
                     textField.setCaretPosition(PREFIX.length());
+                }
+            }
+        });
+    }
+    
+    // Method baru untuk setup quantity field
+    private void setupQuantityField(final JTextField textField) {
+        textField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                
+                // Hanya izinkan angka dan backspace
+                if (!Character.isDigit(c) && c != KeyEvent.VK_BACK_SPACE) {
+                    e.consume();
+                    return;
+                }
+                
+                // Batasi panjang
+                if (textField.getText().length() >= 8 && c != KeyEvent.VK_BACK_SPACE) {
                     e.consume();
                 }
             }
@@ -507,10 +478,11 @@ public class PopUp_edittransbeli extends JDialog {
         private boolean isPlaceholderActive;
 
         public RoundedTextField(int radius, String placeholder) {
-            super(placeholder);
+            super();
             this.radius = radius;
             this.placeholder = placeholder;
             this.isPlaceholderActive = true;
+            setText(placeholder);
             setForeground(Color.GRAY);
             setOpaque(false);
             setBorder(new EmptyBorder(5, 10, 5, 10));
@@ -534,6 +506,15 @@ public class PopUp_edittransbeli extends JDialog {
                     }
                 }
             });
+        }
+        
+        // Method untuk set nilai tanpa memicu placeholder logic
+        public void setActualValue(String value) {
+            if (value != null && !value.trim().isEmpty()) {
+                isPlaceholderActive = false;
+                setText(value);
+                setForeground(Color.BLACK);
+            }
         }
 
         @Override

@@ -1133,7 +1133,7 @@ public class Transaksibeli extends JPanel {
         deletePopup.setVisible(true);
     }
 
-    private void clearTransactionTable() {
+    public void clearTransactionTable() {
         DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
         model.setRowCount(0); // Remove all rows
 

@@ -169,11 +169,12 @@ public class FormKasir extends JFrame {
                 }
                 switch (index) {
                     case 0: // Dashboard
+                        dashboardPanelKasir.refreshDashboardData();
                         currentPanel = dashboardPanelKasir;
                         break;
                     case 1: // Produk
+                        produkPanelkasir.refreshProducts();
                         currentPanel = produkPanelkasir;
-                        System.out.println("ini produk");
                         break;
                     case 2: // Keluar (pada kasir, Keluar ada di indeks 2)
 //                        System.exit(0);
@@ -268,6 +269,8 @@ public class FormKasir extends JFrame {
         if (currentPanel != null) {
             remove(currentPanel);
         }
+        
+        transaksiJual.clearTransactionTable();
 
         currentPanel = transaksiJual;
         add(currentPanel);
@@ -343,6 +346,14 @@ public class FormKasir extends JFrame {
         revalidate();
         repaint();
     }
+    
+    public ProductDisplayyKasir getProductDisplayKasirPanel() {
+        return this.produkPanelkasir;
+    }
+    
+    public Transjual getTransJualPanel() {
+        return this.transaksiJual;
+    }
 
     public void switchBackToLoginPanel() {
         this.dispose();
@@ -380,6 +391,20 @@ public class FormKasir extends JFrame {
         } catch (SQLException e) {
             System.err.println("Error recording auto logout: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    public void addProductToTransjual(String[] productData) {
+        if (transaksiJual != null) {
+            transaksiJual.addProductToTable(
+                    productData[0], // name
+                    productData[1], // size
+                    Integer.parseInt(productData[2]), // quantity
+                    productData[3], // price
+                    productData[4], // discount
+                    productData[5] // total
+            );
+            transaksiJual.updateTotalAmount();
         }
     }
 }

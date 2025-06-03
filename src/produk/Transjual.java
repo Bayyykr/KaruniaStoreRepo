@@ -34,6 +34,7 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import produk.ProductDisplayyKasir;
 
 public class Transjual extends JPanel {
 
@@ -490,6 +491,7 @@ public class Transjual extends JPanel {
                 // Fungsi saat label X diklik
                 System.out.println("Tombol close diklik");
                 FormKasir.getMainFrame().switchBackToProductPanelKasir();
+                clearTransactionTable();
                 scanKodeField.setText("");
                 namabarang.setText("");
                 hargaBeliField.setText("Rp. ");
@@ -786,26 +788,40 @@ public class Transjual extends JPanel {
                     return;
                 }
 
-                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-                final PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+                String totalStr = totalValueLabel.getText().replace("Rp. ", "").replace(".", "").trim();
 
-                // Tambahkan listener ke tombol OK
-                dialog.addOKButtonActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-//                         Proses transaksi hanya jika OK diklik
-                        if (saveTransactionToDatabase()) {
-                            updateTotalAmount();
-                            printReceipt();
-                            txtIdTransaksi.setText(generateNextTransaksiId());
-                            clearTransactionTable();
-                            dialog.startCloseAnimation();
-                        }
+                try {
+                    int uangMasuk = Integer.parseInt(Masuk);
+                    int totalBelanja = Integer.parseInt(totalStr);
+
+                    if (uangMasuk < totalBelanja) {
+                        JOptionPane.showMessageDialog(parentFrame, "Uang yang diberikan tidak boleh kurang dari total belanja.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                        return;
                     }
-                });
 
-                // Tampilkan dialog
-                dialog.setVisible(true);
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                    final PopUp_BayarTransjual dialog = new PopUp_BayarTransjual(parentFrame);
+
+                    // Tambahkan listener ke tombol OK
+                    dialog.addOKButtonActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (saveTransactionToDatabase()) {
+                                updateTotalAmount();
+                                printReceipt();
+                                txtIdTransaksi.setText(generateNextTransaksiId());
+                                clearTransactionTable();
+                                dialog.startCloseAnimation();
+                            }
+                        }
+                    });
+
+                    // Tampilkan dialog
+                    dialog.setVisible(true);
+
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(parentFrame, "Format uang tidak valid.", "Kesalahan", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
@@ -1132,12 +1148,12 @@ public class Transjual extends JPanel {
 
                     // Update quantity
                     int currentQty = Integer.parseInt(model.getValueAt(i, 3).toString());
-                    
-                     if (currentQty + 1 > stokTersedia) {
-                    PindahanAntarPopUp.showTransJualStokProdukTidakTersedia(parentFrame); 
-                    return;
+
+                    if (currentQty + 1 > stokTersedia) {
+                        PindahanAntarPopUp.showTransJualStokProdukTidakTersedia(parentFrame);
+                        return;
                     }
-                     
+
                     int newQty = currentQty + 1;
                     model.setValueAt(newQty, i, 3);
 
@@ -1408,10 +1424,6 @@ public class Transjual extends JPanel {
             con.commit();
             con.setAutoCommit(true);
 
-            // Tampilkan pesan sukses
-//            JOptionPane.showMessageDialog(parentComponent,
-//                    "Transaksi berhasil disimpan dengan ID: " + transactionId,
-//                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
             PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
             return true; // Transaksi berhasil
 
@@ -1433,7 +1445,7 @@ public class Transjual extends JPanel {
         }
     }
 
-    private void clearTransactionTable() {
+    public void clearTransactionTable() {
         DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
         model.setRowCount(0); // Remove all rows
 
@@ -1938,5 +1950,46 @@ public class Transjual extends JPanel {
 
         DecimalFormat formatter = new DecimalFormat("#,###");
         return formatter.format(nilai).replace(",", ".");
+    }
+
+    public void addProductToTable(String productName, String size, int quantity,
+            String price, String discount, String total) {
+        DefaultTableModel model = (DefaultTableModel) roundedTable.getTable().getModel();
+
+        // Check if the product already exists in the table
+        boolean productExists = false;
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String existingName = model.getValueAt(i, 1).toString();
+            String existingSize = model.getValueAt(i, 2).toString();
+
+            if (existingName.equals(productName) && existingSize.equals(size)) {
+                // Update quantity and total
+                int currentQty = Integer.parseInt(model.getValueAt(i, 3).toString());
+                int newQty = currentQty + quantity;
+                model.setValueAt(newQty, i, 3);
+
+                // Calculate new total
+                double priceValue = Double.parseDouble(price.replace("Rp. ", "").replace(".", ""));
+                double totalValue = priceValue * newQty;
+                model.setValueAt("Rp. " + formatter.format(totalValue), i, 6);
+
+                productExists = true;
+                break;
+            }
+        }
+
+        // If product doesn't exist, add new row
+        if (!productExists) {
+            model.addRow(new Object[]{
+                model.getRowCount() + 1, // Row number
+                productName,
+                size,
+                quantity,
+                price,
+                discount,
+                total,
+                "" // Action column
+            });
+        }
     }
 }

@@ -3,16 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/Form/Laporan.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/Form/FormKasir.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/PopUp_all/PopUp_SmallStartnDateMasukkanrentangtahun.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/PopUp_all/PopUp_StartDateEndDate.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/PopUp_all/PopUp_DashboardKaryawanStokOpname.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/Form/ExcelExporter.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/Form/LoginForm.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/Form/DashboardKasir.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/produk/Productt.java</file>
-            <file>file:/D:/bu_ruli/KaruniaStoreRepo/src/PopUp_all/PopUp_SmallStartnDatePilihRentangTanggalLengkap.java</file>
+            <file>file:/D:/KasirBaru3/KaruniaStoreRepo/src/Form/FormKasir.java</file>
+            <file>file:/D:/KasirBaru3/KaruniaStoreRepo/src/produk/Productt.java</file>
+            <file>file:/D:/KasirBaru3/KaruniaStoreRepo/src/produk/ProductDisplayyKasir.java</file>
+            <file>file:/D:/KasirBaru3/KaruniaStoreRepo/src/produk/ProductDisplayy.java</file>
         </group>
     </open-files>
 </project-private>

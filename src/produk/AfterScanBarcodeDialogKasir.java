@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.border.EmptyBorder;
 import Form.Productt;
+import Form.Transjual;
 import db.conn;
 import java.sql.*;
 import java.text.NumberFormat;
@@ -52,7 +53,6 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
 //            return;
 //        }
 //        isShowingPopup = true;
-
         fetchProductData();
         setupGlassPane();
         setupContentPanel();
@@ -329,7 +329,7 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
 
         return productPanel;
     }
-    
+
     public String getScannedBarcode() {
         return scannedBarcode;
     }
@@ -349,18 +349,33 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         editButton.setBackground(new Color(60, 63, 65));
         editButton.setForeground(Color.WHITE);
         editButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-                editButton.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
-                        startCloseAnimation();
-                        FormKasir.getMainFrame().switchToTransJualPanel(scannedBarcode);
-                        System.out.println("ini jual kasir");
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Barcode kosong atau tidak valid.");
+        editButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
+                    String[] productData = {
+                        productName,
+                        size,
+                        "1", // quantity
+                        "Rp. " + price.replace(",", "."), // price
+                        "-", // discount
+                        "Rp. " + price.replace(",", ".") // total
+                    };
+
+                    // Pass data to FormKasir
+                    FormKasir formKasir = FormKasir.getMainFrame();
+                    if (formKasir != null) {
+                        formKasir.addProductToTransjual(productData);
+                        formKasir.switchToTransJualPanel(scannedBarcode);
                     }
+
+                    // Close the dialog
+                    startCloseAnimation();
+                } else {
+                    JOptionPane.showMessageDialog(null, "Barcode kosong atau tidak valid.");
                 }
-            });
+            }
+        });
 
         // Buat dan atur UI rounded dengan border hitam
         RoundedButtonLaporan roundedUI = new RoundedButtonLaporan();
@@ -371,7 +386,9 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         footerPanel.add(editButton);
 
         return footerPanel;
-    };
+    }
+
+    ;
 
     public void showDialog() {
         setVisible(true);

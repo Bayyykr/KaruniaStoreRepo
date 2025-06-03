@@ -1023,6 +1023,15 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+//         / Store product ID in the card 
+        card.putClientProperty("productId", productId);
+        card.putClientProperty("productName", productName);
+        card.putClientProperty("price", price);
+        card.putClientProperty("size", size);
+        card.putClientProperty("stock", stock);
+
+        // Add click listener to the entire card
+        addProductCardClickListener(card);
 
         // Panel gambar produk dengan background abu-abu muda rounded
         JPanel imageContainer = new JPanel(new BorderLayout());
@@ -1065,7 +1074,6 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
 
         // Store product ID as a property to use in click listener
         imagePanel.putClientProperty("productId", productId);
-        sellPanelClickListener(imagePanel);
 
         // Menggunakan GridBagLayout untuk lebih presisi dalam pengaturan posisi
         JPanel imageLabelContainer = new JPanel(new GridBagLayout());
@@ -1115,13 +1123,14 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         infoPanel.setPreferredSize(new Dimension(230, 100));
         infoPanel.setMinimumSize(new Dimension(230, 100));
         infoPanel.setMaximumSize(new Dimension(230, 100));
+        addProductCardClickListener(infoPanel);
 
         // Use data from the database
         JLabel nameLabel = new JLabel(productName);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         nameLabel.putClientProperty("productId", productId);
-//        addLabelClickListener(nameLabel);
+        addLabelClickListener(nameLabel);
 
         // Format the price with proper formatting
         NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
@@ -1131,13 +1140,13 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         priceLabel.setForeground(new Color(0, 102, 204));
         priceLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         priceLabel.putClientProperty("productId", productId);
-//        addLabelClickListener(priceLabel);
+        addLabelClickListener(priceLabel);
 
         JLabel sizeLabel = new JLabel("Uk : " + size);
         sizeLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         sizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         sizeLabel.putClientProperty("productId", productId);
-//        addLabelClickListener(sizeLabel);
+        addLabelClickListener(sizeLabel);
 
         JPanel stockAddPanel = new JPanel(new BorderLayout(5, 0));
         stockAddPanel.setBackground(Color.WHITE);
@@ -1147,7 +1156,7 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
         JLabel stockLabel = new JLabel("Stok : " + stock);
         stockLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         stockLabel.putClientProperty("productId", productId);
-//        addLabelClickListener(stockLabel);
+        addLabelClickListener(stockLabel);
 
         stockAddPanel.add(stockLabel, BorderLayout.WEST);
 
@@ -1210,63 +1219,6 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
 
         imageLabel.setLayout(new BorderLayout());
         imageLabel.add(placeholderPanel, BorderLayout.CENTER);
-    }
-
-//    private void addLabelClickListener(JLabel label) {
-//        label.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                String productId = (String) label.getClientProperty("productId");
-//                if (productId != null) {
-//                    selectedProductId = productId; // Store the selected product ID
-//                    System.out.println("Product ID clicked: " + selectedProductId);
-////                    if (addLabelClickListener != null) {
-////                        // Now run the listener which will call switchToEditProductPanel
-////                        addLabelClickListener.run();
-////                    }
-//                }
-//            }
-//
-//            @Override
-//            public void mouseEntered(MouseEvent e) {
-//                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-//            }
-//
-//            @Override
-//            public void mouseExited(MouseEvent e) {
-//                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-//            }
-//        });
-//    }
-
-    private void sellPanelClickListener(JPanel panel) {
-        panel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                String productId = (String) panel.getClientProperty("productId");
-                if (productId != null) {
-                    selectedProductId = productId; // Store the selected product ID
-                    System.out.println("Product ID clicked: " + selectedProductId);
-                    FormKasir.getMainFrame().switchToTransJualPanel();
-                    if (sellPanelClickListener != null) {
-                        // Now run the listener which will call switchToEditProductPanel
-                        FormKasir.getMainFrame().switchToTransJualPanel();
-                        sellPanelClickListener.run();
-                    }
-                }
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-            
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                panel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-            }
-        });
     }
 
     private JPanel createActionButtons() {
@@ -1615,7 +1567,112 @@ public class ProductDisplayyKasir extends javax.swing.JPanel {
                 }
             }
         }
-
     }
 
+    public void refreshProducts() {
+        // Reinitialize all category panels with fresh data
+        initializeCategoryPanels();
+
+        // Show the currently active tab again to refresh its content
+        if (activeTab != null && activeTab.getComponent(0) instanceof JButton) {
+            String activeCategory = ((JButton) activeTab.getComponent(0)).getText();
+            switchCategory(activeCategory);
+        }
+    }
+
+    private void addProductCardClickListener(JPanel panel) {
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String productId = (String) panel.getClientProperty("productId");
+                String productName = (String) panel.getClientProperty("productName");
+                Double price = (Double) panel.getClientProperty("price");
+                Integer size = (Integer) panel.getClientProperty("size");
+                Integer stock = (Integer) panel.getClientProperty("stock");
+
+                if (productId != null && stock != null) {
+                    addProductToTransjual(productId, productName, price, size, stock);
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                panel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
+    }
+
+    private void addLabelClickListener(JLabel label) {
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String productId = (String) label.getClientProperty("productId");
+                if (productId != null) {
+                    // Get product details from the parent panel
+                    Container parent = label.getParent();
+                    while (parent != null && !(parent instanceof JPanel)) {
+                        parent = parent.getParent();
+                    }
+
+                    if (parent != null) {
+                        String productName = (String) ((JPanel) parent).getClientProperty("productName");
+                        Double price = (Double) ((JPanel) parent).getClientProperty("price");
+                        Integer size = (Integer) ((JPanel) parent).getClientProperty("size");
+                        Integer stock = (Integer) ((JPanel) parent).getClientProperty("stock");
+
+                        if (productName != null && price != null && size != null && stock != null) {
+                            addProductToTransjual(productId, productName, price, size, stock);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
+    }
+
+    private void addProductToTransjual(String productId, String productName, double price, int size, int stock) {
+        // Check if stock is 0
+        if (stock <= 0) {
+            System.out.println("Stok produk " + productName + " (ID: " + productId + ") adalah 0. Tidak dapat ditambahkan.");
+            return;
+        }
+
+        // Get the main FormKasir instance
+        FormKasir formKasir = FormKasir.getMainFrame();
+        if (formKasir != null) {
+            // Format the price with thousand separators
+            NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("id", "ID"));
+            String formattedPrice = "Rp. " + currencyFormat.format(price);
+
+            // Create product data array
+            String[] productData = {
+                productName, // name
+                String.valueOf(size), // size
+                "1", // quantity (default 1)
+                formattedPrice, // price
+                "-", // discount (default none)
+                formattedPrice // total (same as price for quantity 1)
+            };
+
+            // Add product to Transjual table
+            formKasir.addProductToTransjual(productData);
+
+            // Switch to Transjual panel only if stock is available
+            formKasir.switchToTransJualPanel(productId);
+        }
+    }
 }

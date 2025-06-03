@@ -147,6 +147,7 @@ public class Productt extends JFrame {
 
                 switch (index) {
                     case 0:
+                        dashboardPanel.refreshDashboardData();
                         currentPanel = dashboardPanel;
                         break;
                     case 1:
@@ -160,6 +161,7 @@ public class Productt extends JFrame {
                         currentPanel = laporanPanel;
                         break;
                     case 3:
+                        transaksiBeli.clearTransactionTable();
                         currentPanel = transaksiBeli;
                         break;
                     default:
