@@ -811,18 +811,14 @@ public class EditProductPanel extends JPanel {
 
             // Tampilkan dialog print
             if (job.printDialog()) {
-                // Informasi kepada user
-                JOptionPane.showMessageDialog(this,
-                        "Barcode sedang dikirim ke printer.",
-                        "Informasi", JOptionPane.INFORMATION_MESSAGE);
+               
 
                 // Jalankan pencetakan
                 job.print();
+                PindahanAntarPopUp.showEditProdukCetakBarcodeBerhasilDiCetak(parentFrame); 
             }
         } catch (PrinterException pe) {
-            JOptionPane.showMessageDialog(this,
-                    "Error saat mencetak barcode: " + pe.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+             PindahanAntarPopUp.showEditProdukCetakBarcodeDibatalkan(parentFrame); 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Error: " + e.getMessage(),
