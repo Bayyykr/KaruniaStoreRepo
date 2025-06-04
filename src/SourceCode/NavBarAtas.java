@@ -35,7 +35,7 @@ import javax.swing.JFrame;
 
 public class NavBarAtas extends JPanel {
 
-    private JLabel notificationLabel, profileLabel;
+    private JLabel  profileLabel;
     private JPopupMenu userMenu, detailMenu;
     private JPasswordField passwordField;
     private JTextField emailField, usernameField;
@@ -93,13 +93,6 @@ public class NavBarAtas extends JPanel {
 
         setNamaUser();
 
-        notificationLabel = new JLabel();
-        try {
-            ImageIcon bellIcon = loadImage("/SourceImage/notifications-icon.png");
-            notificationLabel.setIcon(bellIcon);
-        } catch (Exception e) {
-            System.err.println("Error loading notification icon: " + e.getMessage());
-        }
 
         profileLabel = new JLabel();
         try {
@@ -120,7 +113,6 @@ public class NavBarAtas extends JPanel {
             }
         });
 
-        add(notificationLabel);
         add(profileLabel);
     }
 
