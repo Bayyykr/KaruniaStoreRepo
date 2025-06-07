@@ -86,15 +86,13 @@ public class cobadiagram extends JPanel {
                 "ORDER BY bulan";
             
             // Query untuk mendapatkan laba per bulan
-            String queryLaba = "SELECT " +
-                "MONTH(jual.tanggal_transaksi) AS bulan, " +
-                "SUM(djual.total_harga - dbeli.total_harga) AS total_laba " +
-                "FROM transaksi_jual jual " +
-                "JOIN detail_transaksijual djual ON jual.id_transaksijual = djual.id_transaksijual " +
-                "JOIN transaksi_beli beli ON MONTH(jual.tanggal_transaksi) = MONTH(beli.tanggal_transaksi) " +
-                "JOIN detail_transaksibeli dbeli ON beli.id_transaksibeli = dbeli.id_transaksibeli " +
-                "GROUP BY bulan " +
-                "ORDER BY bulan";
+             String queryLaba = "SELECT "
+                    + "MONTH(jual.tanggal_transaksi) AS bulan, "
+                    + "SUM(djual.laba) AS total_laba "
+                    + "FROM transaksi_jual jual "
+                    + "JOIN detail_transaksijual djual ON jual.id_transaksijual = djual.id_transaksijual "
+                    + "GROUP BY bulan "
+                    + "ORDER BY bulan";
             
             // Eksekusi query untuk transaksi beli
             Statement stmtBeli = connection.createStatement();
@@ -141,14 +139,14 @@ public class cobadiagram extends JPanel {
             for (int bulan = 1; bulan <= 12; bulan++) {
                 // Tambahkan Pemasukan (Pembelian)
                 dataset.addValue(
-                    pembelianMap.getOrDefault(bulan, 0.0), 
+                    penjualanMap.getOrDefault(bulan, 0.0), 
                     "Pemasukan", 
                     getNamaBulan(bulan)
                 );
                 
                 // Tambahkan Pengeluaran (Penjualan)
                 dataset.addValue(
-                    penjualanMap.getOrDefault(bulan, 0.0), 
+                    pembelianMap.getOrDefault(bulan, 0.0), 
                     "Pengeluaran", 
                     getNamaBulan(bulan)
                 );

@@ -4,14 +4,18 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_SmallTransJualStokProdukTidakTersedia.java</file>
+            <file>file:/D:/project/silit11/KaruniaStoreRepo/src/Form/Dashboard.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_EditProdukCetakBarcodeDibatalkan.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_SmallAturDiskonOwnerAngkaHarus0sampai100.java</file>
+            <file>file:/D:/project/silit11/KaruniaStoreRepo/src/SourceCode/NavBarAtas.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/Form/diagramlaporankeuangan.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/SourceCode/TambahKaryawan.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/Form/DataKaryawan.java</file>
+            <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_DetailGajiKaryawan.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_EditProdukCetakBarcodeBerhasilDiCetak.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PindahanAntarPopUp.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_SmallTransJualMasukkanuangTidakBolehMinus.java</file>
+            <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_LaporanDetailPengeluaranAtautransaksibeli.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/ScanBarcodeDialog.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_ProdukDisplayDiskonSuksesDitambahkan.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/Form/LoginForm.java</file>
@@ -20,6 +24,7 @@
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/AddNewProductFormm.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/ProductDisplayyKasir.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/Transjual.java</file>
+            <file>file:/D:/project/silit11/KaruniaStoreRepo/src/PopUp_all/PopUp_LaporanDetailPemasukanAtautransaksiJual.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/ScanBarcodeDialogKasir.java</file>
             <file>file:/D:/project/silit11/KaruniaStoreRepo/src/produk/EditProductPanel.java</file>
         </group>

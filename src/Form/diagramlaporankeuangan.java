@@ -103,78 +103,106 @@ public class diagramlaporankeuangan extends JPanel {
         }
     }
 
-    private DefaultCategoryDataset createDataset() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+   private DefaultCategoryDataset createDataset() {
+    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-        Map<String, Double> pemasukanMap = new HashMap<>();
-        Map<String, Double> pengeluaranMap = new HashMap<>();
+    Map<String, Double> pemasukanMap = new HashMap<>();
+    Map<String, Double> pengeluaranMap = new HashMap<>();
+    Map<String, Double> labaMap = new HashMap<>();
 
-        String[] semuaHari = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
+    String[] semuaHari = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
 
-        LocalDate today = LocalDate.now();
-        DayOfWeek firstDayOfWeek = DayOfWeek.MONDAY;
-        LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek));
-        LocalDate endOfWeek = startOfWeek.plusDays(6);
+    LocalDate today = LocalDate.now();
+    DayOfWeek firstDayOfWeek = DayOfWeek.MONDAY;
+    LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek));
+    LocalDate endOfWeek = startOfWeek.plusDays(6);
 
-        try {
-            String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
-                    + "FROM transaksi_jual tj "
-                    + "JOIN detail_transaksijual dt ON tj.id_transaksijual = dt.id_transaksijual "
-                    + "WHERE tanggal_transaksi BETWEEN ? AND ? "
-                    + "GROUP BY DAYNAME(tanggal_transaksi)";
-            PreparedStatement stmt = con.prepareStatement(sql);
-            stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
-            stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
-            ResultSet rs = stmt.executeQuery();
+    // Pemasukan
+    try {
+        String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
+                   + "FROM transaksi_jual tj "
+                   + "JOIN detail_transaksijual dt ON tj.id_transaksijual = dt.id_transaksijual "
+                   + "WHERE tanggal_transaksi BETWEEN ? AND ? "
+                   + "GROUP BY DAYNAME(tanggal_transaksi)";
+        PreparedStatement stmt = con.prepareStatement(sql);
+        stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
+        stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
+        ResultSet rs = stmt.executeQuery();
 
-            while (rs.next()) {
-                String hari = rs.getString("hari").toLowerCase();
-                double total = rs.getDouble("total");
-                pemasukanMap.put(hari, total);
-            }
-
-            rs.close();
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        while (rs.next()) {
+            String hari = rs.getString("hari").toLowerCase();
+            double total = rs.getDouble("total");
+            pemasukanMap.put(hari, total);
         }
 
-        try {
-            String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
-                    + "FROM transaksi_beli tb "
-                    + "JOIN detail_transaksibeli dtb ON tb.id_transaksibeli = dtb.id_transaksibeli "
-                    + "WHERE tanggal_transaksi BETWEEN ? AND ? "
-                    + "GROUP BY DAYNAME(tanggal_transaksi)";
-            PreparedStatement stmt = con.prepareStatement(sql);
-            stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
-            stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                String hari = rs.getString("hari").toLowerCase();
-                double total = rs.getDouble("total");
-                pengeluaranMap.put(hari, total);
-            }
-
-            rs.close();
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        for (String hari : semuaHari) {
-            String label = ubahHariKeIndo(hari);
-            double pemasukan = pemasukanMap.getOrDefault(hari, 0.0);
-            double pengeluaran = pengeluaranMap.getOrDefault(hari, 0.0);
-            double laba = pemasukan - pengeluaran;
-
-            dataset.addValue(pemasukan, "Pemasukan", label);
-            dataset.addValue(pengeluaran, "Pengeluaran", label);
-            dataset.addValue(laba, "Laba", label);
-        }
-
-        return dataset;
+        rs.close();
+        stmt.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+
+    // Pengeluaran
+    try {
+        String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(total_harga) AS total "
+                   + "FROM transaksi_beli tb "
+                   + "JOIN detail_transaksibeli dtb ON tb.id_transaksibeli = dtb.id_transaksibeli "
+                   + "WHERE tanggal_transaksi BETWEEN ? AND ? "
+                   + "GROUP BY DAYNAME(tanggal_transaksi)";
+        PreparedStatement stmt = con.prepareStatement(sql);
+        stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
+        stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            String hari = rs.getString("hari").toLowerCase();
+            double total = rs.getDouble("total");
+            pengeluaranMap.put(hari, total);
+        }
+
+        rs.close();
+        stmt.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    // Laba
+    try {
+        String sql = "SELECT DAYNAME(tanggal_transaksi) AS hari, SUM(laba) AS total_laba "
+                   + "FROM transaksi_jual tj "
+                   + "JOIN detail_transaksijual dtj ON tj.id_transaksijual = dtj.id_transaksijual "
+                   + "WHERE tanggal_transaksi BETWEEN ? AND ? "
+                   + "GROUP BY DAYNAME(tanggal_transaksi)";
+        PreparedStatement stmt = con.prepareStatement(sql);
+        stmt.setDate(1, java.sql.Date.valueOf(startOfWeek));
+        stmt.setDate(2, java.sql.Date.valueOf(endOfWeek));
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            String hari = rs.getString("hari").toLowerCase();
+            double totalLaba = rs.getDouble("total_laba");
+            labaMap.put(hari, totalLaba);
+        }
+
+        rs.close();
+        stmt.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    // Tambahkan ke dataset
+    for (String hari : semuaHari) {
+        String label = ubahHariKeIndo(hari);
+        double pemasukan = pemasukanMap.getOrDefault(hari, 0.0);
+        double pengeluaran = pengeluaranMap.getOrDefault(hari, 0.0);
+        double laba = labaMap.getOrDefault(hari, 0.0);
+
+        dataset.addValue(pemasukan, "Pemasukan", label);
+        dataset.addValue(pengeluaran, "Pengeluaran", label);
+        dataset.addValue(laba, "Laba", label);
+    }
+
+    return dataset;
+}
 
     private String ubahHariKeIndo(String hariInggris) {
         return switch (hariInggris.toLowerCase()) {

@@ -1349,65 +1349,52 @@ public class Transjual extends JPanel {
         int rowCount = model.getRowCount();
 
         if (rowCount == 0) {
-            return false; // Tidak ada item untuk disimpan
+            return false;
         }
 
         try {
-            // Mulai transaksi untuk atomisitas
             con.setAutoCommit(false);
-
-            // Buat nomor referensi untuk transaksi (norfid)
             String norfid = NoRFID;
 
-            // Masukkan header transaksi ke tabel transaksi_jual
             String insertTransHeader = "INSERT INTO transaksi_jual (id_transaksijual, tanggal_transaksi, norfid) VALUES (?, ?, ?)";
             PreparedStatement psHeader = con.prepareStatement(insertTransHeader, Statement.RETURN_GENERATED_KEYS);
 
             String transactionId = txtIdTransaksi.getText();
             psHeader.setString(1, transactionId);
 
-            // Set tanggal transaksi
             java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
             psHeader.setTimestamp(2, currentTimestamp);
 
-            // Set nomor referensi
             psHeader.setString(3, norfid);
-
             psHeader.executeUpdate();
 
-            // Sekarang masukkan setiap item dari tabel sebagai detail transaksi
             for (int i = 0; i < rowCount; i++) {
-                // Dapatkan data dari tabel
                 String productName = model.getValueAt(i, 1).toString();
                 String productSize = model.getValueAt(i, 2).toString();
                 System.out.println(productName);
                 System.out.println(productSize);
                 int quantity = Integer.parseInt(model.getValueAt(i, 3).toString());
 
-                // Dapatkan harga dari kolom 4, hilangkan "Rp. " dan "."
                 String priceStr = model.getValueAt(i, 4).toString().replace("Rp. ", "").replace(".", "");
                 double price = Double.parseDouble(priceStr);
 
-                // Dapatkan diskon
                 String discountStr = model.getValueAt(i, 5).toString();
-                String discountId = "DS_00"; // Default jika tidak ada diskon
-
+                String discountId = "DS_00";
                 if (!discountStr.equals("-")) {
-                    // Dapatkan ID diskon dari database berdasarkan nama/nilai diskon
                     discountId = getDiscountId(discountStr);
                     System.out.println(discountId);
                 }
 
-                // Dapatkan total harga dari kolom 6
                 String totalStr = model.getValueAt(i, 6).toString().replace("Rp. ", "").replace(".", "");
                 double totalPrice = Double.parseDouble(totalStr);
 
-                // Dapatkan ID produk dari nama dan ukuran
                 String productId = getProductIdFromNameAndSize(productName, productSize);
                 System.out.println(productId);
 
-                // Masukkan ke tabel transaksi_jual_detail
-                String insertDetail = "INSERT INTO detail_transaksijual (id_produk, id_transaksijual, total_harga, jumlah_produk, id_diskon) VALUES (?, ?, ?, ?, ?)";
+                double hargaModal = getHargaModal(productId);
+                double laba = (price - hargaModal) * quantity;
+
+                String insertDetail = "INSERT INTO detail_transaksijual (id_produk, id_transaksijual, total_harga, jumlah_produk, id_diskon, laba) VALUES (?, ?, ?, ?, ?, ?)";
                 PreparedStatement psDetail = con.prepareStatement(insertDetail);
 
                 psDetail.setString(1, productId);
@@ -1415,20 +1402,19 @@ public class Transjual extends JPanel {
                 psDetail.setDouble(3, totalPrice);
                 psDetail.setInt(4, quantity);
                 psDetail.setString(5, discountId);
+                psDetail.setDouble(6, laba); 
 
                 psDetail.executeUpdate();
                 psDetail.close();
             }
 
-            // Commit transaksi
             con.commit();
             con.setAutoCommit(true);
 
             PindahanAntarPopUp.showSuksesBayarTransjual(parentFrame);
-            return true; // Transaksi berhasil
+            return true;
 
         } catch (SQLException ex) {
-            // Rollback jika terjadi kesalahan
             try {
                 con.rollback();
                 con.setAutoCommit(true);
@@ -1440,9 +1426,30 @@ public class Transjual extends JPanel {
                     "Error menyimpan transaksi: " + ex.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
-
-            return false; // Transaksi gagal
+            return false;
         }
+    }
+
+    private double getHargaModal(String idProduk) {
+        double hargaModal = 0.0;
+
+        try {
+            String query = "SELECT harga_beli FROM produk WHERE id_produk = ?";
+            PreparedStatement ps = con.prepareStatement(query);
+            ps.setString(1, idProduk);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                hargaModal = rs.getDouble("harga_beli");
+            }
+
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil harga beli: " + e.getMessage());
+        }
+
+        return hargaModal;
     }
 
     public void clearTransactionTable() {

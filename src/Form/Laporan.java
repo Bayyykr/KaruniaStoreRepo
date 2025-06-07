@@ -53,6 +53,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.function.BiConsumer;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 
@@ -69,6 +70,7 @@ public class Laporan extends javax.swing.JPanel {
     private JTableRounded tabelPemasukan, tabelPengeluaran;
     private JPanel pemasukanPanel, pengeluaranPanel, labaPanel, grafikPanel;
     private java.sql.Date selectedDate;
+    private boolean isPopupOpen = false;
     // Warna dan styling
     private Color selectedTabColor = new Color(20, 20, 20);
     private Color unselectedTabColor = new Color(20, 20, 20);
@@ -465,76 +467,116 @@ public class Laporan extends javax.swing.JPanel {
 
     private void loadPemasukanData(Date startDate, Date endDate) {
         String query = "SELECT tj.id_transaksijual, tj.tanggal_transaksi, "
-                + "SUM(dtj.total_harga) as total, "
-                + "GROUP_CONCAT(dtj.jumlah_produk) as jumlah_produk, "
-                + "tj.norfid, u.nama_user "
+                + "SUM(dtj.total_harga) AS total, "
+                + "GROUP_CONCAT(CONCAT(p.nama_produk, ' (', dtj.jumlah_produk, ')') SEPARATOR ', ') AS nama_produk, "
+                + "u.nama_user "
                 + "FROM transaksi_jual tj "
                 + "JOIN detail_transaksijual dtj ON tj.id_transaksijual = dtj.id_transaksijual "
+                + "JOIN produk p ON dtj.id_produk = p.id_produk "
                 + "JOIN user u ON tj.norfid = u.norfid ";
 
-        // Tambahkan WHERE clause berdasarkan ketersediaan tanggal
         if (startDate != null && endDate != null) {
-            // Jika keduanya ada, maka ini adalah rentang tanggal (range date)
             query += "WHERE tj.tanggal_transaksi BETWEEN ? AND ? ";
         } else if (startDate != null) {
-            // Jika hanya startDate yang ada, maka ini adalah tanggal tunggal (single date)
             query += "WHERE DATE(tj.tanggal_transaksi) = DATE(?) ";
         }
 
-        query += "GROUP BY tj.id_transaksijual, tj.tanggal_transaksi, tj.norfid, u.nama_user "
+        query += "GROUP BY tj.id_transaksijual, tj.tanggal_transaksi, u.nama_user "
                 + "ORDER BY tj.tanggal_transaksi DESC";
 
         try {
             PreparedStatement stmt = con.prepareStatement(query);
 
-            // Set parameter tanggal sesuai dengan kondisi yang digunakan
             if (startDate != null && endDate != null) {
-                // Range date: gunakan kedua parameter
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(endDate);
                 cal.add(Calendar.DATE, 1); // Tambah 1 hari
                 java.sql.Date adjustedEndDate = new java.sql.Date(cal.getTimeInMillis());
-
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
                 stmt.setDate(2, adjustedEndDate);
             } else if (startDate != null) {
-                // Single date: gunakan hanya satu parameter
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
             }
 
             ResultSet rs = stmt.executeQuery();
             JTable rawTable = tabelPemasukan.getTable();
+rawTable.addMouseListener(new MouseAdapter() {
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (isPopupOpen) {
+            return;
+        }
+
+        int row = rawTable.rowAtPoint(e.getPoint());
+        int col = rawTable.columnAtPoint(e.getPoint());
+
+        if (row == -1 || col == -1) {
+            return;
+        }
+
+        if (col == 3 || col == 2) {
+            String kodeTransaksi = rawTable.getValueAt(row, 2).toString();
+
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+            PopUp_LaporanDetailPemasukanAtautransaksiJual detailTransaksiPopup = new PopUp_LaporanDetailPemasukanAtautransaksiJual(parentFrame);
+            isPopupOpen = true;
+
+            detailTransaksiPopup.loadTransactionDetails(kodeTransaksi);
+            detailTransaksiPopup.setVisible(true);
+
+            System.out.println("Menampilkan detail untuk transaksi: " + kodeTransaksi);
+
+            detailTransaksiPopup.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    isPopupOpen = false;
+                }
+
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    isPopupOpen = false;
+                }
+            });
+        }
+    }
+});
             DefaultTableModel model = (DefaultTableModel) rawTable.getModel();
             model.setRowCount(0);
             DecimalFormat decimalFormat = new DecimalFormat("#,###");
             decimalFormat.setGroupingUsed(true);
             SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
             int no = 1;
             double totalPendapatan = 0;
 
             while (rs.next()) {
+                String idTransaksi = rs.getString("id_transaksijual");
                 Date tanggalRaw = rs.getDate("tanggal_transaksi");
+                String tanggal = displayDateFormat.format(tanggalRaw);
+                String namaProduk = rs.getString("nama_produk");
                 double total = rs.getDouble("total");
                 String namaKasir = rs.getString("nama_user");
+
                 totalPendapatan += total;
-                String tanggal = displayDateFormat.format(tanggalRaw);
                 String totalFormatted = "Rp. " + decimalFormat.format(total);
+
                 model.addRow(new Object[]{
                     no++,
                     tanggal,
+                    idTransaksi,
+                    namaProduk,
                     totalFormatted,
                     namaKasir
                 });
             }
 
-            // Update total pendapatan
             String totalPendapatanFormatted = "Rp. " + decimalFormat.format(totalPendapatan);
             totalPendapatanValue.setText(totalPendapatanFormatted);
 
             rs.close();
             stmt.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error saat mengambil data: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error saat mengambil data pemasukan: " + e.getMessage());
         }
     }
 
@@ -566,13 +608,15 @@ public class Laporan extends javax.swing.JPanel {
         totalPendapatanPanel.add(totalPendapatanValue);
         totalPanel.add(totalPendapatanPanel, BorderLayout.CENTER);
 
-        String[] kolom = {"No", "Tanggal", "Total", "Kasir"};
+        String[] kolom = {"No", "Tanggal", "Kode Transaksi", "Detail Produk", "Total", "Kasir"};
         tabelPemasukan = new JTableRounded(kolom);
 
-        tabelPemasukan.setColumnWidth(0, 50);
-        tabelPemasukan.setColumnWidth(1, 100);
-        tabelPemasukan.setColumnWidth(2, 200);
-        tabelPemasukan.setColumnWidth(3, 200);
+        tabelPemasukan.setColumnWidth(0, 38);
+        tabelPemasukan.setColumnWidth(1, 85);
+        tabelPemasukan.setColumnWidth(2, 95);
+        tabelPemasukan.setColumnWidth(3, 150);
+        tabelPemasukan.setColumnWidth(4, 100);
+        tabelPemasukan.setColumnWidth(5, 90);
 
         loadPemasukanData(null, null);
 
@@ -602,121 +646,78 @@ public class Laporan extends javax.swing.JPanel {
     }
 
     private void loadLabaData(Date startDate, Date endDate) {
-        // Debug: Print raw query components first
         System.out.println("=== DEBUG LABA QUERY ===");
         System.out.println("Start Date: " + startDate);
         System.out.println("End Date: " + endDate);
 
+        // Tentukan kondisi WHERE untuk tanggal transaksi
+        String whereCondition = "";
+        boolean useRange = (startDate != null && endDate != null);
+        boolean useSingleDate = (startDate != null && endDate == null);
+
+        if (useRange) {
+            whereCondition = " WHERE tanggal_transaksi >= ? AND tanggal_transaksi <= ? ";
+        } else if (useSingleDate) {
+            whereCondition = " WHERE DATE(tanggal_transaksi) = DATE(?) ";
+        } else {
+            whereCondition = "";  // Kalau null semua, ambil semua data tanpa filter tanggal
+        }
+
+        // Query utama dengan alias tabel yg diupdate supaya gampang parameternya
         String query = "SELECT "
                 + "(SELECT IFNULL(SUM(dtj.total_harga), 0) FROM detail_transaksijual dtj "
                 + " JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
-                + (startDate != null && endDate != null
-                        ? " WHERE tj.tanggal_transaksi >= ? AND tj.tanggal_transaksi <= ? "
-                        : startDate != null ? " WHERE DATE(tj.tanggal_transaksi) = DATE(?) " : "")
+                + whereCondition.replace("tanggal_transaksi", "tj.tanggal_transaksi")
                 + ") AS pemasukan, "
                 + "(SELECT IFNULL(SUM(dtb.total_harga), 0) FROM detail_transaksibeli dtb "
                 + " JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
-                + (startDate != null && endDate != null
-                        ? " WHERE tb.tanggal_transaksi >= ? AND tb.tanggal_transaksi <= ? "
-                        : startDate != null ? " WHERE DATE(tb.tanggal_transaksi) = DATE(?) " : "")
+                + whereCondition.replace("tanggal_transaksi", "tb.tanggal_transaksi")
                 + ") AS pengeluaran, "
                 + "(SELECT IFNULL(SUM(total), 0) FROM biaya_operasional "
-                + (startDate != null && endDate != null
-                        ? " WHERE tanggal >= ? AND tanggal <= ? "
-                        : startDate != null ? " WHERE DATE(tanggal) = DATE(?) " : "")
-                + ") AS totalOperasional";
+                + whereCondition.replace("tanggal_transaksi", "tanggal")
+                + ") AS totalOperasional, "
+                + "(SELECT IFNULL(SUM(dtj.total_harga - (p.harga_beli * dtj.jumlah_produk)), 0) "
+                + " FROM detail_transaksijual dtj "
+                + " JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
+                + " JOIN produk p ON dtj.id_produk = p.id_produk "
+                + whereCondition.replace("tanggal_transaksi", "tj.tanggal_transaksi")
+                + ") AS labaFromSales";
 
         System.out.println("Query: " + query);
 
         try {
             PreparedStatement stmt = con.prepareStatement(query);
-            int paramIndex = 1;
 
+            // Karena setiap subquery menggunakan parameter tanggal yang sama,
+            // kita set parameter sekali per subquery, total 4 subqueries.
+            // Jadi, set parameter startDate dan endDate 4 kali berturut-turut sesuai kondisi.
             if (startDate != null) {
                 java.sql.Timestamp sqlStartDate = new java.sql.Timestamp(startDate.getTime());
-                java.sql.Timestamp sqlEndDate = endDate != null ? new java.sql.Timestamp(endDate.getTime()) : null;
+                java.sql.Timestamp sqlEndDate = (endDate != null) ? new java.sql.Timestamp(endDate.getTime()) : null;
 
-                System.out.println("SQL Start Date: " + sqlStartDate);
-                System.out.println("SQL End Date: " + sqlEndDate);
+                // Fungsi untuk set parameter tanggal sesuai kondisi
+                BiConsumer<Integer, PreparedStatement> setParams = (paramStartIndex, preparedStatement) -> {
+                    try {
+                        if (useRange) {
+                            preparedStatement.setTimestamp(paramStartIndex, sqlStartDate);
+                            preparedStatement.setTimestamp(paramStartIndex + 1, sqlEndDate);
+                        } else {
+                            preparedStatement.setTimestamp(paramStartIndex, sqlStartDate);
+                        }
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                };
 
-                // Parameter untuk subquery pemasukan
-                if (endDate != null) {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
-                    stmt.setTimestamp(paramIndex++, sqlEndDate);
-                } else {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
+                int paramIndex = 1;
+                for (int i = 0; i < 4; i++) {
+                    if (useRange) {
+                        stmt.setTimestamp(paramIndex++, sqlStartDate);
+                        stmt.setTimestamp(paramIndex++, sqlEndDate);
+                    } else {
+                        stmt.setTimestamp(paramIndex++, sqlStartDate);
+                    }
                 }
-
-                // Parameter untuk subquery pengeluaran
-                if (endDate != null) {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
-                    stmt.setTimestamp(paramIndex++, sqlEndDate);
-                } else {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
-                }
-
-                // Parameter untuk subquery biaya operasional
-                if (endDate != null) {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
-                    stmt.setTimestamp(paramIndex++, sqlEndDate);
-                } else {
-                    stmt.setTimestamp(paramIndex++, sqlStartDate);
-                }
-            }
-
-            // Test individual subqueries
-            System.out.println("=== TESTING SUBQUERIES ===");
-
-            // Test pemasukan
-            if (startDate != null && endDate != null) {
-                String testQuery = "SELECT COUNT(*) as count, IFNULL(SUM(dtj.total_harga), 0) as total "
-                        + "FROM detail_transaksijual dtj "
-                        + "JOIN transaksi_jual tj ON dtj.id_transaksijual = tj.id_transaksijual "
-                        + "WHERE tj.tanggal_transaksi >= ? AND tj.tanggal_transaksi <= ?";
-
-                PreparedStatement testStmt = con.prepareStatement(testQuery);
-                testStmt.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
-                testStmt.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
-
-                ResultSet testRs = testStmt.executeQuery();
-                if (testRs.next()) {
-                    System.out.println("Pemasukan test - Records: " + testRs.getInt("count") + ", Total: " + testRs.getDouble("total"));
-                }
-                testRs.close();
-                testStmt.close();
-
-                // Test pengeluaran
-                String testQuery2 = "SELECT COUNT(*) as count, IFNULL(SUM(dtb.total_harga), 0) as total "
-                        + "FROM detail_transaksibeli dtb "
-                        + "JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
-                        + "WHERE tb.tanggal_transaksi >= ? AND tb.tanggal_transaksi <= ?";
-
-                PreparedStatement testStmt2 = con.prepareStatement(testQuery2);
-                testStmt2.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
-                testStmt2.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
-
-                ResultSet testRs2 = testStmt2.executeQuery();
-                if (testRs2.next()) {
-                    System.out.println("Pengeluaran test - Records: " + testRs2.getInt("count") + ", Total: " + testRs2.getDouble("total"));
-                }
-                testRs2.close();
-                testStmt2.close();
-
-                // Test biaya operasional
-                String testQuery3 = "SELECT COUNT(*) as count, IFNULL(SUM(total), 0) as total "
-                        + "FROM biaya_operasional "
-                        + "WHERE tanggal >= ? AND tanggal <= ?";
-
-                PreparedStatement testStmt3 = con.prepareStatement(testQuery3);
-                testStmt3.setTimestamp(1, new java.sql.Timestamp(startDate.getTime()));
-                testStmt3.setTimestamp(2, new java.sql.Timestamp(endDate.getTime()));
-
-                ResultSet testRs3 = testStmt3.executeQuery();
-                if (testRs3.next()) {
-                    System.out.println("Operasional test - Records: " + testRs3.getInt("count") + ", Total: " + testRs3.getDouble("total"));
-                }
-                testRs3.close();
-                testStmt3.close();
             }
 
             // Execute main query
@@ -728,10 +729,9 @@ public class Laporan extends javax.swing.JPanel {
                 double totalPemasukan = rs.getDouble("pemasukan");
                 double totalPengeluaran = rs.getDouble("pengeluaran");
                 double biayaOperasional = rs.getDouble("totalOperasional");
-                double labaKotor = totalPemasukan - totalPengeluaran;
-                double labaBersih = labaKotor - biayaOperasional;
+                double labaKotor = rs.getDouble("labaFromSales");  // langsung dari DB
+                double labaBersih = labaKotor - biayaOperasional;  // laba kotor - operasional
 
-                // Update label dengan nilai baru
                 pemasukanValueLabel.setText("Rp. " + decimalFormat.format(totalPemasukan));
                 pengeluaranValueLabel.setText("- Rp. " + decimalFormat.format(totalPengeluaran));
                 labaKotorValueLabel.setText("Rp. " + decimalFormat.format(labaKotor));
@@ -743,7 +743,7 @@ public class Laporan extends javax.swing.JPanel {
                 System.out.println("Pemasukan: " + totalPemasukan);
                 System.out.println("Pengeluaran: " + totalPengeluaran);
                 System.out.println("Biaya Operasional: " + biayaOperasional);
-                System.out.println("Laba Kotor: " + labaKotor);
+                System.out.println("Laba Kotor (labaFromSales): " + labaKotor);
                 System.out.println("Laba Bersih: " + labaBersih);
                 System.out.println("====================");
             }
@@ -935,20 +935,18 @@ public class Laporan extends javax.swing.JPanel {
 
     private void loadPengeluaranData(Date startDate, Date endDate) {
         String query = "SELECT tb.id_transaksibeli, tb.tanggal_transaksi, "
-                + "SUM(dtb.total_harga) as total, "
-                + "GROUP_CONCAT(dtb.jumlah_produk) as jumlah_produk, "
-                + "tb.norfid, u.nama_user "
+                + "SUM(dtb.total_harga) AS total, "
+                + "GROUP_CONCAT(CONCAT(p.nama_produk, ' (', dtb.jumlah_produk, ')') SEPARATOR ', ') AS nama_produk, "
+                + "u.nama_user "
                 + "FROM transaksi_beli tb "
                 + "JOIN detail_transaksibeli dtb ON tb.id_transaksibeli = dtb.id_transaksibeli "
+                + "JOIN produk p ON dtb.id_produk = p.id_produk "
                 + "JOIN user u ON tb.norfid = u.norfid ";
 
         // Tambahkan WHERE clause berdasarkan ketersediaan tanggal
         if (startDate != null && endDate != null) {
-            // Jika keduanya ada, maka ini adalah rentang tanggal (range date)
             query += "WHERE tb.tanggal_transaksi BETWEEN ? AND ? ";
-
         } else if (startDate != null) {
-            // Jika hanya startDate yang ada, maka ini adalah tanggal tunggal (single date)
             query += "WHERE DATE(tb.tanggal_transaksi) = DATE(?) ";
         }
 
@@ -958,7 +956,7 @@ public class Laporan extends javax.swing.JPanel {
         try {
             PreparedStatement stmt = con.prepareStatement(query);
 
-            // Set parameter tanggal sesuai dengan kondisi yang digunakan
+            // Set parameter tanggal
             if (startDate != null && endDate != null) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(endDate);
@@ -967,7 +965,6 @@ public class Laporan extends javax.swing.JPanel {
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
                 stmt.setDate(2, adjustedEndDate);
             } else if (startDate != null) {
-                // Single date: gunakan hanya satu parameter
                 stmt.setDate(1, new java.sql.Date(startDate.getTime()));
             }
 
@@ -975,33 +972,79 @@ public class Laporan extends javax.swing.JPanel {
             JTable rawTable = tabelPengeluaran.getTable();
             DefaultTableModel model = (DefaultTableModel) rawTable.getModel();
             model.setRowCount(0);
+
             DecimalFormat decimalFormat = new DecimalFormat("#,###");
             decimalFormat.setGroupingUsed(true);
             SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
             int no = 1;
             double totalPengeluaran = 0;
 
             while (rs.next()) {
+                String kodeTransaksi = rs.getString("id_transaksibeli");
                 Date tanggalRaw = rs.getDate("tanggal_transaksi");
-                double total = rs.getDouble("total");
-                namaUser = rs.getString("nama_user");
-                totalPengeluaran += total;
                 String tanggal = displayDateFormat.format(tanggalRaw);
+                String namaProduk = rs.getString("nama_produk");
+                double total = rs.getDouble("total");
+                totalPengeluaran += total;
+
                 String totalFormatted = "Rp. " + decimalFormat.format(total);
+
                 model.addRow(new Object[]{
                     no++,
                     tanggal,
-                    totalFormatted,
-                    namaUser
+                    kodeTransaksi,
+                    namaProduk,
+                    totalFormatted
                 });
             }
 
-            // Update total pengeluaran
             String totalPengeluaranFormatted = "- Rp. " + decimalFormat.format(totalPengeluaran);
             totalPengeluaranValue.setText(totalPengeluaranFormatted);
 
             rs.close();
             stmt.close();
+            MouseListener[] listeners = rawTable.getMouseListeners();
+            for (MouseListener listener : listeners) {
+                rawTable.removeMouseListener(listener);
+            }
+
+            rawTable.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (isPopupOpen) {
+                        return;
+                    }
+
+                    int row = rawTable.rowAtPoint(e.getPoint());
+                    int col = rawTable.columnAtPoint(e.getPoint());
+
+                    if (row >= 0 && col >= 0 && (col == 2 || col == 3)) {
+                        String kodeTransaksi = rawTable.getValueAt(row, 2).toString();
+
+                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                        PopUp_LaporanDetailPengeluaranAtautransaksibeli detailPengeluaranPopup
+                                = new PopUp_LaporanDetailPengeluaranAtautransaksibeli(parentFrame);
+
+                        detailPengeluaranPopup.loadPengeluaranTransactionDetails(kodeTransaksi);
+                        detailPengeluaranPopup.setVisible(true);
+
+                        isPopupOpen = true;
+
+                        detailPengeluaranPopup.addWindowListener(new WindowAdapter() {
+                            @Override
+                            public void windowClosed(WindowEvent e) {
+                                isPopupOpen = false;
+                            }
+
+                            @Override
+                            public void windowClosing(WindowEvent e) {
+                                isPopupOpen = false;
+                            }
+                        });
+                    }
+                }
+            });
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error saat mengambil data pengeluaran: " + e.getMessage());
         }
@@ -1035,18 +1078,20 @@ public class Laporan extends javax.swing.JPanel {
         totalPengeluaranPanel.add(totalPengeluaranValue);
         totalPanel.add(totalPengeluaranPanel, BorderLayout.CENTER);
 
-        String[] kolom = {"No", "Tanggal", "Total"};
+        String[] kolom = {"No", "Tanggal", "Kode Transaksi", "Detail Produk", "Total"};
         tabelPengeluaran = new JTableRounded(kolom);
 
-        tabelPengeluaran.setColumnWidth(0, 50);
-        tabelPengeluaran.setColumnWidth(1, 200);
-        tabelPengeluaran.setColumnWidth(2, 300);
+        tabelPengeluaran.setColumnWidth(0, 40);
+        tabelPengeluaran.setColumnWidth(1, 90);
+        tabelPengeluaran.setColumnWidth(2, 100);
+        tabelPengeluaran.setColumnWidth(3, 220);
+        tabelPengeluaran.setColumnWidth(4, 110);
 
         loadPengeluaranData(null, null);
         JTable rawTable = tabelPengeluaran.getTable();
         TableColumnModel columnModel = rawTable.getColumnModel();
 
-        columnModel.getColumn(2).setCellEditor(new DefaultCellEditor(new JTextField()) {
+        columnModel.getColumn(4).setCellEditor(new DefaultCellEditor(new JTextField()) {
             @Override
             public boolean isCellEditable(EventObject event) {
                 return false;
