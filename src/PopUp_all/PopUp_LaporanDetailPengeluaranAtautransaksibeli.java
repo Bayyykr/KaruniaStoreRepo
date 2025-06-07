@@ -363,93 +363,89 @@ public class PopUp_LaporanDetailPengeluaranAtautransaksibeli extends JDialog {
      * @param kodeTransaksi ID transaksi yang akan ditampilkan detailnya
      */
     public void loadPengeluaranTransactionDetails(String kodeTransaksi) {
-        this.kodeTransaksi = kodeTransaksi;
+    this.kodeTransaksi = kodeTransaksi;
 
-        // PERBAIKAN: Query disesuaikan dengan struktur database yang benar
-        String query = "SELECT dtb.id_transaksibeli, p.nama_produk, p.harga_beli, "
-                + "dtb.total_harga, dtb.jumlah_produk, "
-                + "tb.tanggal_transaksi, u.nama_user "
-                + "FROM detail_transaksibeli dtb "
-                + "JOIN produk p ON dtb.id_produk = p.id_produk "
-                + "JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
-                + "JOIN user u ON tb.norfid = u.norfid "
-                + "WHERE tb.id_transaksibeli = ? "
-                + "ORDER BY dtb.id_transaksibeli";
+    String query = "SELECT dtb.id_transaksibeli, p.nama_produk, "
+            + "dtb.total_harga, dtb.jumlah_produk, "
+            + "tb.tanggal_transaksi, u.nama_user, dtb.id_produk "
+            + "FROM detail_transaksibeli dtb "
+            + "JOIN produk p ON dtb.id_produk = p.id_produk "
+            + "JOIN transaksi_beli tb ON dtb.id_transaksibeli = tb.id_transaksibeli "
+            + "JOIN user u ON tb.norfid = u.norfid "
+            + "WHERE tb.id_transaksibeli = ? "
+            + "ORDER BY dtb.id_transaksibeli";
 
-        try {
-            PreparedStatement stmt = con.prepareStatement(query);
-            stmt.setString(1, kodeTransaksi);
-            ResultSet rs = stmt.executeQuery();
+    try {
+        PreparedStatement stmt = con.prepareStatement(query);
+        stmt.setString(1, kodeTransaksi);
+        ResultSet rs = stmt.executeQuery();
 
-            DefaultTableModel model = (DefaultTableModel) tablePengeluaran.getTable().getModel();
-            model.setRowCount(0); // Clear existing data
+        DefaultTableModel model = (DefaultTableModel) tablePengeluaran.getTable().getModel();
+        model.setRowCount(0); // Clear existing data
 
-            DecimalFormat decimalFormat = new DecimalFormat("#,###");
-            decimalFormat.setGroupingUsed(true);
-            SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DecimalFormat decimalFormat = new DecimalFormat("#,###");
+        decimalFormat.setGroupingUsed(true);
+        SimpleDateFormat displayDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-            int no = 1;
-            double grandTotal = 0;
-            String tanggalTransaksi = "";
-            String namaOwner = "";
+        int no = 1;
+        double grandTotal = 0;
+        String tanggalTransaksi = "";
+        String namaOwner = "";
 
-            while (rs.next()) {
-                String namaProduk = rs.getString("nama_produk");
-                double hargaBeli = rs.getDouble("harga_beli");
-                double totalHarga = rs.getDouble("total_harga");
-                int jumlahProduk = rs.getInt("jumlah_produk");
+        while (rs.next()) {
+            String namaProduk = rs.getString("nama_produk");
+            int jumlahProduk = rs.getInt("jumlah_produk");
+            double totalHarga = rs.getDouble("total_harga");
 
-                // Format harga dalam rupiah
-                String hargaBeliFormatted = "Rp. " + decimalFormat.format(hargaBeli);
-                String totalHargaFormatted = "Rp. " + decimalFormat.format(totalHarga);
+            double hargaBeli = (jumlahProduk > 0) ? (totalHarga / jumlahProduk) : 0;
 
-                model.addRow(new Object[]{
-                    no++,
-                    namaProduk,
-                    hargaBeliFormatted,
-                    jumlahProduk,
-                    totalHargaFormatted
-                });
+            String hargaBeliFormatted = "Rp. " + decimalFormat.format(hargaBeli);
+            String totalHargaFormatted = "Rp. " + decimalFormat.format(totalHarga);
 
-                grandTotal += totalHarga;
+            model.addRow(new Object[]{
+                no++,
+                namaProduk,
+                hargaBeliFormatted,
+                jumlahProduk,
+                totalHargaFormatted
+            });
 
-                if (no == 2) {
-                    Date tanggalRaw = rs.getTimestamp("tanggal_transaksi");
-                    if (tanggalRaw != null) {
-                        tanggalTransaksi = displayDateFormat.format(tanggalRaw);
-                    }
-                    namaOwner = rs.getString("nama_user");
+            grandTotal += totalHarga;
+
+            if (no == 2) {
+                Date tanggalRaw = rs.getTimestamp("tanggal_transaksi");
+                if (tanggalRaw != null) {
+                    tanggalTransaksi = displayDateFormat.format(tanggalRaw);
                 }
+                namaOwner = rs.getString("nama_user");
             }
+        }
 
-            // Update label header dengan informasi transaksi
-            if (!tanggalTransaksi.isEmpty()) {
-                titleLabel.setText("Detail Pengeluaran: " + kodeTransaksi);
-                infoLabel.setText("Tanggal: " + tanggalTransaksi + " | Owner: " + (namaOwner != null ? namaOwner : "-"));
-                totalLabel.setText("Total Transaksi: Rp. " + decimalFormat.format(grandTotal));
-            } else {
-                // Jika tidak ada data ditemukan
-                titleLabel.setText("Detail Pengeluaran: " + kodeTransaksi);
-                infoLabel.setText("Data tidak ditemukan");
-                totalLabel.setText("Total Transaksi: Rp. 0");
-            }
-
-            rs.close();
-            stmt.close();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Error saat mengambil detail transaksi: " + e.getMessage(),
-                    "Error Database",
-                    JOptionPane.ERROR_MESSAGE);
-
-            // Set default values jika terjadi error
+        if (!tanggalTransaksi.isEmpty()) {
             titleLabel.setText("Detail Pengeluaran: " + kodeTransaksi);
-            infoLabel.setText("Error mengambil data");
+            infoLabel.setText("Tanggal: " + tanggalTransaksi + " | Owner: " + (namaOwner != null ? namaOwner : "-"));
+            totalLabel.setText("Total Transaksi: Rp. " + decimalFormat.format(grandTotal));
+        } else {
+            titleLabel.setText("Detail Pengeluaran: " + kodeTransaksi);
+            infoLabel.setText("Data tidak ditemukan");
             totalLabel.setText("Total Transaksi: Rp. 0");
         }
+
+        rs.close();
+        stmt.close();
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this,
+                "Error saat mengambil detail transaksi: " + e.getMessage(),
+                "Error Database",
+                JOptionPane.ERROR_MESSAGE);
+
+        titleLabel.setText("Detail Pengeluaran: " + kodeTransaksi);
+        infoLabel.setText("Error mengambil data");
+        totalLabel.setText("Total Transaksi: Rp. 0");
     }
+}
 
     /**
      * Overloaded method untuk backward compatibility
