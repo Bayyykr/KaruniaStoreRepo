@@ -616,7 +616,7 @@ rawTable.addMouseListener(new MouseAdapter() {
         tabelPemasukan.setColumnWidth(2, 95);
         tabelPemasukan.setColumnWidth(3, 150);
         tabelPemasukan.setColumnWidth(4, 100);
-        tabelPemasukan.setColumnWidth(5, 90);
+        tabelPemasukan.setColumnWidth(5, 80);
 
         loadPemasukanData(null, null);
 
@@ -1084,7 +1084,7 @@ rawTable.addMouseListener(new MouseAdapter() {
         tabelPengeluaran.setColumnWidth(0, 40);
         tabelPengeluaran.setColumnWidth(1, 90);
         tabelPengeluaran.setColumnWidth(2, 100);
-        tabelPengeluaran.setColumnWidth(3, 220);
+        tabelPengeluaran.setColumnWidth(3, 210);
         tabelPengeluaran.setColumnWidth(4, 110);
 
         loadPengeluaranData(null, null);
@@ -1289,5 +1289,6 @@ rawTable.addMouseListener(new MouseAdapter() {
         ExcelExporter.exportToExcel(dataList, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
         exportToExcel(dataList, namaUser, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
     }
-
+    public void refreshLaporan() {
+    }
 }

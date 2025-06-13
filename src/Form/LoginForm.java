@@ -548,6 +548,7 @@ public class LoginForm extends JFrame {
                             System.out.println("masuk");
                             if (jabatan.equals("kasir")) {
                                 new FormKasir().setVisible(true);
+                                PindahanAntarPopUp.showMasukSebagaiKasir(instance);
                                 LoginForm.this.setVisible(false);
                                 dialog.dispose();
                                 System.out.println("ini kasir");

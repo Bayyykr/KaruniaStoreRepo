@@ -811,14 +811,13 @@ public class EditProductPanel extends JPanel {
 
             // Tampilkan dialog print
             if (job.printDialog()) {
-               
 
                 // Jalankan pencetakan
                 job.print();
-                PindahanAntarPopUp.showEditProdukCetakBarcodeBerhasilDiCetak(parentFrame); 
+                PindahanAntarPopUp.showEditProdukCetakBarcodeBerhasilDiCetak(parentFrame);
             }
         } catch (PrinterException pe) {
-             PindahanAntarPopUp.showEditProdukCetakBarcodeDibatalkan(parentFrame); 
+            PindahanAntarPopUp.showEditProdukCetakBarcodeDibatalkan(parentFrame);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Error: " + e.getMessage(),
@@ -1574,215 +1573,216 @@ public class EditProductPanel extends JPanel {
         return "";
     }
 
-  private void updateProduct() {
-    try {
-        String hargaJualText = txtHargaJual.getText().trim()
-                .replaceAll("(?i)rp\\.?\\s?", "")
-                .replaceAll("\\.", "")
-                .replaceAll(",", "");
-
-        String hargaBeliText = txtHargaBeli.getText().trim()
-                .replaceAll("(?i)rp\\.?\\s?", "")
-                .replaceAll("\\.", "")
-                .replaceAll(",", "");
-
-        String namaProduk = txtNamaProduct.getText().trim();
-        String merk = txtMerk.getText().trim();
-        String ukuranText = txtUkuran.getText().trim();
-        String stokText = txtStok.getText().trim();
-
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(EditProductPanel.this);
-
-        // Validasi nama produk
-        if (namaProduk.isEmpty()) {
-            PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
-            return;
-        }
-
-        if (namaProduk.length() > 30) {
-            PindahanAntarPopUp.showTambahProdukNamaTidakBolehLebihDari30Karakter(parentFrame);
-            txtNamaProduct.requestFocus();
-            return;
-        }
-
+    private void updateProduct() {
         try {
-            int nilaiNama = Integer.parseInt(namaProduk);
-            if (nilaiNama <= 0) {
-                PindahanAntarPopUp.showProdukNamaProdukTidakBolehHanya0AtauNegatif(parentFrame);
+            String hargaJualText = txtHargaJual.getText().trim()
+                    .replaceAll("(?i)rp\\.?\\s?", "")
+                    .replaceAll("\\.", "")
+                    .replaceAll(",", "");
+
+            String hargaBeliText = txtHargaBeli.getText().trim()
+                    .replaceAll("(?i)rp\\.?\\s?", "")
+                    .replaceAll("\\.", "")
+                    .replaceAll(",", "");
+
+            String namaProduk = txtNamaProduct.getText().trim();
+            String merk = txtMerk.getText().trim();
+            String ukuranText = txtUkuran.getText().trim();
+            String stokText = txtStok.getText().trim();
+
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(EditProductPanel.this);
+
+            // Validasi nama produk
+            if (namaProduk.isEmpty()) {
+                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+                return;
+            }
+
+            if (namaProduk.length() > 30) {
+                PindahanAntarPopUp.showTambahProdukNamaTidakBolehLebihDari30Karakter(parentFrame);
                 txtNamaProduct.requestFocus();
                 return;
             }
-        } catch (NumberFormatException e) {
-            // Do nothing – acceptable
-        }
 
-        // Validasi merk
-        if (merk.isEmpty()) {
-            PindahanAntarPopUp.showTambahProdukMerkTidakBolehKosong(parentFrame);
-            txtMerk.requestFocus();
-            return;
-        }
+            try {
+                int nilaiNama = Integer.parseInt(namaProduk);
+                if (nilaiNama <= 0) {
+                    PindahanAntarPopUp.showProdukNamaProdukTidakBolehHanya0AtauNegatif(parentFrame);
+                    txtNamaProduct.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                // Do nothing – acceptable
+            }
 
-        if (merk.length() > 15) {
-            PindahanAntarPopUp.showTambahProdukMerkTidakBolehLebihDari15Karakter(parentFrame);
-            txtMerk.requestFocus();
-            return;
-        }
-
-        try {
-            int nilaiMerk = Integer.parseInt(merk);
-            if (nilaiMerk <= 0) {
-                PindahanAntarPopUp.showMerkTidakBolehHanya0AtauNegatif(parentFrame);
+            // Validasi merk
+            if (merk.isEmpty()) {
+                PindahanAntarPopUp.showTambahProdukMerkTidakBolehKosong(parentFrame);
                 txtMerk.requestFocus();
                 return;
             }
-        } catch (NumberFormatException e) {
-            // Do nothing – acceptable
-        }
 
-        // Validasi ukuran
-        if (ukuranText.isEmpty()) {
-            PindahanAntarPopUp.showTambahProdukUkuranTidakBolehKosong(parentFrame);
-            txtUkuran.requestFocus();
-            return;
-        }
+            if (merk.length() > 15) {
+                PindahanAntarPopUp.showTambahProdukMerkTidakBolehLebihDari15Karakter(parentFrame);
+                txtMerk.requestFocus();
+                return;
+            }
 
-        if (ukuranText.length() > 5) {
-            PindahanAntarPopUp.showProdukUkuranTidakBolehLebihDari5Karakter(parentFrame);
-            txtUkuran.requestFocus();
-            return;
-        }
+            try {
+                int nilaiMerk = Integer.parseInt(merk);
+                if (nilaiMerk <= 0) {
+                    PindahanAntarPopUp.showMerkTidakBolehHanya0AtauNegatif(parentFrame);
+                    txtMerk.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                // Do nothing – acceptable
+            }
 
-        int ukuran;
-        try {
-            ukuran = Integer.parseInt(ukuranText);
-            if (ukuran <= 0) {
-                PindahanAntarPopUp.showProdukUkuranTidakBoleh0AtauNegatif(parentFrame);
+            // Validasi ukuran
+            if (ukuranText.isEmpty()) {
+                PindahanAntarPopUp.showTambahProdukUkuranTidakBolehKosong(parentFrame);
                 txtUkuran.requestFocus();
                 return;
             }
-        } catch (NumberFormatException e) {
-            PindahanAntarPopUp.showTambahProdukHargaDanStokHarusBerupaAngka(parentFrame);
-            txtUkuran.requestFocus();
-            return;
-        }
 
-        // Validasi angka harga dan stok
-        if (hargaJualText.isEmpty() || hargaBeliText.isEmpty() || stokText.isEmpty()) {
-            PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
-            return;
-        }
-
-        int hargaJual = Integer.parseInt(hargaJualText);
-        int hargaBeli = Integer.parseInt(hargaBeliText);
-        int stok = Integer.parseInt(stokText);
-
-        if (hargaBeli <= 0) {
-            PindahanAntarPopUp.showTambahProdukHargaBeliLebihDari0(parentFrame);
-            return;
-        }
-
-        if (hargaJual <= hargaBeli) {
-            PindahanAntarPopUp.showTambahProdukhargaJualHarusLebihDariHargaBeli(parentFrame);
-            return;
-        }
-
-        if (stok < 0) {
-            PindahanAntarPopUp.showTambahProdukStokTidakBolehNegatif(parentFrame);
-            txtStok.requestFocus();
-            return;
-        }
-
-        if (cbCategory.getSelectedIndex() == 0) {
-            PindahanAntarPopUp.showTambahProdukPilihKategoriDulu(parentFrame);
-            cbCategory.requestFocus();
-            return;
-        }
-
-        String category = (String) cbCategory.getSelectedItem();
-        if (category == null || category.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Kategori tidak boleh kosong.", "Validasi Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        PopUp_TambahProdukApakahAndaYakinInginEditProduk dialog = new PopUp_TambahProdukApakahAndaYakinInginEditProduk(parentFrame);
-        dialog.addOKButtonActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String gender = rbMale.isSelected() ? "Cowok"
-                            : rbFemale.isSelected() ? "Cewek"
-                            : rbUnisex.isSelected() ? "Unisex" : "";
-
-                    String styleId = currentStyleIds[currentStyleIndex];
-
-                    String sql = "UPDATE produk SET "
-                            + "nama_produk = ?, harga_jual = ?, harga_beli = ?, merk = ?, size = ?, "
-                            + "gender = ?, jenis_produk = ?, id_style = ?";
-
-                    if (displayedImage != null || uploadInstructionsPanel.isVisible()) {
-                        sql += ", gambar = ?";
-                    }
-
-                    sql += " WHERE id_produk = ?";
-
-                    try (PreparedStatement stmt = con.prepareStatement(sql)) {
-                        stmt.setString(1, namaProduk);
-                        stmt.setInt(2, hargaJual);
-                        stmt.setInt(3, hargaBeli);
-                        stmt.setString(4, merk);
-                        stmt.setString(5, ukuranText);
-                        stmt.setString(6, gender);
-                        stmt.setString(7, category);
-                        stmt.setString(8, styleId);
-
-                        int paramIndex = 9;
-
-                        if (displayedImage != null) {
-                            Image img = ((ImageIcon) displayedImage).getImage();
-                            BufferedImage bufferedImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_RGB);
-                            Graphics g = bufferedImage.createGraphics();
-                            g.drawImage(img, 0, 0, null);
-                            g.dispose();
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            ImageIO.write(bufferedImage, "jpg", baos);
-                            stmt.setBytes(paramIndex++, baos.toByteArray());
-                        } else if (uploadInstructionsPanel.isVisible()) {
-                            stmt.setString(paramIndex++, generateDefaultImagePath());
-                        }
-
-                        stmt.setString(paramIndex, kode);
-
-                        int rowsAffected = stmt.executeUpdate();
-                        if (rowsAffected > 0) {
-                            updateStockIfNeeded();
-                            PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
-                            Productt mainFrame = Productt.getMainFrame();
-                            if (mainFrame != null) {
-                                ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
-                                if (productDisplay != null) {
-                                    productDisplay.refreshProducts();
-                                }
-                                mainFrame.switchBackToProductPanel();
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(EditProductPanel.this, "Gagal mengupdate produk", "Error", JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
-
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(EditProductPanel.this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    ex.printStackTrace();
-                }
+            if (ukuranText.length() > 5) {
+                PindahanAntarPopUp.showProdukUkuranTidakBolehLebihDari5Karakter(parentFrame);
+                txtUkuran.requestFocus();
+                return;
             }
-        });
 
-        dialog.setVisible(true);
+            int ukuran;
+            try {
+                ukuran = Integer.parseInt(ukuranText);
+                if (ukuran <= 0) {
+                    PindahanAntarPopUp.showProdukUkuranTidakBoleh0AtauNegatif(parentFrame);
+                    txtUkuran.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                PindahanAntarPopUp.showTambahProdukHargaDanStokHarusBerupaAngka(parentFrame);
+                txtUkuran.requestFocus();
+                return;
+            }
 
-    } catch (NumberFormatException ex) {
+            // Validasi angka harga dan stok
+            if (hargaJualText.isEmpty() || hargaBeliText.isEmpty() || stokText.isEmpty()) {
+                PindahanAntarPopUp.showEditProductFieldTidakBolehKosong(parentFrame);
+                return;
+            }
+
+            int hargaJual = Integer.parseInt(hargaJualText);
+            int hargaBeli = Integer.parseInt(hargaBeliText);
+            int stok = Integer.parseInt(stokText);
+
+            if (hargaBeli <= 0) {
+                PindahanAntarPopUp.showTambahProdukHargaBeliLebihDari0(parentFrame);
+                return;
+            }
+
+            if (hargaJual <= hargaBeli) {
+                PindahanAntarPopUp.showTambahProdukhargaJualHarusLebihDariHargaBeli(parentFrame);
+                return;
+            }
+
+            if (stok < 0) {
+                PindahanAntarPopUp.showTambahProdukStokTidakBolehNegatif(parentFrame);
+                txtStok.requestFocus();
+                return;
+            }
+
+            if (cbCategory.getSelectedIndex() == 0) {
+                PindahanAntarPopUp.showTambahProdukPilihKategoriDulu(parentFrame);
+                cbCategory.requestFocus();
+                return;
+            }
+
+            String category = (String) cbCategory.getSelectedItem();
+            if (category == null || category.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Kategori tidak boleh kosong.", "Validasi Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            PopUp_TambahProdukApakahAndaYakinInginEditProduk dialog = new PopUp_TambahProdukApakahAndaYakinInginEditProduk(parentFrame);
+            dialog.addOKButtonActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        String gender = rbMale.isSelected() ? "Cowok"
+                                : rbFemale.isSelected() ? "Cewek"
+                                : rbUnisex.isSelected() ? "Unisex" : "";
+
+                        String styleId = currentStyleIds[currentStyleIndex];
+
+                        String sql = "UPDATE produk SET "
+                                + "nama_produk = ?, harga_jual = ?, harga_beli = ?, merk = ?, size = ?, "
+                                + "gender = ?, jenis_produk = ?, id_style = ?";
+
+                        if (displayedImage != null || uploadInstructionsPanel.isVisible()) {
+                            sql += ", gambar = ?";
+                        }
+
+                        sql += " WHERE id_produk = ?";
+
+                        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                            stmt.setString(1, namaProduk);
+                            stmt.setInt(2, hargaJual);
+                            stmt.setInt(3, hargaBeli);
+                            stmt.setString(4, merk);
+                            stmt.setString(5, ukuranText);
+                            stmt.setString(6, gender);
+                            stmt.setString(7, category);
+                            stmt.setString(8, styleId);
+
+                            int paramIndex = 9;
+
+                            if (displayedImage != null) {
+                                Image img = ((ImageIcon) displayedImage).getImage();
+                                BufferedImage bufferedImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                                Graphics2D g2d = bufferedImage.createGraphics();
+                                g2d.setComposite(AlphaComposite.Src);
+                                g2d.drawImage(img, 0, 0, null);
+                                g2d.dispose();
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                ImageIO.write(bufferedImage, "png", baos);
+                                stmt.setBytes(paramIndex++, baos.toByteArray());
+                            } else if (uploadInstructionsPanel.isVisible()) {
+                                stmt.setString(paramIndex++, generateDefaultImagePath());
+                            }
+
+                            stmt.setString(paramIndex, kode);
+
+                            int rowsAffected = stmt.executeUpdate();
+                            if (rowsAffected > 0) {
+                                updateStockIfNeeded();
+                                PindahanAntarPopUp.showEditProductBerhasilDiEdit(parentFrame);
+                                Productt mainFrame = Productt.getMainFrame();
+                                if (mainFrame != null) {
+                                    ProductDisplayy productDisplay = mainFrame.getProductDisplayPanel();
+                                    if (productDisplay != null) {
+                                        productDisplay.refreshProducts();
+                                    }
+                                    mainFrame.switchBackToProductPanel();
+                                }
+                            } else {
+                                JOptionPane.showMessageDialog(EditProductPanel.this, "Gagal mengupdate produk", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(EditProductPanel.this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        ex.printStackTrace();
+                    }
+                }
+            });
+
+            dialog.setVisible(true);
+
+        } catch (NumberFormatException ex) {
             PindahanAntarPopUp.showEditProductFieldUkuranAtauStokHarusBerupaAngka(parentFrame);
+        }
     }
-}
 
     private void updateStockIfNeeded() {
         try {

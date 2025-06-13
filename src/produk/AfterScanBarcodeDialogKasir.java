@@ -14,6 +14,7 @@ import db.conn;
 import java.sql.*;
 import java.text.NumberFormat;
 import java.util.Locale;
+import PopUp_all.*;
 
 public class AfterScanBarcodeDialogKasir extends JDialog {
 
@@ -153,11 +154,12 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
 
     private void fetchProductData() {
         try {
-            String query = "SELECT p.jenis_produk, p.nama_produk, p.merk, p.size, "
-                    + "p.harga_jual, s.nama_style, p.gender, p.gambar "
-                    + "FROM produk p "
-                    + "JOIN style s ON p.id_style = s.id_style "
-                    + "WHERE p.id_produk = ?";
+            String query = "SELECT p.jenis_produk, p.nama_produk, p.merk, p.size, " +
+                "p.harga_jual, s.nama_style, p.gender, p.gambar, " +
+                "(SELECT ks.produk_sisa FROM kartu_stok ks WHERE ks.id_produk = p.id_produk ORDER BY ks.tanggal_transaksi DESC LIMIT 1) AS produk_sisa_terbaru " +
+                "FROM produk p " +
+                "JOIN style s ON p.id_style = s.id_style " +
+                "WHERE p.id_produk = ?";
 
             try (PreparedStatement stmt = con.prepareStatement(query)) {
                 stmt.setString(1, scannedBarcode);
@@ -178,6 +180,8 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
                         stock = String.valueOf(1);
                         style = rs.getString("nama_style");
                         gender = rs.getString("gender");
+                        int latestStock = rs.getInt("produk_sisa_terbaru");
+                        stock = String.valueOf(latestStock);
 
                         // Langsung ambil data BLOB
                         try {
@@ -353,6 +357,14 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (scannedBarcode != null && !scannedBarcode.isEmpty()) {
+                    
+                    int currentStock = Integer.parseInt(stock);
+
+                    if (currentStock <= 0) {
+                    PindahanAntarPopUp.showProdukDisplayKasirStok0TidakBisaDijual(parentFrame);
+                    return;
+                    }
+                    
                     String[] productData = {
                         productName,
                         size,
@@ -386,9 +398,7 @@ public class AfterScanBarcodeDialogKasir extends JDialog {
         footerPanel.add(editButton);
 
         return footerPanel;
-    }
-
-    ;
+    };
 
     public void showDialog() {
         setVisible(true);
