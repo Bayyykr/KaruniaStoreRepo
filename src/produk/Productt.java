@@ -158,6 +158,7 @@ public class Productt extends JFrame {
                         currentPanel = karyawanPanel;
                         break;
                     case 4:
+                        laporanPanel.refreshLaporan();
                         currentPanel = laporanPanel;
                         break;
                     case 3:
@@ -394,6 +395,10 @@ public class Productt extends JFrame {
     
     public GajiKaryawan getGajiPanel() {
         return this.gajikaryawan;
+    }
+    
+    public Laporan getLaporanRefresh() {
+        return this.laporanPanel;
     }
 
     public static void main(String args[]) {

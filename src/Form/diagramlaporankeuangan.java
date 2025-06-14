@@ -301,4 +301,10 @@ public class diagramlaporankeuangan extends JPanel {
         plot.setDataset(newDataset);
         chartPanel.repaint();
     }
+    public void refreshData() {
+    DefaultCategoryDataset newDataset = createDataset(); 
+    CategoryPlot plot = (CategoryPlot) chart.getPlot();
+    plot.setDataset(newDataset); 
+    chartPanel.repaint(); 
+}
 }

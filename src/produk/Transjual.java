@@ -492,6 +492,7 @@ public class Transjual extends JPanel {
                 System.out.println("Tombol close diklik");
                 FormKasir.getMainFrame().switchBackToProductPanelKasir();
                 FormKasir.getMainFrame().getProductDisplayKasirPanel().refreshProducts();
+                Productt.getMainFrame().getLaporanRefresh().refreshLaporan();
                 clearTransactionTable();
                 scanKodeField.setText("");
                 namabarang.setText("");

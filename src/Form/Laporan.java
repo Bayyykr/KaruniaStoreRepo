@@ -66,6 +66,8 @@ public class Laporan extends javax.swing.JPanel {
     private JButton dateRangeButton;
     private CustomKalender calendarPanel;
     private JButton pemasukanTab, pengeluaranTab, labaTab, GrafikTab;
+    private diagramlaporankeuangan diagramKeuangan;
+    private diagramkaryawan diagramKaryawan;
     private diagramlaporan diagramPanel;
     private JTableRounded tabelPemasukan, tabelPengeluaran;
     private JPanel pemasukanPanel, pengeluaranPanel, labaPanel, grafikPanel;
@@ -500,46 +502,46 @@ public class Laporan extends javax.swing.JPanel {
 
             ResultSet rs = stmt.executeQuery();
             JTable rawTable = tabelPemasukan.getTable();
-rawTable.addMouseListener(new MouseAdapter() {
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        if (isPopupOpen) {
-            return;
-        }
-
-        int row = rawTable.rowAtPoint(e.getPoint());
-        int col = rawTable.columnAtPoint(e.getPoint());
-
-        if (row == -1 || col == -1) {
-            return;
-        }
-
-        if (col == 3 || col == 2) {
-            String kodeTransaksi = rawTable.getValueAt(row, 2).toString();
-
-            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
-            PopUp_LaporanDetailPemasukanAtautransaksiJual detailTransaksiPopup = new PopUp_LaporanDetailPemasukanAtautransaksiJual(parentFrame);
-            isPopupOpen = true;
-
-            detailTransaksiPopup.loadTransactionDetails(kodeTransaksi);
-            detailTransaksiPopup.setVisible(true);
-
-            System.out.println("Menampilkan detail untuk transaksi: " + kodeTransaksi);
-
-            detailTransaksiPopup.addWindowListener(new WindowAdapter() {
+            rawTable.addMouseListener(new MouseAdapter() {
                 @Override
-                public void windowClosed(WindowEvent e) {
-                    isPopupOpen = false;
-                }
+                public void mouseClicked(MouseEvent e) {
+                    if (isPopupOpen) {
+                        return;
+                    }
 
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    isPopupOpen = false;
+                    int row = rawTable.rowAtPoint(e.getPoint());
+                    int col = rawTable.columnAtPoint(e.getPoint());
+
+                    if (row == -1 || col == -1) {
+                        return;
+                    }
+
+                    if (col == 3 || col == 2) {
+                        String kodeTransaksi = rawTable.getValueAt(row, 2).toString();
+
+                        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(parentComponent);
+                        PopUp_LaporanDetailPemasukanAtautransaksiJual detailTransaksiPopup = new PopUp_LaporanDetailPemasukanAtautransaksiJual(parentFrame);
+                        isPopupOpen = true;
+
+                        detailTransaksiPopup.loadTransactionDetails(kodeTransaksi);
+                        detailTransaksiPopup.setVisible(true);
+
+                        System.out.println("Menampilkan detail untuk transaksi: " + kodeTransaksi);
+
+                        detailTransaksiPopup.addWindowListener(new WindowAdapter() {
+                            @Override
+                            public void windowClosed(WindowEvent e) {
+                                isPopupOpen = false;
+                            }
+
+                            @Override
+                            public void windowClosing(WindowEvent e) {
+                                isPopupOpen = false;
+                            }
+                        });
+                    }
                 }
             });
-        }
-    }
-});
             DefaultTableModel model = (DefaultTableModel) rawTable.getModel();
             model.setRowCount(0);
             DecimalFormat decimalFormat = new DecimalFormat("#,###");
@@ -1136,13 +1138,13 @@ rawTable.addMouseListener(new MouseAdapter() {
 
         JPanel keuanganPanel = new JPanel(new BorderLayout());
         keuanganPanel.setOpaque(false);
-        diagramlaporankeuangan diagramKeuangan = new diagramlaporankeuangan();
+        diagramKeuangan = new diagramlaporankeuangan();
         diagramKeuangan.setOpaque(false);
         keuanganPanel.add(diagramKeuangan, BorderLayout.CENTER);
 
         JPanel karyawanPanel = new JPanel(new BorderLayout());
         karyawanPanel.setOpaque(false);
-        diagramkaryawan diagramKaryawan = new diagramkaryawan();
+        diagramKaryawan = new diagramkaryawan();
         diagramKaryawan.setOpaque(false);
         karyawanPanel.add(diagramKaryawan, BorderLayout.CENTER);
 
@@ -1289,6 +1291,24 @@ rawTable.addMouseListener(new MouseAdapter() {
         ExcelExporter.exportToExcel(dataList, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
         exportToExcel(dataList, namaUser, "C:/Users/user/Downloads/laporan data keuangan tanggal " + tanggalStr + " waktu " + waktuStr + " .xlsx");
     }
+
     public void refreshLaporan() {
+        if (diagramKeuangan != null) {
+            diagramKeuangan.refreshData();
+            diagramKeuangan.repaint();
+        }
+
+        if (diagramKaryawan != null) {
+            diagramKaryawan.refreshData();
+            diagramKaryawan.repaint();
+        }
+
+        if (diagramPanel != null) {
+            diagramPanel.refreshData();
+            diagramPanel.repaint();
+        }
+
+        // Refresh data laba
+        loadLabaData(sqlStartDate, sqlEndDate);
     }
 }

@@ -670,6 +670,7 @@ public class Transaksibeli extends JPanel {
                         updateTotalAmount();
                         txtIdTransaksi.setText(generateNextTransaksiId());
                         clearTransactionTable();
+                        Productt.getMainFrame().getLaporanRefresh().refreshLaporan();
                         dialog.startCloseAnimation();
                     }
                 }
@@ -1143,7 +1144,10 @@ public class Transaksibeli extends JPanel {
         sizeProduk.setText("");
         hargaBeliField.setText("Rp. ");
         totalValueLabel.setText("Rp. ");
-
+        
+        scanKodeField.setFocusable(true);
+        namaProduk.setFocusable(true);
+        sizeProduk.setFocusable(true);
         scanKodeField.requestFocus();
     }
 

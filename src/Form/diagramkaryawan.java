@@ -338,4 +338,10 @@ public class diagramkaryawan extends JPanel {
         employeeColors.clear();
         updateData(dataset);
     }
+    public void refreshData() {
+    DefaultCategoryDataset newDataset = createDataset(); 
+    CategoryPlot plot = (CategoryPlot) chart.getPlot();
+    plot.setDataset(newDataset); 
+    chartPanel.repaint(); 
+}
 }
